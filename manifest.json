@@ -1,0 +1,39 @@
+{
+	"manifest_version": 2,
+	"version": "0.1.0.0",
+	"name": "AI Spider",
+	"short_name": "WTH",
+	"description": "Tool for data extraction from websites",
+	"permissions": ["<all_urls>", "tabs", "notifications", "storage", "unlimitedStorage", "downloads", "webNavigation", "cookies", "http://corp.admin.com/*"],
+	"icons": {
+		"16": "assets/images/colin.png"
+	},
+	"browser_action": {
+		"default_icon": {
+			"16": "assets/images/colin.png"
+		},
+		"default_title": "Spider Slave",
+		"default_popup": "popup.html"
+	},
+	"content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
+	"background":{
+	    "scripts":[
+	    	"config.js",
+	    	"background/jquery-2.0.3.js",
+	    	"background/run_time_api.js",
+	    	"background/background.js"
+    	]
+	},
+	"content_scripts": [
+		{
+			"matches": ["*://*/*"],
+			"js": [
+				"config.js",
+				"content/jquery-2.0.3.js",
+			    "content/work.js"
+			],
+			"all_frames": false,
+			"run_at":"document_start"
+		}
+	]
+}
