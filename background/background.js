@@ -20,7 +20,7 @@ chrome.tabs.create({'url':window.spiderSlaveApi},function(tab) {
 		if(window.spiderSlaveUrls.length > 0) {
 			getHtmlRun();
 		}else{
-			sendMessageToTabs(window.apiTab,{'admintype':1,'url':window.spiderSlaveApi+'ir/NetworkCitywireasia/getLinksCache','data':{'sFlag':window.spiderSlaveFlag}});
+			sendMessageToTabs(window.apiTab,{'admintype':1,'url':window.spiderSlaveApi+'data/getLinksCache','data':{'sFlag':window.spiderSlaveFlag}});
 		}
 	},window.spiderSlaveDelay);
 });
@@ -32,18 +32,19 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
 	switch (req.type) {
 		case 3://background 
 			if(window.tabUrlIds[tab.id]) {
-				sendMessageToTabs(window.apiTab,{'admintype':2,'tab':tab,'url':window.spiderSlaveApi+'ir/NetworkCitywireasia/recordLinkCacheIsDone','data':{'id':window.tabUrlIds[tab.id],'sResponse':req.html}});
+				sendMessageToTabs(window.apiTab,{'admintype':2,'tab':tab,'url':window.spiderSlaveApi+'data/recordLinkCacheIsDone','data':{'id':window.tabUrlIds[tab.id],'sResponse':req.html}});
 				window.tabUrlIds[tab.id] = undefined;
 			}
 			break;
 			
 		case 2://api result
-			if(!(req.data instanceof Array)) {
+			if(!(req.data.data instanceof Array)) {
 				break;
 			}
-			req.data.forEach(function(v) {
-				if(!window.spiderSlaveUrlsMd5[v['urlMd5']]) {
-					window.spiderSlaveUrlsMd5[v['urlMd5']] = 1;
+			req.data.data.forEach(function(v) {
+				backgroundConsole('v',v);
+				if(!window.spiderSlaveUrlsMd5[v['code']]) {
+					window.spiderSlaveUrlsMd5[v['code']] = 1;
 					window.spiderSlaveUrls.push(v);
 				}
 			});
@@ -61,7 +62,7 @@ function backgroundConsole(pre,obj) {
 function getHtmlRun() {
 	var index = Math.floor((Math.random()*window.spiderSlaveUrls.length));
 	var info = window.spiderSlaveUrls[index];
-	var iSiteId = info['sParameters']['siteId'];
+	var iSiteId = info['domain_flag'];
 	
 	if(window.tabUseStatus[iSiteId] && window.tabUseStatus[iSiteId] === 1) {
 		return ;
@@ -76,7 +77,7 @@ function getHtmlRun() {
 		setTimeout(function() {
 			sendMessageToTabs(window.siteIdToTab[iSiteId],{'actiontype':1},function(res) {
 				if(res && res['html']) {
-					sendMessageToTabs(window.apiTab,{'admintype':2,'tab':tab,'url':window.spiderSlaveApi+'ir/NetworkCitywireasia/recordLinkCacheIsDone','data':{'id':info['id'],'sResponse':res.html}});
+					sendMessageToTabs(window.apiTab,{'admintype':2,'tab':tab,'url':window.spiderSlaveApi+'data/recordLinkCacheIsDone','data':{'id':info['id'],'sResponse':res.html}});
 				}
 				window.tabUseStatus[iSiteId] = 2;
 			});
@@ -84,7 +85,7 @@ function getHtmlRun() {
 	}
 	
 	function createTabAndGetHml() {
-		chrome.tabs.create({'url': info['sParameters']['url']},function(tab) {
+		chrome.tabs.create({'url': info['url']},function(tab) {
 			window.siteIdToTab[iSiteId] = tab;
 			autoDiscardable(tab.id);
 			getHml(tab);
@@ -109,5 +110,5 @@ function getHtmlRun() {
 	}
 	
 	window.spiderSlaveUrls.splice(index,1);
-	window.spiderSlaveUrlsMd5[info['urlMd5']] = undefined;
+	window.spiderSlaveUrlsMd5[info['code']] = undefined;
 }

@@ -32,8 +32,8 @@ chrome.runtime.onMessage.addListener(
 					return ;
 					break;
 				case 2:
-					if(request.info.sParameters) {
-						window.location.href=request.info.sParameters.url;
+					if(request.info.url) {
+						window.location.href=request.info.url;
 					}
 					break;
 				default:
