@@ -74,21 +74,28 @@ function getHtmlRun() {
 	
 	//get html after window.spiderSlaveDelay seconds
 	function getHml(tab) {
-		setTimeout(function() {
+		window.setInterval_getHtml = setInterval(function() {
 			sendMessageToTabs(window.siteIdToTab[iSiteId],{'actiontype':1},function(res) {
-				if(res && res['html']) {
-					sendMessageToTabs(window.apiTab,{'admintype':2,'tab':tab,'url':window.spiderSlaveApi+'data/recordLinkCacheIsDone','data':{'id':info['id'],'sResponse':res.html}});
+				if(res && res['scrollIsEnd'] == true) {
+					clearInterval(window.setInterval_getHtml);
+					if(res && res['html']) {
+						sendMessageToTabs(window.apiTab,{'admintype':2,'tab':tab,'url':window.spiderSlaveApi+'data/recordLinkCacheIsDone','data':{'id':info['id'],'sResponse':res.html}});
+					}
+					window.tabUseStatus[iSiteId] = 2;
 				}
-				window.tabUseStatus[iSiteId] = 2;
 			});
-		},window.spiderSlaveDelay);
+		},2000);
 	}
 	
 	function createTabAndGetHml() {
 		chrome.tabs.create({'url': info['url']},function(tab) {
 			window.siteIdToTab[iSiteId] = tab;
 			autoDiscardable(tab.id);
-			getHml(tab);
+			setTimeout(function() {
+					//scroll 
+					sendMessageToTabs(tab,{'actiontype':3,'info':info});
+					getHml(tab);
+			},window.spiderSlaveDelay);
 		});
 	}
 	
@@ -104,7 +111,11 @@ function getHtmlRun() {
 				var tab = window.siteIdToTab[iSiteId]; 
 				//jump 
 				sendMessageToTabs(tab,{'actiontype':2,'info':info});
-				getHml(tab);
+				setTimeout(function() {
+					//scroll 
+					sendMessageToTabs(tab,{'actiontype':3,'info':info});
+					getHml(tab);
+				},window.spiderSlaveDelay);
 			}
 		});
 	}

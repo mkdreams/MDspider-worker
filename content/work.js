@@ -26,8 +26,7 @@ chrome.runtime.onMessage.addListener(
 			switch(request.actiontype) {
 				//get html
 				case 1:
-					var data = {'html':document.getElementsByTagName('html')[0].innerHTML};
-					console.log('data',data);
+					var data = {'html':document.getElementsByTagName('html')[0].innerHTML,'scrollIsEnd':window.scrollIsEnd};
 					sendResponse(data);
 					return ;
 					break;
@@ -35,6 +34,21 @@ chrome.runtime.onMessage.addListener(
 					if(request.info.url) {
 						window.location.href=request.info.url;
 					}
+					break;
+				//scroll
+				case 3:
+					var maxHeight = document.body.scrollHeight;
+					var clientHeight = document.body.clientHeight/2;
+					var offset = 0;
+					window.scrollIsEnd = false;
+					window.setInterval_scroll = setInterval(function() {
+						window.scroll(0,offset);
+						offset += clientHeight;
+						if(offset > maxHeight) {
+							window.scrollIsEnd = true;
+							clearInterval(window.setInterval_scroll);
+						}
+					},1000);
 					break;
 				default:
 					break;
