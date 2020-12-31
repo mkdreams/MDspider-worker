@@ -34,48 +34,60 @@ chrome.runtime.onMessage.addListener(
 			switch(request.actiontype) {
 				//get html 
 				case 1:
-					if(windows.spiderData != undefined && window.scrollIsEnd) {
-						var data = {'html':windows.spiderData,'scrollIsEnd':window.scrollIsEnd};
+					if(window.spiderData != undefined && window.scrollIsEnd) {
+						var data = {'html':window.spiderData,'scrollIsEnd':window.scrollIsEnd};
 						sendResponse(data);
 						return ;
-					}else{
-						//1:a,2:js,4:css,8:image,16:others
-						switch(request.info.type) {
-							case 2:
-							case 4:
-							case 8:
-								break;
-							case default:
-								var blob = new Blob([document.getElementsByTagName('html')[0].innerHTML]);
-								blobToBase64(blob,function(data){
-									windows.spiderData = data.replace(/data\:[\s\S]+?;base64,/,'');
-								});
-								break;
-						}
-				        sendResponse({'html':'','scrollIsEnd':false});
-						return ;
 					}
+					
+					//1:a,2:js,4:css,8:image,16:others
+					console.log('request',request);
+					switch(request.info.type) {
+						case 2:
+						case 4:
+						case 8:
+						case 16:
+							break;
+						default:
+							var blob = new Blob([document.getElementsByTagName('html')[0].innerHTML]);
+							blobToBase64(blob,function(data){
+								window.spiderData = data.replace(/data\:[\s\S]+?;base64,/,'');
+							});
+							break;
+					}
+			        sendResponse({'html':'','scrollIsEnd':false});
+					return ;
 					break;
+				//jump
 				case 2:
 					if(request.info.url) {
 						//1:a,2:js,4:css,8:image,16:others
-						windows.spiderData = undefined;
+						window.spiderData = undefined;
 						switch(request.info.type) {
 							case 2:
 							case 4:
 							case 8:
+							case 16:
+								window.setTimeout_get_blob = setTimeout(function() {
+									var blob = new Blob(['timeout!']);
+									blobToBase64(blob,function(data){
+										window.spiderData = data.replace(/data\:[\s\S]+?;base64,/,'');
+									});
+								},30000);
+								
 								var xhr = new XMLHttpRequest()
 								xhr.onreadystatechange = function () {
 									if (this.readyState == 4 && this.status == 200) {
 										blobToBase64(this.response,function(data){
-											windows.spiderData = data.replace(/data\:[\s\S]+?;base64,/,'');
+											clearInterval(window.setTimeout_get_blob);
+											window.spiderData = data.replace(/data\:[\s\S]+?;base64,/,'');
 										});
 									}
 								}
 								xhr.open('GET', request.info.url)
 								xhr.responseType = 'blob'
-									xhr.send()
-									break;
+								xhr.send()
+								break;
 							default:
 								window.location.href=request.info.url;
 								break;
@@ -93,11 +105,7 @@ chrome.runtime.onMessage.addListener(
 							window.scroll(0,offset);
 							offset += clientHeight;
 							if(offset > maxHeight) {
-								var blob = new Blob([document.getElementsByTagName('html')[0].innerHTML]);
-						        blobToBase64(blob,function(data){
-						        	windows.spiderData = data;
-						        	window.scrollIsEnd = true;
-						        });
+					        	window.scrollIsEnd = true;
 								clearInterval(window.setInterval_scroll);
 							}
 						},500);
