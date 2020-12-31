@@ -1,13 +1,10 @@
-//setTimeout(function() {
-//	$.ajax({
-//		type: 'GET',
-//		url: 'https://www.farseerbi.com/Application/Home/Static/images/logo.png?v=1.2',
-////		url: 'https://www.farseerbi.com/Application/Home/Static/css/list.css?v=1.3',
-//		success: function(data){
-//			console.log('data',data);
-//		}
-//	});
-//},10000);
+function blobToBase64(blob, callback) {
+   var reader = new FileReader();
+   reader.readAsDataURL(blob);
+   reader.onload = function (e) {
+       callback(e.target.result);
+   }
+}
 
 chrome.runtime.onMessage.addListener(
 	function (request, sender, sendResponse) {
@@ -37,36 +34,48 @@ chrome.runtime.onMessage.addListener(
 			switch(request.actiontype) {
 				//get html 
 				case 1:
-					if(windows.spiderData != undefined) {
+					if(windows.spiderData != undefined && window.scrollIsEnd) {
 						var data = {'html':windows.spiderData,'scrollIsEnd':window.scrollIsEnd};
+						sendResponse(data);
+						return ;
 					}else{
-						var data = {'html':document.getElementsByTagName('html')[0].innerHTML,'scrollIsEnd':window.scrollIsEnd};
+						//1:a,2:js,4:css,8:image,16:others
+						switch(request.info.type) {
+							case 2:
+							case 4:
+							case 8:
+								break;
+							case default:
+								var blob = new Blob([document.getElementsByTagName('html')[0].innerHTML]);
+								blobToBase64(blob,function(data){
+									windows.spiderData = data;
+								});
+								break;
+						}
+				        sendResponse({'html':'','scrollIsEnd':false});
+						return ;
 					}
-					sendResponse(data);
-					return ;
 					break;
 				case 2:
 					if(request.info.url) {
 						//1:a,2:js,4:css,8:image,16:others
 						windows.spiderData = undefined;
 						switch(request.info.type) {
-							case 1:
-							case 16:
-								window.location.href=request.info.url;
-								break;
 							case 2:
 							case 4:
 							case 8:
-							case 16:
-								$.ajax({
-									type: 'GET',
-									url: request.info.url,
-									success: function(data){
-										windows.spiderData = data;
-//										console.log('data',data);
+								var xhr = new XMLHttpRequest()
+								xhr.onreadystatechange = function () {
+									if (this.readyState == 4 && this.status == 200) {
+										blobToBase64(this.response,function(data){
+											windows.spiderData = data;
+										});
 									}
-								});
-								break;
+								}
+								xhr.open('GET', request.info.url)
+								xhr.responseType = 'blob'
+									xhr.send()
+									break;
 							default:
 								window.location.href=request.info.url;
 								break;
@@ -84,7 +93,11 @@ chrome.runtime.onMessage.addListener(
 							window.scroll(0,offset);
 							offset += clientHeight;
 							if(offset > maxHeight) {
-								window.scrollIsEnd = true;
+								var blob = new Blob([document.getElementsByTagName('html')[0].innerHTML]);
+						        blobToBase64(blob,function(data){
+						        	windows.spiderData = data;
+						        	window.scrollIsEnd = true;
+						        });
 								clearInterval(window.setInterval_scroll);
 							}
 						},1000);

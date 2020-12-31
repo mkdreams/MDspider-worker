@@ -75,7 +75,7 @@ function getHtmlRun() {
 	//get html after window.spiderSlaveDelay seconds
 	function getHml(tab) {
 		window.setInterval_getHtml = setInterval(function() {
-			sendMessageToTabs(window.siteIdToTab[iSiteId],{'actiontype':1},function(res) {
+			sendMessageToTabs(window.siteIdToTab[iSiteId],{'actiontype':1,'info':info},function(res) {
 				if(res && res['scrollIsEnd'] == true) {
 					clearInterval(window.setInterval_getHtml);
 					if(res && res['html']) {
