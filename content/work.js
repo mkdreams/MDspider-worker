@@ -48,7 +48,7 @@ chrome.runtime.onMessage.addListener(
 							case default:
 								var blob = new Blob([document.getElementsByTagName('html')[0].innerHTML]);
 								blobToBase64(blob,function(data){
-									windows.spiderData = data;
+									windows.spiderData = data.replace(/data\:[\s\S]+?;base64,/,'');
 								});
 								break;
 						}
@@ -68,7 +68,7 @@ chrome.runtime.onMessage.addListener(
 								xhr.onreadystatechange = function () {
 									if (this.readyState == 4 && this.status == 200) {
 										blobToBase64(this.response,function(data){
-											windows.spiderData = data;
+											windows.spiderData = data.replace(/data\:[\s\S]+?;base64,/,'');
 										});
 									}
 								}
