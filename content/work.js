@@ -86,7 +86,7 @@ chrome.runtime.onMessage.addListener(
 				case 3:
 					if(request.info && request.info.type && request.info.type == 1) {
 						var maxHeight = document.body.scrollHeight;
-						var clientHeight = document.body.clientHeight/2;
+						var clientHeight = document.body.clientHeight*0.5;
 						var offset = 0;
 						window.scrollIsEnd = false;
 						window.setInterval_scroll = setInterval(function() {
@@ -100,7 +100,7 @@ chrome.runtime.onMessage.addListener(
 						        });
 								clearInterval(window.setInterval_scroll);
 							}
-						},1000);
+						},500);
 					}else{
 						window.scrollIsEnd = true;
 					}
