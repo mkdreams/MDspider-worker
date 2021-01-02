@@ -60,17 +60,38 @@ function backgroundConsole(pre,obj) {
 }
 
 function getHtmlRun() {
-	var index = Math.floor((Math.random()*window.spiderSlaveUrls.length));
+	//var index = Math.floor((Math.random()*window.spiderSlaveUrls.length));
+	var index = 0;
 	var info = window.spiderSlaveUrls[index];
 	var iSiteId = info['domain_flag'];
+	
 	
 	if(window.tabUseStatus[iSiteId] && window.tabUseStatus[iSiteId] === 1) {
 		return ;
 	}
 	
+	console.log('comming',info.url);
 	
 	//create tab 
 	window.tabUseStatus[iSiteId] = 1;
+	
+	function isDone() {
+		window.tabUseStatus[iSiteId] = 2;
+		window.spiderSlaveUrls.splice(index,1);
+		window.spiderSlaveUrlsMd5[info['code']] = undefined;
+		clearTimeout(window.setTimeout_getHtml);
+		
+		console.log('end',info.url);
+	}
+	
+	//try agin
+	clearTimeout(window.setTimeout_getHtml);
+	window.setTimeout_getHtml = setTimeout(function() {
+		window.tabUseStatus[iSiteId] = 2;
+		clearInterval(window.setInterval_getHtml);
+		clearInterval(window.setInterval_waitToComplete);
+		console.log('time out!',info);
+	},180000);
 	
 	//get html after window.spiderSlaveDelay seconds
 	function getHml(tab) {
@@ -81,16 +102,19 @@ function getHtmlRun() {
 					if(res && res['html']) {
 						sendMessageToTabs(window.apiTab,{'admintype':2,'tab':tab,'url':window.spiderSlaveApi+'data/recordLinkCacheIsDone','data':{'id':info['id'],'sResponse':res.html}});
 					}
-					window.tabUseStatus[iSiteId] = 2;
+					isDone();
 				}
 			});
-		},2000);
+		},1000);
 	}
 	
+	
+	 
 	function createTabAndGetHml() {
 		chrome.tabs.create({'url': info['url']},function(tab) {
 			window.siteIdToTab[iSiteId] = tab;
 			autoDiscardable(tab.id);
+			
 			setTimeout(function() {
 					//scroll 
 					sendMessageToTabs(tab,{'actiontype':3,'info':info});
@@ -98,7 +122,6 @@ function getHtmlRun() {
 			},window.spiderSlaveDelay);
 		});
 	}
-	
 	
 	if(!window.siteIdToTab[iSiteId]) {
 		createTabAndGetHml();
@@ -111,15 +134,32 @@ function getHtmlRun() {
 				var tab = window.siteIdToTab[iSiteId]; 
 				//jump 
 				sendMessageToTabs(tab,{'actiontype':2,'info':info});
-				setTimeout(function() {
-					//scroll 
-					sendMessageToTabs(tab,{'actiontype':3,'info':info});
-					getHml(tab);
-				},window.spiderSlaveDelay);
+				
+				if(info.type == 100) {
+					setTimeout(function() {
+						sendMessageToTabs(window.apiTab,{'admintype':2,'tab':tab,'url':window.spiderSlaveApi+'data/recordLinkCacheIsDone','data':{'id':info['id'],'sResponse':''}});
+						isDone();
+					},1000);
+				}else if(info.type == 1) {
+					setTimeout(function() {
+						window.setInterval_waitToComplete = setInterval(function(callback) {
+							chrome.tabs.get(window.siteIdToTab[iSiteId].id, function(nowTab) {
+								console.log('tab info',nowTab.status);
+								if(nowTab.status == 'complete') {
+									clearInterval(window.setInterval_waitToComplete);
+									//scroll 
+									sendMessageToTabs(nowTab,{'actiontype':3,'info':info});
+									getHml(nowTab);
+								}
+							});
+						},500);
+					},500);
+				}else{
+					setTimeout(function() {
+						getHml(tab);
+					},500);
+				}
 			}
 		});
 	}
-	
-	window.spiderSlaveUrls.splice(index,1);
-	window.spiderSlaveUrlsMd5[info['code']] = undefined;
 }

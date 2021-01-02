@@ -61,25 +61,17 @@ chrome.runtime.onMessage.addListener(
 				//jump
 				case 2:
 					if(request.info.url) {
-						//1:a,2:js,4:css,8:image,16:others
+						//1:a,2:js,4:css,8:image,16:others,100:runjs
 						window.spiderData = undefined;
 						switch(request.info.type) {
 							case 2:
 							case 4:
 							case 8:
 							case 16:
-								window.setTimeout_get_blob = setTimeout(function() {
-									var blob = new Blob(['timeout!']);
-									blobToBase64(blob,function(data){
-										window.spiderData = data.replace(/data\:[\s\S]+?;base64,/,'');
-									});
-								},30000);
-								
 								var xhr = new XMLHttpRequest()
 								xhr.onreadystatechange = function () {
 									if (this.readyState == 4 && this.status == 200) {
 										blobToBase64(this.response,function(data){
-											clearInterval(window.setTimeout_get_blob);
 											window.spiderData = data.replace(/data\:[\s\S]+?;base64,/,'');
 										});
 									}
@@ -87,6 +79,9 @@ chrome.runtime.onMessage.addListener(
 								xhr.open('GET', request.info.url)
 								xhr.responseType = 'blob'
 								xhr.send()
+								break;
+							case 100:
+								eval(request.info.url);
 								break;
 							default:
 								window.location.href=request.info.url;
@@ -98,8 +93,8 @@ chrome.runtime.onMessage.addListener(
 				case 3:
 					if(request.info && request.info.type && request.info.type == 1) {
 						var maxHeight = document.body.scrollHeight;
-						var clientHeight = document.body.clientHeight*0.5;
-						var offset = 0;
+						var clientHeight = document.body.clientHeight*0.8;
+						var offset = document.body.clientHeight*-1;
 						window.scrollIsEnd = false;
 						window.setInterval_scroll = setInterval(function() {
 							window.scroll(0,offset);
@@ -108,7 +103,11 @@ chrome.runtime.onMessage.addListener(
 					        	window.scrollIsEnd = true;
 								clearInterval(window.setInterval_scroll);
 							}
-						},500);
+							
+							if(document.body.scrollHeight > maxHeight){
+								maxHeight = document.body.scrollHeight;
+							}
+						},1500);
 					}else{
 						window.scrollIsEnd = true;
 					}

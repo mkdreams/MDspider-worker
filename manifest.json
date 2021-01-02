@@ -30,6 +30,7 @@
 			"js": [
 				"config.js",
 				"content/jquery-2.0.3.js",
+				"content/js.cookie.min.js",
 			    "content/work.js"
 			],
 			"all_frames": false,
