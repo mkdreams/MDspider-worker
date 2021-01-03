@@ -1,8 +1,9 @@
-window.spiderSlaveTabInfos = {'api':{},'tabs':[]};
-window.siteIdToTab = {};
-window.tabUseStatus = {};
-window.tabIndex = 0;
+window.spiderSlaveTabInfos = {'api':{},'tabs':{}};
 window.spiderSlaveUrls = {};
+window.setInterval_getHtml = {};
+window.setInterval_waitToComplete = {};
+window.setTimeout_checkIsDie = {};
+window.tabUrlIds = {};
 
 //chrome://discards/ 
 function autoDiscardable(tabId) {
@@ -10,51 +11,55 @@ function autoDiscardable(tabId) {
 }
 
 
-function createTab(url,name,callback) {
+function createTab(url,callback) {
 	chrome.tabs.create({'url':url},function(tab) {
-		window.spiderSlaveTabInfos[name] = tab;
 		autoDiscardable(tab.id);
 		callback(tab);
 	});
 }
 
-//create api tab
-createTab(window.spiderSlaveApi,'api',function(tab) {
-	window.setInterval_getHtmlRun = setInterval(function() {
-		if(Object.keys(window.spiderSlaveUrls).length > 0) {
-			getHtmlRun();
-		}
-	},1000);
-	
-	window.setInterval_getLinksCache = setInterval(function() {
-		if(Object.keys(window.spiderSlaveUrls).length == 0) {
-			sendMessageToTabs(window.spiderSlaveTabInfos['api'],{'admintype':1,'url':window.spiderSlaveApi+'data/getLinksCache','data':{'sFlag':window.spiderSlaveFlag}});
-		}
-	},window.spiderSlaveGetUrlsDelay);
-});
+if(window.spiderSlaveOff == false) {
+	//init and create api tab
+	createTab(window.spiderSlaveApi,function(tab) {
+		window.spiderSlaveTabInfos['api'] = tab;
+		window.setInterval_getHtmlRun = setInterval(function() {
+			if(Object.keys(window.spiderSlaveUrls).length > 0) {
+				getHtmlRun();
+			}
+		},1000);
+		
+		window.setInterval_getLinksCache = setInterval(function() {
+			if(Object.keys(window.spiderSlaveUrls).length == 0) {
+				sendMessageToTabs(window.spiderSlaveTabInfos['api'],{'admintype':1,'url':window.spiderSlaveApi+'data/getLinksCache','data':{'sFlag':window.spiderSlaveFlag}});
+			}
+		},window.spiderSlaveGetUrlsDelay);
+	});
+}
 
 function getNextTab() {
-	var tabLen = window.spiderSlaveTabInfos['tabs'].length;
+	var index  = -1;//all is busy
+	var tabLen = 0;
+	for(var i in window.spiderSlaveTabInfos['tabs']) {
+		tabLen++;
+		if(window.spiderSlaveTabInfos['tabs'][i]['runStatus'] == 1) {
+			continue;
+		}
+		
+		index = i;
+		break;
+	}
+	
 	//need create tab
-	if(tabLen < window.spiderSlaveTabCount) {
+	if(index == -1 && tabLen < window.spiderSlaveTabCount) {
 		return -2;
 	}
 	
-	var index  = -1;
-	window.spiderSlaveTabInfos['tabs'].forEach(function(tab) {
-		index++;
-		backgroundConsole('tab',tab);
-	});
-	
-	//all is busy
 	return index;
 }
 
 function getUrlInfo(type) {
-	var index = 0;
 	var nowTimeStamp = new Date().getTime();
 	var needAgain = nowTimeStamp - 300000;
-//	var needAgain = nowTimeStamp - 30000;
 	for(var id in window.spiderSlaveUrls) {
 		if(window.spiderSlaveUrls[id]
 				&& (!type || window.spiderSlaveUrls[id]['type'] == type)
@@ -68,111 +73,113 @@ function getUrlInfo(type) {
 	return -1;
 }
 
-function getHtmlRun() {
-	var urlIndex = getUrlInfo();
-//	backgroundConsole('urlInfo',urlInfo);
-//	return;
-//	var domain_flag = urlInfo['domain_flag'];
+
+function isDone(tab,info) {
+	window.spiderSlaveTabInfos['tabs'][tab.id]['runStatus'] = 0;
+	delete window.spiderSlaveUrls[info['id']];
+	console.log('spiderSlaveUrls',window.spiderSlaveUrls);
+	console.log('spiderSlaveTabInfos',window.spiderSlaveTabInfos);
+	clearTimeout(window.setTimeout_checkIsDie[tab.id]);
 	
-	var tabIndex = getNextTab();
-	
-	if(tabIndex == -2) {
-		
+	console.log('end',info.url);
+}
+
+
+//get html after window.spiderSlaveDelay seconds
+function getHml(tab,info) {
+	window.setInterval_getHtml[tab.id] = setInterval(function() {
+		sendMessageToTabs(tab,{'actiontype':1,'info':info},function(res) {
+			if(res && res['scrollIsEnd'] == true) {
+				clearInterval(window.setInterval_getHtml[tab.id]);
+				if(res && res['html']) {
+					sendMessageToTabs(window.spiderSlaveTabInfos['api'],{'admintype':2,'tab':tab,'url':window.spiderSlaveApi+'data/recordLinkCacheIsDone','data':{'id':info['id'],'sResponse':res.html}});
+				}
+				isDone(tab,info);
+			}
+		});
+	},1000);
+}
+
+function dealContent(tab,info,isInit) {
+	if(!isInit) {//jump 
+		sendMessageToTabs(tab,{'actiontype':2,'info':info});
 	}
 	
-	if(window.spiderSlaveTabInfos['tabs'][tabIndex]['runStatus']) {
+	window.tabUrlIds[tab.id] = info['id'];
+	
+	if(info.type == 100) {
+		setTimeout(function() {
+			sendMessageToTabs(window.spiderSlaveTabInfos['api'],{'admintype':2,'tab':tab,'url':window.spiderSlaveApi+'data/recordLinkCacheIsDone','data':{'id':info['id'],'sResponse':''}});
+			isDone(tab,info);
+		},1000);
+	}else if(info.type == 1) {
+		setTimeout(function() {
+			window.setInterval_waitToComplete[tab.id] = setInterval(function(callback) {
+				chrome.tabs.get(tab.id, function(nowTab) {
+					backgroundConsole('tab info',nowTab.status);
+					if(nowTab.status == 'complete') {
+						clearInterval(window.setInterval_waitToComplete[tab.id]);
+						//scroll 
+						sendMessageToTabs(nowTab,{'actiontype':3,'info':info});
+						getHml(nowTab,info);
+					}
+				});
+			},500);
+		},500);
+	}else{
+		setTimeout(function() {
+			getHml(tab,info);
+		},500);
+	}
+}
+
+
+function getHtmlRun() {
+	var urlId = getUrlInfo();
+	var tabId = getNextTab();
+	
+	console.log('urlId',urlId);
+	console.log('tabId',tabId);
+	
+	//create one
+	if(tabId == -2) {
+		var urlId = getUrlInfo(1);//get one a
+		if(urlId == -1) {
+			sendMessageToTabs(window.spiderSlaveTabInfos['api'],{'admintype':1,'url':window.spiderSlaveApi+'data/getLinksCache','data':{'sFlag':window.spiderSlaveFlag}});
+			return ;
+		}
+		
+		createTab(window.spiderSlaveUrls[urlId]['url'],function(tab) {
+			window.spiderSlaveTabInfos['tabs'][tab.id] = tab;
+			window.spiderSlaveTabInfos['tabs'][tab.id]['runStatus'] = 1;
+			dealContent(window.spiderSlaveTabInfos['tabs'][tab.id],window.spiderSlaveUrls[urlId],true);
+		});
 		return ;
 	}
 	
-	console.log('comming',info.url);
-	
-	//create tab 
-	window.tabUseStatus[domain_flag][tabIndexTemp] = 1;
-	
-	function isDone() {
-		window.tabUseStatus[domain_flag][tabIndexTemp] = 2;
-		window.spiderSlaveUrls.splice(index,1);
-		clearTimeout(window.setTimeout_getHtml);
-		
-		console.log('end',info.url);
+	if(urlId == -1) {
+		sendMessageToTabs(window.spiderSlaveTabInfos['api'],{'admintype':1,'url':window.spiderSlaveApi+'data/getLinksCache','data':{'sFlag':window.spiderSlaveFlag}});
+		return ;
 	}
 	
+	if(tabId < 0 || urlId < 0 || window.spiderSlaveTabInfos['tabs'][tabId]['runStatus'] == 1) {
+		window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
+		return ;
+	}
+	
+	console.log('comming',window.spiderSlaveUrls[urlId].url);
+	window.spiderSlaveTabInfos['tabs'][tabId]['runStatus'] = 1
+	
 	//try agin
-	clearTimeout(window.setTimeout_getHtml);
-	window.setTimeout_getHtml = setTimeout(function() {
-		window.tabUseStatus[domain_flag][tabIndexTemp] = 2;
-		clearInterval(window.setInterval_getHtml);
-		clearInterval(window.setInterval_waitToComplete);
+	clearTimeout(window.setTimeout_checkIsDie[window.spiderSlaveTabInfos['tabs'][tabId].id]);
+	window.setTimeout_checkIsDie[window.spiderSlaveTabInfos['tabs'][tabId].id] = setTimeout(function() {
+		window.spiderSlaveTabInfos['tabs'][tabId]['runStatus'] = 0;
+		clearInterval(window.setInterval_getHtml[window.spiderSlaveTabInfos['tabs'][tabId].id]);
+		clearInterval(window.setInterval_waitToComplete[window.spiderSlaveTabInfos['tabs'][tabId].id]);
 		console.log('time out!',info);
 	},180000);
 	
-	//get html after window.spiderSlaveDelay seconds
-	function getHml(tab) {
-		window.setInterval_getHtml = setInterval(function() {
-			sendMessageToTabs(window.siteIdToTab[domain_flag],{'actiontype':1,'info':info},function(res) {
-				if(res && res['scrollIsEnd'] == true) {
-					clearInterval(window.setInterval_getHtml);
-					if(res && res['html']) {
-						sendMessageToTabs(window.spiderSlaveTabInfos['api'],{'admintype':2,'tab':tab,'url':window.spiderSlaveApi+'data/recordLinkCacheIsDone','data':{'id':info['id'],'sResponse':res.html}});
-					}
-					isDone();
-				}
-			});
-		},1000);
-	}
-	
-	function createTabAndGetHml() {
-		chrome.tabs.create({'url': info['url']},function(tab) {
-			window.siteIdToTab[domain_flag] = tab;
-			autoDiscardable(tab.id);
-			
-			setTimeout(function() {
-					//scroll 
-					sendMessageToTabs(tab,{'actiontype':3,'info':info});
-					getHml(tab);
-			},window.spiderSlaveDelay);
-		});
-	}
-	
-	if(!window.siteIdToTab[domain_flag]) {
-		createTabAndGetHml();
-	}else{//use old tab
-		chrome.tabs.get(window.siteIdToTab[domain_flag].id,function(tab) {
-			backgroundConsole('tab info',tab); 
-			if(tab === undefined) {
-				createTabAndGetHml();
-			}else{
-				var tab = window.siteIdToTab[domain_flag]; 
-				//jump 
-				sendMessageToTabs(tab,{'actiontype':2,'info':info});
-				
-				if(info.type == 100) {
-					setTimeout(function() {
-						sendMessageToTabs(window.spiderSlaveTabInfos['api'],{'admintype':2,'tab':tab,'url':window.spiderSlaveApi+'data/recordLinkCacheIsDone','data':{'id':info['id'],'sResponse':''}});
-						isDone();
-					},1000);
-				}else if(info.type == 1) {
-					setTimeout(function() {
-						window.setInterval_waitToComplete = setInterval(function(callback) {
-							chrome.tabs.get(window.siteIdToTab[domain_flag].id, function(nowTab) {
-								console.log('tab info',nowTab.status);
-								if(nowTab.status == 'complete') {
-									clearInterval(window.setInterval_waitToComplete);
-									//scroll 
-									sendMessageToTabs(nowTab,{'actiontype':3,'info':info});
-									getHml(nowTab);
-								}
-							});
-						},500);
-					},500);
-				}else{
-					setTimeout(function() {
-						getHml(tab);
-					},500);
-				}
-			}
-		});
-	}
+	dealContent(window.spiderSlaveTabInfos['tabs'][tabId],window.spiderSlaveUrls[urlId]);
 }
 
 //api tab interface
