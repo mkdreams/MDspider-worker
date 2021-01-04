@@ -1,22 +1,72 @@
-window.spiderSlaveTabInfos = {'api':{},'tabs':{}};
+window.spiderSlaveTabInfos = {'locked':false,'api':{},'tabs':{}};
 window.spiderSlaveUrls = {};
 window.setInterval_getHtml = {};
 window.setInterval_waitToComplete = {};
 window.setTimeout_checkIsDie = {};
 window.tabUrlIds = {};
+window.baseWindow = undefined;
+
+if(window.spiderSlaveDebug) {
+	createTab('chrome://extensions/',function(tab) {},true);
+	createTab('https://developer.chrome.com/docs/extensions/reference/windows/',function(tab) {},true);
+}
 
 //chrome://discards/ 
 function autoDiscardable(tabId) {
 	chrome.tabs.update(tabId, {autoDiscardable: false});
 }
 
-
-function createTab(url,callback) {
-	chrome.tabs.create({'url':url},function(tab) {
-		autoDiscardable(tab.id);
-		callback(tab);
-	});
+var windowLeftOffset = 0;
+var windowTopOffset = 0;
+function focuseOnBaseWindow() {
+	if(!window.baseWindow) return ;
+	
+//	chrome.windows.update(window.baseWindow.id,{focused:true,height:600,width:900,top:window.baseWindow.height-600,left:window.baseWindow.width-900});
 }
+
+function createTab(url,callback,useBaseWindow) {
+	var createOneTab = function(newWin) {
+		var tabOption = {'url':url};
+		if(newWin) {
+			tabOption['windowId'] = newWin.id;
+		}
+		chrome.tabs.create(tabOption,function(tab) {
+			autoDiscardable(tab.id);
+			callback(tab);
+			
+			focuseOnBaseWindow();
+		});
+	}
+	
+	if(useBaseWindow) {
+		createOneTab();
+	}else {
+		if(!window.baseWindow) {
+			chrome.windows.getCurrent(function(win) {
+				window.baseWindow = {};
+				window.baseWindow['id'] = win.id;
+				window.baseWindow['height'] = 1080;
+				window.baseWindow['width'] = 1920;
+				
+				chrome.windows.create({focused:true,height:window.baseWindow.height,width:window.baseWindow.width},function(newWin) {
+					chrome.windows.update(newWin.id,{top:windowTopOffset,left:windowLeftOffset},function(newWin) {
+						createOneTab(newWin);
+					});
+				});
+			});
+		}else {
+			chrome.windows.create({focused:true,height:window.baseWindow.height,width:window.baseWindow.width},function(newWin) {
+				chrome.windows.update(newWin.id,{top:windowTopOffset,left:windowLeftOffset},function(newWin) {
+					createOneTab(newWin);
+				});
+			});
+		}
+		
+		windowLeftOffset += 300;
+//		windowTopOffset += 100;
+	}
+}
+
 
 if(window.spiderSlaveOff == false) {
 	//init and create api tab
@@ -33,7 +83,7 @@ if(window.spiderSlaveOff == false) {
 				sendMessageToTabs(window.spiderSlaveTabInfos['api'],{'admintype':1,'url':window.spiderSlaveApi+'data/getLinksCache','data':{'sFlag':window.spiderSlaveFlag}});
 			}
 		},window.spiderSlaveGetUrlsDelay);
-	});
+	},true);
 }
 
 function getNextTab() {
@@ -61,6 +111,18 @@ function getUrlInfo(type) {
 	var nowTimeStamp = new Date().getTime();
 	var needAgain = nowTimeStamp - 300000;
 	for(var id in window.spiderSlaveUrls) {
+		console.log('id',id);
+		//js 阻塞式运行
+		if(window.spiderSlaveUrls[id]['type'] == 100) {
+			if((!type || window.spiderSlaveUrls[id]['type'] == type) 
+				&& (!window.spiderSlaveUrls[id]['runStartTime'] || window.spiderSlaveUrls[id]['runStartTime'] < needAgain)) {
+				window.spiderSlaveUrls[id]['runStartTime'] = nowTimeStamp;
+				return id;
+			}else {
+				return -2;
+			}
+		}
+		
 		if(window.spiderSlaveUrls[id]
 				&& (!type || window.spiderSlaveUrls[id]['type'] == type)
 				&& (!window.spiderSlaveUrls[id]['runStartTime'] || window.spiderSlaveUrls[id]['runStartTime'] < needAgain)
@@ -141,17 +203,35 @@ function getHtmlRun() {
 	console.log('urlId',urlId);
 	console.log('tabId',tabId);
 	
+	//wait 
+	if(urlId == -2) {
+		return;
+	}
+	
 	//create one
 	if(tabId == -2) {
+		if(window.spiderSlaveTabInfos['locked']) {
+			window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
+			return ;
+		}
+		
+		window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
 		var urlId = getUrlInfo(1);//get one a
 		if(urlId == -1) {
 			sendMessageToTabs(window.spiderSlaveTabInfos['api'],{'admintype':1,'url':window.spiderSlaveApi+'data/getLinksCache','data':{'sFlag':window.spiderSlaveFlag}});
 			return ;
 		}
 		
+		//wait 
+		if(urlId == -2) {
+			return;
+		}
+		
+		window.spiderSlaveTabInfos['locked'] = true;
 		createTab(window.spiderSlaveUrls[urlId]['url'],function(tab) {
 			window.spiderSlaveTabInfos['tabs'][tab.id] = tab;
 			window.spiderSlaveTabInfos['tabs'][tab.id]['runStatus'] = 1;
+			window.spiderSlaveTabInfos['locked'] = false;
 			dealContent(window.spiderSlaveTabInfos['tabs'][tab.id],window.spiderSlaveUrls[urlId],true);
 		});
 		return ;
@@ -162,7 +242,8 @@ function getHtmlRun() {
 		return ;
 	}
 	
-	if(tabId < 0 || urlId < 0 || window.spiderSlaveTabInfos['tabs'][tabId]['runStatus'] == 1) {
+	
+	if(tabId < 0 || window.spiderSlaveTabInfos['tabs'][tabId]['runStatus'] == 1) {
 		window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
 		return ;
 	}
