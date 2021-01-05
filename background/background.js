@@ -48,14 +48,14 @@ function createTab(url,callback,useBaseWindow) {
 				window.baseWindow['height'] = 1600;
 				window.baseWindow['width'] = 2560;
 				
-				chrome.windows.create({focused:true,height:window.baseWindow.height,width:100},function(newWin) {
+				chrome.windows.create({focused:true,height:window.baseWindow.height,width:1000},function(newWin) {
 					chrome.windows.update(newWin.id,{top:windowTopOffset,left:windowLeftOffset+160},function(newWin) {
 						createOneTab(newWin);
 					});
 				});
 			});
 		}else {
-			chrome.windows.create({focused:true,height:window.baseWindow.height,width:100},function(newWin) {
+			chrome.windows.create({focused:true,height:window.baseWindow.height,width:1000},function(newWin) {
 				chrome.windows.update(newWin.id,{top:windowTopOffset,left:windowLeftOffset+160},function(newWin) {
 					createOneTab(newWin);
 				});
