@@ -1,19 +1,19 @@
 {
 	"manifest_version": 2,
 	"version": "0.1.0.0",
-	"name": "AI Spider",
+	"name": "Spider Worder",
 	"short_name": "WTH",
 	"description": "Tool for data extraction from websites",
 	"permissions": ["<all_urls>", "tabs", "notifications", "storage", "unlimitedStorage", "downloads", "webNavigation", "cookies", "http://corp.admin.com/*"],
 	"icons": {
-		"16": "assets/images/colin.png"
+		"16": "popup/images/colin.png"
 	},
 	"browser_action": {
 		"default_icon": {
-			"16": "assets/images/colin.png"
+			"16": "popup/images/colin.png"
 		},
-		"default_title": "Spider Slave",
-		"default_popup": "popup.html"
+		"default_title": "Spider Worder",
+		"default_popup": "popup/popup.html"
 	},
 	"content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
 	"background":{
