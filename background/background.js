@@ -62,7 +62,7 @@ function createTab(url,callback,useBaseWindow) {
 			});
 		}
 		
-		windowLeftOffset += 800;
+		windowLeftOffset += 600;
 //		windowTopOffset += 100;
 	}
 }
