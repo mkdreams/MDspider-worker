@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>工作节点</title>
+<link type="text/css" href="/popup/layui/css/layui.css" rel="stylesheet"/>
+<script type="text/javascript" src="/popup/layui/layui.js"></script>
+<script type="text/javascript" src="/popup/js/popup.js"></script>
+</head>
+<body>
+<div style="width:500px;">
+	<div class="layui-collapse" lay-filter="main">
+	  <div class="layui-colla-item">
+	    <h2 class="layui-colla-title">配置</h2>
+	    <div class="layui-colla-content layui-show">
+	    	<form class="layui-form" action="" lay-filter="workerConfig">
+			  <div class="layui-form-item">
+			    <label class="layui-form-label">节点Flag</label>
+			    <div class="layui-input-block">
+			      <input type="text" name="spiderSlaveFlag" lay-verify="required" autocomplete="off" class="layui-input">
+			    </div>
+			  </div>
+			  <div class="layui-form-item">
+			    <label class="layui-form-label">验证必填项</label>
+			    <div class="layui-input-block">
+			      <input type="text" name="username" lay-verify="required" lay-reqtext="用户名是必填项，岂能为空？" placeholder="请输入" autocomplete="off" class="layui-input">
+			    </div>
+			  </div>
+			  </form>
+	    </div>
+	  </div>
+	  <div class="layui-colla-item">
+	    <h2 class="layui-colla-title">状态</h2>
+	    <div class="layui-colla-content">内容区域</div>
+	  </div>
+	  <div class="layui-colla-item">
+	    <h2 class="layui-colla-title">操作</h2>
+	    <div class="layui-colla-content">
+	    	<i class="layui-icon layui-icon-pause" style="font-size: 30px; color: #1E9FFF;"></i>
+	    	<i class="layui-icon layui-icon-play" style="font-size: 30px; color: #1E9FFF;"></i>
+	    	<i class="layui-icon layui-icon-refresh" style="font-size: 30px; color: #1E9FFF;"></i>
+	    </div>
+	  </div>
+	</div>
+</div>
+</body>
+</html>
