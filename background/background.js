@@ -45,24 +45,24 @@ function createTab(url,callback,useBaseWindow) {
 			chrome.windows.getCurrent(function(win) {
 				window.baseWindow = {};
 				window.baseWindow['id'] = win.id;
-				window.baseWindow['height'] = 1080;
-				window.baseWindow['width'] = 1920;
+				window.baseWindow['height'] = 1600;
+				window.baseWindow['width'] = 2560;
 				
-				chrome.windows.create({focused:true,height:window.baseWindow.height,width:window.baseWindow.width},function(newWin) {
-					chrome.windows.update(newWin.id,{top:windowTopOffset,left:windowLeftOffset},function(newWin) {
+				chrome.windows.create({focused:true,height:window.baseWindow.height,width:800},function(newWin) {
+					chrome.windows.update(newWin.id,{top:windowTopOffset,left:windowLeftOffset+160},function(newWin) {
 						createOneTab(newWin);
 					});
 				});
 			});
 		}else {
-			chrome.windows.create({focused:true,height:window.baseWindow.height,width:window.baseWindow.width},function(newWin) {
-				chrome.windows.update(newWin.id,{top:windowTopOffset,left:windowLeftOffset},function(newWin) {
+			chrome.windows.create({focused:true,height:window.baseWindow.height,width:800},function(newWin) {
+				chrome.windows.update(newWin.id,{top:windowTopOffset,left:windowLeftOffset+160},function(newWin) {
 					createOneTab(newWin);
 				});
 			});
 		}
 		
-		windowLeftOffset += 300;
+		windowLeftOffset += 800;
 //		windowTopOffset += 100;
 	}
 }
