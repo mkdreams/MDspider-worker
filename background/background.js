@@ -8,25 +8,25 @@ window.baseWindow = undefined;
 
 var windowLeftOffset = 0;
 var windowTopOffset = 0;
-function createTab(url,callback,useBaseWindow,opened) {
-	var createOneTab = function(newWin) {
+function createTab(url,callback,useBaseWindow) {
+	var createOneTab = function(newWin,tabId) {
 		var tabOption = {'url':url};
 		if(newWin) {
 			tabOption['windowId'] = newWin.id;
 		}
 		
-		if(opened) {
-			chrome.tabs.getCurrent(function(tab) {
+		if(tabId) {
+			chrome.tabs.get(tabId,function(tab) {
 				//chrome://discards/ 
 				chrome.tabs.update(tab.id, {autoDiscardable: false},function() {
-					callback(tab);
+					callback && callback(tab);
 				});
 			});
 		}else{
 			chrome.tabs.create(tabOption,function(tab) {
 				//chrome://discards/ 
 				chrome.tabs.update(tab.id, {autoDiscardable: false},function() {
-					callback(tab);
+					callback && callback(tab);
 				});
 			});
 		}
@@ -42,7 +42,8 @@ function createTab(url,callback,useBaseWindow,opened) {
 		}
 		
 		chrome.windows.create({focused:true,state:'normal','url':url,top:windowTopOffset,left:windowLeftOffset,height:window.baseInfo['perHeight'],width:window.baseInfo['perWidth']},function(newWin) {
-			createOneTab(newWin,undfined,undfined,true);
+			console.log('newWin',newWin);
+			createOneTab(newWin,newWin.tabs.length > 0?newWin.tabs[0]['id']:0);
 		});
 	}
 }
@@ -50,22 +51,34 @@ function createTab(url,callback,useBaseWindow,opened) {
 function workPlay() {
 	workPause();
 	
+	chrome.tabs.onRemoved.addListener(function(tabId) {
+		clearTimeout(window.setTimeout_checkIsDie[window.spiderSlaveTabInfos['tabs'][tabId].id]);
+		clearInterval(window.setInterval_getHtml[window.spiderSlaveTabInfos['tabs'][tabId].id]);
+		clearInterval(window.setInterval_waitToComplete[window.spiderSlaveTabInfos['tabs'][tabId].id]);
+		delete window.spiderSlaveTabInfos['tabs'][tabId];
+		console.log('close tab!',tabId);
+	});
+	
+	clearInterval(window.setInterval_getHtmlRun);
 	window.setInterval_getHtmlRun = setInterval(function() {
 		if(Object.keys(window.spiderSlaveUrls).length > 0) {
 			getHtmlRun();
 		}
 	},1000);
 	
+	clearInterval(window.setInterval_getLinksCache);
 	window.setInterval_getLinksCache = setInterval(function() {
 		if(Object.keys(window.spiderSlaveUrls).length == 0) {
 			sendMessageToTabs(window.spiderSlaveTabInfos['api'],{'admintype':1,'url':window.spiderSlaveApi+'data/getLinksCache','data':{'sFlag':window.spiderSlaveFlag}});
 		}
 	},window.spiderSlaveGetUrlsDelay);
+	backgroundConsole('已开始',1);
 }
 
 function workPause() {
 	clearInterval(window.setInterval_getHtmlRun);
 	clearInterval(window.setInterval_getLinksCache);
+	backgroundConsole('已暂停',1);
 }
 
 function getNextTab() {
@@ -93,7 +106,6 @@ function getUrlInfo(type) {
 	var nowTimeStamp = new Date().getTime();
 	var needAgain = nowTimeStamp - 300000;
 	for(var id in window.spiderSlaveUrls) {
-		console.log('id',id);
 		//js 阻塞式运行
 		if(window.spiderSlaveUrls[id]['type'] == 100) {
 			if((!type || window.spiderSlaveUrls[id]['type'] == type) 
@@ -182,8 +194,8 @@ function getHtmlRun() {
 	var urlId = getUrlInfo();
 	var tabId = getNextTab();
 	
-	console.log('urlId',urlId);
-	console.log('tabId',tabId);
+//	console.log('urlId',urlId);
+//	console.log('tabId',tabId);
 	
 	//wait 
 	if(urlId == -2) {

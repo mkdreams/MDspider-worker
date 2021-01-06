@@ -6,15 +6,16 @@ layui.use(['element', 'layer', 'form', 'jquery'], function(){
 	var bg = chrome.extension.getBackgroundPage();
 	form.val('workerConfig', {
       "spiderSlaveFlag": bg.spiderSlaveFlag
+      ,"spiderSlaveTabCount": bg.spiderSlaveTabCount
     });
 	
 	$('#worker_status').click(function() {
 		if($(this).hasClass('layui-icon-pause')) {//now play
 			$(this).removeClass('layui-icon-pause').addClass('layui-icon-play');
-			chrome.extension.workPause();
+			bg.workPause();
 		}else{//now pause
 			$(this).removeClass('layui-icon-play').addClass('layui-icon-pause');
-			chrome.extension.workPlay();
+			bg.workPlay();
 		}
 	});
 	
