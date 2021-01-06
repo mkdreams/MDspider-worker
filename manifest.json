@@ -4,7 +4,7 @@
 	"name": "Spider Worder",
 	"short_name": "WTH",
 	"description": "Tool for data extraction from websites",
-	"permissions": ["<all_urls>", "tabs", "notifications", "storage", "unlimitedStorage", "downloads", "webNavigation", "cookies", "http://corp.admin.com/*"],
+	"permissions": ["<all_urls>", "tabs", "notifications", "system.display","system.memory", "storage", "unlimitedStorage", "downloads", "webNavigation", "cookies"],
 	"icons": {
 		"16": "popup/images/colin.png"
 	},
@@ -28,7 +28,6 @@
 		{
 			"matches": ["*://*/*"],
 			"js": [
-				"config.js",
 				"content/jquery-2.0.3.js",
 				"content/js.cookie.min.js",
 			    "content/work.js"

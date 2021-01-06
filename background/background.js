@@ -6,84 +6,66 @@ window.setTimeout_checkIsDie = {};
 window.tabUrlIds = {};
 window.baseWindow = undefined;
 
-if(window.spiderSlaveDebug) {
-	createTab('chrome://extensions/',function(tab) {},true);
-	createTab('https://developer.chrome.com/docs/extensions/reference/windows/',function(tab) {},true);
-}
-
-//chrome://discards/ 
-function autoDiscardable(tabId) {
-	chrome.tabs.update(tabId, {autoDiscardable: false});
-}
-
 var windowLeftOffset = 0;
 var windowTopOffset = 0;
-function focuseOnBaseWindow() {
-	if(!window.baseWindow) return ;
-	
-//	chrome.windows.update(window.baseWindow.id,{focused:true,height:600,width:900,top:window.baseWindow.height-600,left:window.baseWindow.width-900});
-}
-
-function createTab(url,callback,useBaseWindow) {
+function createTab(url,callback,useBaseWindow,opened) {
 	var createOneTab = function(newWin) {
 		var tabOption = {'url':url};
 		if(newWin) {
 			tabOption['windowId'] = newWin.id;
 		}
-		chrome.tabs.create(tabOption,function(tab) {
-			autoDiscardable(tab.id);
-			callback(tab);
-			
-			focuseOnBaseWindow();
-		});
+		
+		if(opened) {
+			chrome.tabs.getCurrent(function(tab) {
+				//chrome://discards/ 
+				chrome.tabs.update(tab.id, {autoDiscardable: false},function() {
+					callback(tab);
+				});
+			});
+		}else{
+			chrome.tabs.create(tabOption,function(tab) {
+				//chrome://discards/ 
+				chrome.tabs.update(tab.id, {autoDiscardable: false},function() {
+					callback(tab);
+				});
+			});
+		}
 	}
 	
 	if(useBaseWindow) {
 		createOneTab();
 	}else {
-		if(!window.baseWindow) {
-			chrome.windows.getCurrent(function(win) {
-				window.baseWindow = {};
-				window.baseWindow['id'] = win.id;
-				window.baseWindow['height'] = 1080;
-				window.baseWindow['width'] = 1920;
-				
-				chrome.windows.create({focused:true,height:window.baseWindow.height,width:window.baseWindow.width},function(newWin) {
-					chrome.windows.update(newWin.id,{top:windowTopOffset,left:windowLeftOffset},function(newWin) {
-						createOneTab(newWin);
-					});
-				});
-			});
-		}else {
-			chrome.windows.create({focused:true,height:window.baseWindow.height,width:window.baseWindow.width},function(newWin) {
-				chrome.windows.update(newWin.id,{top:windowTopOffset,left:windowLeftOffset},function(newWin) {
-					createOneTab(newWin);
-				});
-			});
+		windowLeftOffset += window.baseInfo['perWidth'];
+		if(windowLeftOffset+window.baseInfo['perWidth']-10 >=  window.baseInfo['width']) {
+			windowLeftOffset = 0;
+			windowTopOffset += window.baseInfo['perHeight'];
 		}
 		
-		windowLeftOffset += 300;
-//		windowTopOffset += 100;
+		chrome.windows.create({focused:true,state:'normal','url':url,top:windowTopOffset,left:windowLeftOffset,height:window.baseInfo['perHeight'],width:window.baseInfo['perWidth']},function(newWin) {
+			createOneTab(newWin,undfined,undfined,true);
+		});
 	}
 }
 
+function workPlay() {
+	workPause();
+	
+	window.setInterval_getHtmlRun = setInterval(function() {
+		if(Object.keys(window.spiderSlaveUrls).length > 0) {
+			getHtmlRun();
+		}
+	},1000);
+	
+	window.setInterval_getLinksCache = setInterval(function() {
+		if(Object.keys(window.spiderSlaveUrls).length == 0) {
+			sendMessageToTabs(window.spiderSlaveTabInfos['api'],{'admintype':1,'url':window.spiderSlaveApi+'data/getLinksCache','data':{'sFlag':window.spiderSlaveFlag}});
+		}
+	},window.spiderSlaveGetUrlsDelay);
+}
 
-if(window.spiderSlaveOff == false) {
-	//init and create api tab
-	createTab(window.spiderSlaveApi,function(tab) {
-		window.spiderSlaveTabInfos['api'] = tab;
-		window.setInterval_getHtmlRun = setInterval(function() {
-			if(Object.keys(window.spiderSlaveUrls).length > 0) {
-				getHtmlRun();
-			}
-		},1000);
-		
-		window.setInterval_getLinksCache = setInterval(function() {
-			if(Object.keys(window.spiderSlaveUrls).length == 0) {
-				sendMessageToTabs(window.spiderSlaveTabInfos['api'],{'admintype':1,'url':window.spiderSlaveApi+'data/getLinksCache','data':{'sFlag':window.spiderSlaveFlag}});
-			}
-		},window.spiderSlaveGetUrlsDelay);
-	},true);
+function workPause() {
+	clearInterval(window.setInterval_getHtmlRun);
+	clearInterval(window.setInterval_getLinksCache);
 }
 
 function getNextTab() {

@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <title>工作节点</title>
 <link type="text/css" href="/popup/layui/css/layui.css" rel="stylesheet"/>
+<link type="text/css" href="/popup/css/popup.css" rel="stylesheet"/>
 <script type="text/javascript" src="/popup/layui/layui.js"></script>
 <script type="text/javascript" src="/popup/js/popup.js"></script>
 </head>
@@ -21,9 +22,9 @@
 			    </div>
 			  </div>
 			  <div class="layui-form-item">
-			    <label class="layui-form-label">验证必填项</label>
+			    <label class="layui-form-label">并发数</label>
 			    <div class="layui-input-block">
-			      <input type="text" name="username" lay-verify="required" lay-reqtext="用户名是必填项，岂能为空？" placeholder="请输入" autocomplete="off" class="layui-input">
+			      <input type="text" name="spiderSlaveTabCount" lay-verify="required" autocomplete="off" class="layui-input">
 			    </div>
 			  </div>
 			  </form>
@@ -36,9 +37,9 @@
 	  <div class="layui-colla-item">
 	    <h2 class="layui-colla-title">操作</h2>
 	    <div class="layui-colla-content">
-	    	<i class="layui-icon layui-icon-pause" style="font-size: 30px; color: #1E9FFF;"></i>
-	    	<i class="layui-icon layui-icon-play" style="font-size: 30px; color: #1E9FFF;"></i>
-	    	<i class="layui-icon layui-icon-refresh" style="font-size: 30px; color: #1E9FFF;"></i>
+	    	<i id="worker_status" class="layui-icon layui-icon-pause pointer" style="font-size: 30px; color: #1E9FFF;"></i>
+<!-- 	    	<i class="layui-icon layui-icon-play" style="font-size: 30px; color: #1E9FFF;"></i> -->
+	    	<i id="worker_refresh" class="layui-icon layui-icon-refresh" style="font-size: 30px; color: #1E9FFF;"></i>
 	    </div>
 	  </div>
 	</div>
