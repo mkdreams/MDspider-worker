@@ -3,7 +3,7 @@ window.spiderSlaveApi = "http://test.blog.com/";
 window.spiderSlaveDelay = 5000;
 window.spiderSlaveGetUrlsDelay = 5000;
 window.spiderSlaveTabCount = 2;
-window.spiderSlaveOff = true;
+window.spiderSlaveOff = false;
 window.spiderSlaveDebug = false;
 
 window.baseInfo = {};
