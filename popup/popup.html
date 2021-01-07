@@ -22,6 +22,12 @@
 	    <div class="layui-colla-content">
 	    	<form class="layui-form" action="" lay-filter="workerConfig">
 			  <div class="layui-form-item">
+			    <label class="layui-form-label">后端API</label>
+			    <div class="layui-input-block">
+			      <input type="text" name="spiderSlaveApi" lay-verify="required" autocomplete="off" class="layui-input">
+			    </div>
+			  </div>
+			  <div class="layui-form-item">
 			    <label class="layui-form-label">节点Flag</label>
 			    <div class="layui-input-block">
 			      <input type="text" name="spiderSlaveFlag" lay-verify="required" autocomplete="off" class="layui-input">
@@ -31,6 +37,23 @@
 			    <label class="layui-form-label">窗口数</label>
 			    <div class="layui-input-block">
 			      <input type="text" name="spiderSlaveTabCount" lay-verify="required" autocomplete="off" class="layui-input">
+			    </div>
+			  </div>
+			  <div class="layui-form-item">
+			    <label class="layui-form-label">状态</label>
+			    <div class="layui-input-block">
+			      <input type="checkbox" name="spiderSlaveOff" lay-skin="switch" lay-text="ON|OFF">
+			    </div>
+			  </div>
+			  <div class="layui-form-item">
+			    <label class="layui-form-label">DEBUG</label>
+			    <div class="layui-input-block">
+			    	<input type="checkbox" name="spiderSlaveDebug" lay-skin="switch" lay-text="ON|OFF">
+			    </div>
+			  </div>
+			  <div class="layui-form-item">
+			    <div class="layui-input-block">
+			      <button class="layui-btn" lay-submit lay-filter="workerConfig">提交</button>
 			    </div>
 			  </div>
 			  </form>
