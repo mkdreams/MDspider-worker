@@ -143,6 +143,7 @@ function isDone(tab,info) {
 
 //get html after window.spiderSlaveDelay seconds
 function getHml(tab,info) {
+	clearInterval(window.setInterval_getHtml[tab.id]);
 	window.setInterval_getHtml[tab.id] = setInterval(function() {
 		sendMessageToTabs(tab,{'actiontype':1,'info':info},function(res) {
 			if(res && res['scrollIsEnd'] == true) {
@@ -170,6 +171,7 @@ function dealContent(tab,info,isInit) {
 		},1000);
 	}else if(info.type == 1) {
 		setTimeout(function() {
+			clearInterval(window.setInterval_waitToComplete[tab.id]);
 			window.setInterval_waitToComplete[tab.id] = setInterval(function(callback) {
 				chrome.tabs.get(tab.id, function(nowTab) {
 					backgroundConsole('tab info',nowTab.status);
