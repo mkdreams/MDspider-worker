@@ -35,8 +35,12 @@ function initDeviceInfo(cb) {
 				
 				window.spiderSlaveTabCount = parseInt(window.spiderSlaveTabCount);
 				window.baseInfo['xCount'] = Math.ceil(Math.sqrt(window.spiderSlaveTabCount+1));
-				window.baseInfo['xCount'] = 3;
-				window.baseInfo['yCount'] = Math.ceil((window.spiderSlaveTabCount+1)/window.baseInfo['xCount']);
+				if(window.baseInfo['xCount'] < 3) {
+					window.baseInfo['xCount'] = window.spiderSlaveTabCount+1;
+					window.baseInfo['yCount'] = 1;
+				}else{
+					window.baseInfo['yCount'] = Math.ceil((window.spiderSlaveTabCount+1)/window.baseInfo['xCount']);
+				}
 				window.baseInfo['perHeight'] = parseInt(window.baseInfo['height']/window.baseInfo['yCount']);
 				window.baseInfo['perWidth'] = parseInt(window.baseInfo['width']/window.baseInfo['xCount']);
 				
