@@ -3,7 +3,7 @@ window.spiderSlaveApi = "http://test.blog.com/";
 window.spiderSlaveDelay = 5000;
 window.spiderSlaveGetUrlsDelay = 5000;
 window.spiderSlaveTabCount = 2;
-window.spiderSlaveOff = false;
+window.spiderSlaveOn = true;
 window.spiderSlaveDebug = false;
 
 window.baseInfo = {};
@@ -11,9 +11,7 @@ initDeviceInfo(function(){
 	//init and create api tab
 	createTab(window.spiderSlaveApi,function(tab) {
 		window.spiderSlaveTabInfos['api'] = tab;
-		if(window.spiderSlaveOff == false) {
-			workPlay();
-		}
+		workPlay();
 	},true);
 	
 	if(window.spiderSlaveDebug) {
@@ -23,10 +21,15 @@ initDeviceInfo(function(){
 		createTab('chrome://extensions/',function(tab) {});
 		createTab('https://developer.chrome.com/docs/extensions/reference/windows/',function(tab) {});
 	}
+	console.log('window.spiderSlaveDebug',window.spiderSlaveDebug);
 });
 
 function initDeviceInfo(cb) {
 	loadConfig(function() {
+		console.log('window.spiderSlaveOn',window.spiderSlaveOn);
+		if(window.spiderSlaveOn === false) {
+			return ;
+		}
 		chrome.system.display.getInfo(function(info) {
 			chrome.windows.getCurrent(function(win) {
 				window.baseInfo['windowId'] = win.id;

@@ -8,7 +8,7 @@ layui.use(['element', 'layer', 'form', 'jquery'], function(){
       "spiderSlaveFlag": bg.spiderSlaveFlag
       ,"spiderSlaveApi": bg.spiderSlaveApi
       ,"spiderSlaveTabCount": bg.spiderSlaveTabCount
-      ,"spiderSlaveOff": bg.spiderSlaveOff
+      ,"spiderSlaveOn": bg.spiderSlaveOn
       ,"spiderSlaveDebug": bg.spiderSlaveDebug
     });
 	
@@ -24,6 +24,18 @@ layui.use(['element', 'layer', 'form', 'jquery'], function(){
 	
 	//监听提交
 	form.on('submit(workerConfig)', function(data){
+		if(data.field['spiderSlaveOn']) {
+			data.field['spiderSlaveOn'] = true;
+		}else{
+			data.field['spiderSlaveOn'] = false;
+		}
+		
+		if(data.field['spiderSlaveDebug']) {
+			data.field['spiderSlaveDebug'] = true;
+		}else{
+			data.field['spiderSlaveDebug'] = false;
+		}
+		
 		chrome.storage.local.set(data.field,function(){
 			layer.msg('储存成功');
 		});
