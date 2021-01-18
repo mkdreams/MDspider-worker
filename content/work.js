@@ -1,3 +1,5 @@
+window.scrollIsEnd = true;
+
 function blobToBase64(blob, callback) {
    var reader = new FileReader();
    reader.readAsDataURL(blob);
@@ -40,14 +42,16 @@ chrome.runtime.onMessage.addListener(
 						return ;
 					}
 					
-					//1:a,2:js,4:css,8:image,16:others
+					//1:a,2:js,4:css,8:image,16:others,101:ajax,102:a without scroll	
 					console.log('request',request);
 					switch(request.info.type) {
 						case 2:
 						case 4:
 						case 8:
 						case 16:
+						case 101:
 							break;
+						case 102:
 						default:
 							var blob = new Blob([document.getElementsByTagName('html')[0].innerHTML]);
 							blobToBase64(blob,function(data){
@@ -68,10 +72,16 @@ chrome.runtime.onMessage.addListener(
 							case 4:
 							case 8:
 							case 16:
+							case 101:
 								var xhr = new XMLHttpRequest()
 								xhr.onreadystatechange = function () {
 									if (this.readyState == 4 && this.status == 200) {
 										blobToBase64(this.response,function(data){
+											window.spiderData = data.replace(/data\:[\s\S]+?;base64,/,'');
+										});
+									}if (this.readyState == 4 && this.status == 404) {
+										var blob = new Blob([this.status]);
+										blobToBase64(blob,function(data){
 											window.spiderData = data.replace(/data\:[\s\S]+?;base64,/,'');
 										});
 									}
@@ -83,6 +93,7 @@ chrome.runtime.onMessage.addListener(
 							case 100:
 								eval(request.info.url);
 								break;
+							case 102:
 							default:
 								window.location.href=request.info.url;
 								break;
