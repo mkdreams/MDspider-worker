@@ -1,7 +1,7 @@
 {
 	"manifest_version": 2,
 	"version": "0.1.0.0",
-	"name": "Spider Worder",
+	"name": "MDspider",
 	"short_name": "WTH",
 	"description": "Tool for data extraction from websites",
 	"permissions": ["<all_urls>", "tabs", "notifications", "system.display","system.memory", "storage", "unlimitedStorage", "downloads", "webNavigation", "cookies"],
@@ -12,7 +12,7 @@
 		"default_icon": {
 			"16": "popup/images/colin.png"
 		},
-		"default_title": "Spider Worder",
+		"default_title": "MDspider",
 		"default_popup": "popup/popup.html"
 	},
 	"content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
@@ -20,7 +20,7 @@
 	    "scripts":[
 	    	"background/background.js",
 	    	"config.js",
-	    	"background/jquery-2.0.3.js",
+	    	"common/jquery-2.0.3.js",
 	    	"background/run_time_api.js"
     	]
 	},
@@ -28,7 +28,7 @@
 		{
 			"matches": ["*://*/*"],
 			"js": [
-				"content/jquery-2.0.3.js",
+				"common/jquery-2.0.3.js",
 				"content/js.cookie.min.js",
 			    "content/work.js"
 			],
