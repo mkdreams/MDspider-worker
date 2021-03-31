@@ -15,6 +15,7 @@ chrome.runtime.onMessage.addListener(
 			switch(request.admintype) {
 				case 1:
 				case 2:
+					console.log(request)
 					$.ajax({
 						type: 'POST',
 						url: request.url,

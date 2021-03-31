@@ -8,8 +8,15 @@ layui.use(['element', 'layer', 'form', 'jquery'], function(){
       "spiderSlaveFlag": bg.spiderSlaveFlag
       ,"spiderSlaveApi": bg.spiderSlaveApi
       ,"spiderSlaveTabCount": bg.spiderSlaveTabCount
+      ,"spiderSlaveGetUrlsDelay": bg.spiderSlaveGetUrlsDelay
+      ,"spiderSlaveDelay": bg.spiderSlaveDelay
       ,"spiderSlaveOn": bg.spiderSlaveOn
       ,"spiderSlaveDebug": bg.spiderSlaveDebug
+    });
+	form.val('proxyConfig', {
+      "spiderProxyOn": bg.spiderProxyOn
+      ,"spiderProxyChangePerReqCount": bg.spiderProxyChangePerReqCount
+      ,"spiderProxyFetchApi": bg.spiderProxyFetchApi
     });
 	
 	$('#worker_status').click(function() {
@@ -20,6 +27,22 @@ layui.use(['element', 'layer', 'form', 'jquery'], function(){
 			$(this).removeClass('layui-icon-play').addClass('layui-icon-pause');
 			bg.workPlay();
 		}
+	});
+	
+	//监听提交
+	form.on('submit(proxyConfig)', function(data){
+		if(data.field['spiderProxyOn']) {
+			data.field['spiderProxyOn'] = true;
+		}else{
+			data.field['spiderProxyOn'] = false;
+		}
+		
+		chrome.storage.local.set(data.field,function(){
+			layer.msg('储存成功');
+		});
+		
+		bg.loadConfig();
+	    return false;
 	});
 	
 	//监听提交

@@ -1,10 +1,28 @@
 window.spiderSlaveFlag = 'worker1';
 window.spiderSlaveApi = "http://test.blog.com/";
-window.spiderSlaveDelay = 5000;
+window.spiderSlaveDelay = 2000;
 window.spiderSlaveGetUrlsDelay = 5000;
 window.spiderSlaveTabCount = 2;
 window.spiderSlaveOn = true;
 window.spiderSlaveDebug = false;
+window.spiderProxyOn = false;
+window.spiderProxyChangePerReqCount = 5;
+window.spiderProxyFetchApi = "http.tiqu.alibabaapi.com/getip3?num=2&type=2&pack=62956&port=1&lb=1&pb=4&gm=4&regions=";
+
+//var config = {
+//  mode: "pac_script",
+//  pacScript: {
+////	  data: "function FindProxyForURL(url, host) {\n" +
+////			  "  alert(url);\n" +
+////	          "  if (host == 'www.baidu.com')\n" +
+////	          "    return 'PROXY 127.0.0.1:1080';\n" +
+////	          "  return 'DIRECT';\n" +
+////	          "}"
+//	  url:"http://127.0.0.1/think5.1-layui-blog/pac.php"
+//	  ,mandatory: true
+//  }
+//};
+
 
 window.baseInfo = {};
 initDeviceInfo(function(){
@@ -26,7 +44,12 @@ initDeviceInfo(function(){
 
 function initDeviceInfo(cb) {
 	loadConfig(function() {
-		console.log('window.spiderSlaveOn',window.spiderSlaveOn);
+		if(window.spiderProxyOn) {
+			enabledProxy();
+		}else {
+			disabledProxy();
+		}
+		
 		if(window.spiderSlaveOn === false) {
 			return ;
 		}

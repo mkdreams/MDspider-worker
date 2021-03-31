@@ -1,3 +1,11 @@
 .pointer{
 	cursor: pointer;
 }
+
+.layui-form-label {
+	width: 100px;
+}
+
+.layui-input-block {
+	margin-left: 140px;
+}

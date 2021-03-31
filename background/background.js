@@ -6,6 +6,71 @@ window.setTimeout_checkIsDie = {};
 window.tabUrlIds = {};
 window.baseWindow = undefined;
 
+function enabledProxy() {
+	disabledProxy();
+	
+	$.ajax({
+	  url: window.spiderProxyFetchApi,
+	  cache: false,
+	  success: function(html){
+		  var proxysTemp = html.split("\r\n");
+		  chrome.storage.local.get(['proxys'],function(proxys) {
+			  if(Object.keys(proxys).length == 0) {
+				  proxys = [];
+			  }else {
+				  proxys = proxys.proxys;
+			  }
+			  proxysTemp.forEach(function(v){
+				  if(v != '') {
+					  proxys.push(v);
+				  }
+			  });
+			  
+			  chrome.storage.local.set({'proxys':proxys});
+			  console.log(proxysTemp,proxys);
+		  });
+	  }
+	});
+	
+	var config = {
+	    mode: "pac_script",
+	    pacScript: {
+		  data: "function FindProxyForURL(url, host) {\n" +
+			  "  alert(url);\n" +
+	          "  if (host == 'www.baidu.com')\n" +
+	          "    return 'PROXY 127.0.0.1:1080';\n" +
+	          "  return 'DIRECT';\n" +
+	          "}"
+		  ,mandatory: true
+	    }
+	};
+
+	chrome.proxy.settings.set(
+		  {
+			  value: config,
+			  scope: 'regular'
+		  },
+		  function(config) {
+		  }
+	);
+}
+
+function disabledProxy() {
+	var config = {
+			mode: "direct"
+	};
+
+	chrome.proxy.settings.set(
+		  {
+			  value: config,
+			  scope: 'regular'
+		  },
+		  function(config) {
+			  
+		  }
+	);
+}
+
 var windowLeftOffset = 0;
 var windowTopOffset = 0;
 function createTab(url,callback,useBaseWindow) {
@@ -64,7 +129,7 @@ function workPlay() {
 		if(Object.keys(window.spiderSlaveUrls).length > 0) {
 			getHtmlRun();
 		}
-	},2000);
+	},window.spiderSlaveDelay);
 	
 	clearInterval(window.setInterval_getLinksCache);
 	window.setInterval_getLinksCache = setInterval(function() {
@@ -141,7 +206,6 @@ function isDone(tab,info) {
 }
 
 
-//get html after window.spiderSlaveDelay seconds
 function getHml(tab,info) {
 	clearInterval(window.setInterval_getHtml[tab.id]);
 	window.setInterval_getHtml[tab.id] = setInterval(function() {

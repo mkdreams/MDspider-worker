@@ -18,7 +18,7 @@
 	    </div>
 	  </div>
 	  <div class="layui-colla-item">
-	    <h2 class="layui-colla-title">配置</h2>
+	    <h2 class="layui-colla-title">执行配置</h2>
 	    <div class="layui-colla-content">
 	    	<form class="layui-form" action="" lay-filter="workerConfig">
 			  <div class="layui-form-item">
@@ -40,6 +40,18 @@
 			    </div>
 			  </div>
 			  <div class="layui-form-item">
+			    <label class="layui-form-label">获取链接延时</label>
+			    <div class="layui-input-block">
+			      <input type="text" name="spiderSlaveGetUrlsDelay" lay-verify="required" autocomplete="off" class="layui-input">
+			    </div>
+			  </div>
+			  <div class="layui-form-item">
+			    <label class="layui-form-label">执行动作延时</label>
+			    <div class="layui-input-block">
+			      <input type="text" name="spiderSlaveDelay" lay-verify="required" autocomplete="off" class="layui-input">
+			    </div>
+			  </div>
+			  <div class="layui-form-item">
 			    <label class="layui-form-label">状态</label>
 			    <div class="layui-input-block">
 			      <input type="checkbox" name="spiderSlaveOn" lay-skin="switch" lay-text="ON|OFF">
@@ -54,6 +66,42 @@
 			  <div class="layui-form-item">
 			    <div class="layui-input-block">
 			      <button class="layui-btn" lay-submit lay-filter="workerConfig">提交</button>
+			    </div>
+			  </div>
+			  </form>
+	    </div>
+	  </div>
+	  <div class="layui-colla-item">
+	    <h2 class="layui-colla-title">代理配置</h2>
+	    <div class="layui-colla-content">
+	    	<form class="layui-form" action="" lay-filter="proxyConfig">
+			  <div class="layui-form-item">
+			    <label class="layui-form-label">当前代理IP</label>
+			    <div class="layui-input-block">
+			      <span style="line-height: 38px;">N/A</span>
+			    </div>
+			  </div>
+			  <div class="layui-form-item">
+			    <label class="layui-form-label">获取代理API</label>
+			    <div class="layui-input-block">
+			      <input type="text" name="spiderProxyFetchApi" lay-verify="required" autocomplete="off" class="layui-input">
+			    </div>
+			  </div>
+			  <div class="layui-form-item">
+			    <label class="layui-form-label">更换频率(几个/REQ)</label>
+			    <div class="layui-input-block">
+			      <input type="text" name="spiderProxyChangePerReqCount" lay-verify="required" autocomplete="off" class="layui-input">
+			    </div>
+			  </div>
+			  <div class="layui-form-item">
+			    <label class="layui-form-label">状态</label>
+			    <div class="layui-input-block">
+			      <input type="checkbox" name="spiderProxyOn" lay-skin="switch" lay-text="ON|OFF">
+			    </div>
+			  </div>
+			  <div class="layui-form-item">
+			    <div class="layui-input-block">
+			      <button class="layui-btn" lay-submit lay-filter="proxyConfig">提交</button>
 			    </div>
 			  </div>
 			  </form>

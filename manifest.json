@@ -4,7 +4,7 @@
 	"name": "MDspider",
 	"short_name": "WTH",
 	"description": "Tool for data extraction from websites",
-	"permissions": ["<all_urls>", "tabs", "notifications", "system.display","system.memory", "storage", "unlimitedStorage", "downloads", "webNavigation", "cookies"],
+	"permissions": ["<all_urls>", "tabs", "notifications", "system.display","system.memory", "storage", "unlimitedStorage", "downloads", "webNavigation", "cookies", "proxy"],
 	"icons": {
 		"16": "popup/images/colin.png"
 	},
@@ -17,10 +17,10 @@
 	},
 	"content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
 	"background":{
-	    "scripts":[
+		"scripts":[
+			"common/jquery-2.0.3.js",
 	    	"background/background.js",
 	    	"config.js",
-	    	"common/jquery-2.0.3.js",
 	    	"background/run_time_api.js"
     	]
 	},
