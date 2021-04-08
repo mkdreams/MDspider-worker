@@ -2,7 +2,7 @@
 	"manifest_version": 2,
 	"version": "0.1.0.0",
 	"name": "MDspider",
-	"short_name": "WTH",
+	"short_name": "MDS",
 	"description": "Tool for data extraction from websites",
 	"permissions": ["<all_urls>", "tabs", "notifications", "system.display","system.memory", "storage", "unlimitedStorage", "downloads", "webNavigation", "cookies", "proxy"],
 	"icons": {

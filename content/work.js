@@ -8,6 +8,14 @@ function blobToBase64(blob, callback) {
    }
 }
 
+
+function pageRunJs(jsStr) {
+	var tempDom = $("<div style=\"display:none;\" onclick=\"eval('"+jsStr.replace(/"/g,'&quot;')+"')\"></div>");
+	$("body").append(tempDom);
+	tempDom.click();
+	tempDom.remove();
+}
+
 chrome.runtime.onMessage.addListener(
 	function (request, sender, sendResponse) {
 		//api request
@@ -92,7 +100,7 @@ chrome.runtime.onMessage.addListener(
 								xhr.send()
 								break;
 							case 100:
-								eval(request.info.url);
+								pageRunJs(request.info.url);
 								break;
 							case 102:
 							default:
