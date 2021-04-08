@@ -29,7 +29,9 @@ initDeviceInfo(function(){
 	//init and create api tab
 	createTab(window.spiderSlaveApi,function(tab) {
 		window.spiderSlaveTabInfos['api'] = tab;
-		workPlay();
+		if(window.spiderSlaveOn === true) {
+			workPlay();
+		}
 	},true);
 	
 	if(window.spiderSlaveDebug) {
@@ -39,7 +41,6 @@ initDeviceInfo(function(){
 		createTab('chrome://extensions/',function(tab) {});
 		createTab('https://developer.chrome.com/docs/extensions/reference/windows/',function(tab) {});
 	}
-	console.log('window.spiderSlaveDebug',window.spiderSlaveDebug);
 });
 
 function initDeviceInfo(cb) {
@@ -50,9 +51,6 @@ function initDeviceInfo(cb) {
 			disabledProxy();
 		}
 		
-		if(window.spiderSlaveOn === false) {
-			return ;
-		}
 		chrome.system.display.getInfo(function(info) {
 			chrome.windows.getCurrent(function(win) {
 				window.baseInfo['windowId'] = win.id;
@@ -70,6 +68,11 @@ function initDeviceInfo(cb) {
 				window.baseInfo['perHeight'] = parseInt(window.baseInfo['height']/window.baseInfo['yCount']);
 				window.baseInfo['perWidth'] = parseInt(window.baseInfo['width']/window.baseInfo['xCount']);
 				
+				if(window.spiderSlaveOn === false) {
+					cb && cb();
+					return ;
+				}
+
 				chrome.windows.update(window.baseInfo['windowId'],{state:'normal',top:0,left:0,height:window.baseInfo['perHeight'],width:window.baseInfo['perWidth']},function(newWin) {
 					cb && cb();
 				});

@@ -9,3 +9,17 @@
 .layui-input-block {
 	margin-left: 140px;
 }
+
+.test .layui-form-label {
+	width: 55px;
+	padding: 9px 15px 9px 0;
+}
+
+.test .layui-input-block {
+	margin-left: 50px;
+}
+
+.test .layui-input,.test .layui-textarea {
+	width: calc(100% - 85px);
+	float: left;
+}

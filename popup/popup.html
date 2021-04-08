@@ -1,113 +1,144 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<meta charset="utf-8">
-<title>工作节点</title>
-<link type="text/css" href="/popup/layui/css/layui.css" rel="stylesheet"/>
-<link type="text/css" href="/popup/css/popup.css" rel="stylesheet"/>
-<script type="text/javascript" src="/popup/layui/layui.js"></script>
-<script type="text/javascript" src="/popup/js/popup.js"></script>
+	<meta charset="utf-8">
+	<title>工作节点</title>
+	<link type="text/css" href="/popup/layui/css/layui.css" rel="stylesheet" />
+	<link type="text/css" href="/popup/css/popup.css" rel="stylesheet" />
+	<script type="text/javascript" src="/popup/layui/layui.js"></script>
+	<script type="text/javascript" src="/popup/js/popup.js"></script>
 </head>
+
 <body>
-<div style="width:500px;">
-	<div class="layui-collapse" lay-filter="main">
-	  <div class="layui-colla-item">
-	    <h2 class="layui-colla-title">状态及控制</h2>
-	    <div class="layui-colla-content layui-show">
-	    	<i id="worker_status" class="layui-icon layui-icon-pause pointer" style="font-size: 30px; color: #1E9FFF;"></i>
-	    </div>
-	  </div>
-	  <div class="layui-colla-item">
-	    <h2 class="layui-colla-title">执行配置</h2>
-	    <div class="layui-colla-content">
-	    	<form class="layui-form" action="" lay-filter="workerConfig">
-			  <div class="layui-form-item">
-			    <label class="layui-form-label">后端API</label>
-			    <div class="layui-input-block">
-			      <input type="text" name="spiderSlaveApi" lay-verify="required" autocomplete="off" class="layui-input">
-			    </div>
-			  </div>
-			  <div class="layui-form-item">
-			    <label class="layui-form-label">节点Flag</label>
-			    <div class="layui-input-block">
-			      <input type="text" name="spiderSlaveFlag" lay-verify="required" autocomplete="off" class="layui-input">
-			    </div>
-			  </div>
-			  <div class="layui-form-item">
-			    <label class="layui-form-label">窗口数</label>
-			    <div class="layui-input-block">
-			      <input type="text" name="spiderSlaveTabCount" lay-verify="required" autocomplete="off" class="layui-input">
-			    </div>
-			  </div>
-			  <div class="layui-form-item">
-			    <label class="layui-form-label">获取链接延时</label>
-			    <div class="layui-input-block">
-			      <input type="text" name="spiderSlaveGetUrlsDelay" lay-verify="required" autocomplete="off" class="layui-input">
-			    </div>
-			  </div>
-			  <div class="layui-form-item">
-			    <label class="layui-form-label">执行动作延时</label>
-			    <div class="layui-input-block">
-			      <input type="text" name="spiderSlaveDelay" lay-verify="required" autocomplete="off" class="layui-input">
-			    </div>
-			  </div>
-			  <div class="layui-form-item">
-			    <label class="layui-form-label">状态</label>
-			    <div class="layui-input-block">
-			      <input type="checkbox" name="spiderSlaveOn" lay-skin="switch" lay-text="ON|OFF">
-			    </div>
-			  </div>
-			  <div class="layui-form-item">
-			    <label class="layui-form-label">DEBUG</label>
-			    <div class="layui-input-block">
-			    	<input type="checkbox" name="spiderSlaveDebug" lay-skin="switch" lay-text="ON|OFF">
-			    </div>
-			  </div>
-			  <div class="layui-form-item">
-			    <div class="layui-input-block">
-			      <button class="layui-btn" lay-submit lay-filter="workerConfig">提交</button>
-			    </div>
-			  </div>
-			  </form>
-	    </div>
-	  </div>
-	  <div class="layui-colla-item">
-	    <h2 class="layui-colla-title">代理配置</h2>
-	    <div class="layui-colla-content">
-	    	<form class="layui-form" action="" lay-filter="proxyConfig">
-			  <div class="layui-form-item">
-			    <label class="layui-form-label">当前代理IP</label>
-			    <div class="layui-input-block">
-			      <span style="line-height: 38px;">N/A</span>
-			    </div>
-			  </div>
-			  <div class="layui-form-item">
-			    <label class="layui-form-label">获取代理API</label>
-			    <div class="layui-input-block">
-			      <input type="text" name="spiderProxyFetchApi" lay-verify="required" autocomplete="off" class="layui-input">
-			    </div>
-			  </div>
-			  <div class="layui-form-item">
-			    <label class="layui-form-label">更换频率(几个/REQ)</label>
-			    <div class="layui-input-block">
-			      <input type="text" name="spiderProxyChangePerReqCount" lay-verify="required" autocomplete="off" class="layui-input">
-			    </div>
-			  </div>
-			  <div class="layui-form-item">
-			    <label class="layui-form-label">状态</label>
-			    <div class="layui-input-block">
-			      <input type="checkbox" name="spiderProxyOn" lay-skin="switch" lay-text="ON|OFF">
-			    </div>
-			  </div>
-			  <div class="layui-form-item">
-			    <div class="layui-input-block">
-			      <button class="layui-btn" lay-submit lay-filter="proxyConfig">提交</button>
-			    </div>
-			  </div>
-			  </form>
-	    </div>
-	  </div>
-	</div>
-</div>
+	<div style="width:500px;">
+		<div class="layui-collapse" lay-filter="main">
+			<div class="layui-colla-item">
+				<h2 class="layui-colla-title">状态及控制</h2>
+				<div class="layui-colla-content layui-show">
+					<i id="worker_status" class="layui-icon layui-icon-pause pointer"
+						style="font-size: 30px; color: #1E9FFF;"></i>
+				</div>
+			</div>
+			<div class="layui-colla-item">
+				<h2 class="layui-colla-title">执行配置</h2>
+				<div class="layui-colla-content">
+					<form class="layui-form" action="" lay-filter="workerConfig">
+						<div class="layui-form-item">
+							<label class="layui-form-label">后端API</label>
+							<div class="layui-input-block">
+								<input type="text" name="spiderSlaveApi" lay-verify="required" autocomplete="off"
+									class="layui-input">
+							</div>
+						</div>
+						<div class="layui-form-item">
+							<label class="layui-form-label">节点Flag</label>
+							<div class="layui-input-block">
+								<input type="text" name="spiderSlaveFlag" lay-verify="required" autocomplete="off"
+									class="layui-input">
+							</div>
+						</div>
+						<div class="layui-form-item">
+							<label class="layui-form-label">窗口数</label>
+							<div class="layui-input-block">
+								<input type="text" name="spiderSlaveTabCount" lay-verify="required" autocomplete="off"
+									class="layui-input">
+							</div>
+						</div>
+						<div class="layui-form-item">
+							<label class="layui-form-label">获取链接延时</label>
+							<div class="layui-input-block">
+								<input type="text" name="spiderSlaveGetUrlsDelay" lay-verify="required"
+									autocomplete="off" class="layui-input">
+							</div>
+						</div>
+						<div class="layui-form-item">
+							<label class="layui-form-label">执行动作延时</label>
+							<div class="layui-input-block">
+								<input type="text" name="spiderSlaveDelay" lay-verify="required" autocomplete="off"
+									class="layui-input">
+							</div>
+						</div>
+						<div class="layui-form-item">
+							<label class="layui-form-label">状态</label>
+							<div class="layui-input-block">
+								<input type="checkbox" name="spiderSlaveOn" lay-skin="switch" lay-text="ON|OFF">
+							</div>
+						</div>
+						<div class="layui-form-item">
+							<label class="layui-form-label">DEBUG</label>
+							<div class="layui-input-block">
+								<input type="checkbox" name="spiderSlaveDebug" lay-skin="switch" lay-text="ON|OFF">
+							</div>
+						</div>
+						<div class="layui-form-item">
+							<div class="layui-input-block">
+								<button class="layui-btn" lay-submit lay-filter="workerConfig">提交</button>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+			<div class="layui-colla-item">
+				<h2 class="layui-colla-title">代理配置</h2>
+				<div class="layui-colla-content">
+					<form class="layui-form" action="" lay-filter="proxyConfig">
+						<div class="layui-form-item">
+							<label class="layui-form-label">当前代理IP</label>
+							<div class="layui-input-block">
+								<span style="line-height: 38px;">N/A</span>
+							</div>
+						</div>
+						<div class="layui-form-item">
+							<label class="layui-form-label">获取代理API</label>
+							<div class="layui-input-block">
+								<input type="text" name="spiderProxyFetchApi" lay-verify="required" autocomplete="off"
+									class="layui-input">
+							</div>
+						</div>
+						<div class="layui-form-item">
+							<label class="layui-form-label">更换频率(几个/REQ)</label>
+							<div class="layui-input-block">
+								<input type="text" name="spiderProxyChangePerReqCount" lay-verify="required"
+									autocomplete="off" class="layui-input">
+							</div>
+						</div>
+						<div class="layui-form-item">
+							<label class="layui-form-label">状态</label>
+							<div class="layui-input-block">
+								<input type="checkbox" name="spiderProxyOn" lay-skin="switch" lay-text="ON|OFF">
+							</div>
+						</div>
+						<div class="layui-form-item">
+							<div class="layui-input-block">
+								<button class="layui-btn" lay-submit lay-filter="proxyConfig">提交</button>
+							</div>
+						</div>
+					</form>
+				</div>
+				<div class="layui-colla-item">
+					<h2 class="layui-colla-title">DEBUG</h2>
+					<div class="layui-colla-content test">
+						<div class="layui-row">
+							<div class="layui-form-item">
+								<label class="layui-form-label">
+									<select>
+										<option value="1">网页</option>
+										<option value="8">图片</option>
+										<option value="4">CSS</option>
+										<option value="2">JS</option>
+									</select>
+								</label>
+								<div class="layui-input-block">
+									<input type="text" value="https://www.farseerbi.com/home/member/login.html" autocomplete="off" class="layui-input">
+									<div class="layui-btn test-run">执行</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
 </body>
+
 </html>

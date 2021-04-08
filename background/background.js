@@ -105,6 +105,8 @@ function createTab(url,callback,useBaseWindow) {
 			windowLeftOffset = 0;
 			windowTopOffset += window.baseInfo['perHeight'];
 		}
+
+		console.log({focused:true,state:'normal','url':url,top:windowTopOffset,left:windowLeftOffset,height:window.baseInfo['perHeight'],width:window.baseInfo['perWidth']})
 		
 		chrome.windows.create({focused:true,state:'normal','url':url,top:windowTopOffset,left:windowLeftOffset,height:window.baseInfo['perHeight'],width:window.baseInfo['perWidth']},function(newWin) {
 			console.log('newWin',newWin);
@@ -158,7 +160,7 @@ function getNextTab() {
 		index = i;
 		break;
 	}
-	
+
 	//need create tab
 	if(index == -1 && tabLen < window.spiderSlaveTabCount) {
 		return -2;
@@ -262,8 +264,8 @@ function getHtmlRun() {
 	var urlId = getUrlInfo();
 	var tabId = getNextTab();
 	
-//	console.log('urlId',urlId);
-//	console.log('tabId',tabId);
+	console.log('urlId',urlId);
+	console.log('tabId',tabId);
 	
 	//wait 
 	if(urlId == -2) {
@@ -352,6 +354,12 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
 			break;
 	}
 })
+
+function debugRun(type,url) {
+	window.spiderSlaveUrls['debug'] = {"id":"debug","url":url,"type":type,"code":"debug"};
+	console.log(window.spiderSlaveUrls);
+	getHtmlRun();
+}
 
 //background console.log to api tab
 function backgroundConsole(pre,obj) {
