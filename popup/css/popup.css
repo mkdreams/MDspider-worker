@@ -4,10 +4,22 @@
 
 .layui-form-label {
 	width: 100px;
+	float: left;
 }
 
 .layui-input-block {
-	margin-left: 140px;
+	margin-left: 0;
+	margin-right: 8px;
+	width: 310px;
+	float: left;
+}
+
+.layui-form-item .layui-icon {
+	float: left;
+	font-size: 20px; 
+	color: #FF5722;
+	line-height: 36px;
+	cursor: pointer;
 }
 
 .test .layui-form-label {

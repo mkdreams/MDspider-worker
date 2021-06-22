@@ -136,7 +136,7 @@ function workPlay() {
 	clearInterval(window.setInterval_getLinksCache);
 	window.setInterval_getLinksCache = setInterval(function () {
 		if (Object.keys(window.spiderSlaveUrls).length == 0) {
-			sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 1, 'url': window.spiderSlaveApi + 'data/getLinksCache', 'data': { 'sFlag': window.spiderSlaveFlag } });
+			sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 1, 'url': window.spiderSlaveApiActionList, 'data': { 'sFlag': window.spiderSlaveFlag } });
 		}
 	}, window.spiderSlaveGetUrlsDelay);
 	backgroundConsole('已开始', 1);
@@ -215,7 +215,7 @@ function getHml(tab, info) {
 			if (res && res['scrollIsEnd'] == true) {
 				clearInterval(window.setInterval_getHtml[tab.id]);
 				if (res && res['html']) {
-					sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': tab, 'url': window.spiderSlaveApi + 'data/recordLinkCacheIsDone', 'data': { 'id': info['id'], 'sResponse': res.html } });
+					sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': tab, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': res.html } });
 				}
 				isDone(tab, info);
 			}
@@ -236,7 +236,7 @@ function dealContent(tab, info, isInit) {
 
 	if (info.type == 100) {
 		setTimeout(function () {
-			sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': tab, 'url': window.spiderSlaveApi + 'data/recordLinkCacheIsDone', 'data': { 'id': info['id'], 'sResponse': '' } });
+			sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': tab, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': '' } });
 			isDone(tab, info);
 		}, 1000);
 	} else if (info.type == 1 || info.type == 102) {
@@ -286,7 +286,7 @@ function getHtmlRun() {
 		window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
 		var urlId = getUrlInfo([1, 102]);//get one a
 		if (urlId == -1) {
-			sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 1, 'url': window.spiderSlaveApi + 'data/getLinksCache', 'data': { 'sFlag': window.spiderSlaveFlag } });
+			sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 1, 'url': window.spiderSlaveApiActionList, 'data': { 'sFlag': window.spiderSlaveFlag } });
 			return;
 		}
 
@@ -306,7 +306,7 @@ function getHtmlRun() {
 	}
 
 	if (urlId == -1) {
-		sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 1, 'url': window.spiderSlaveApi + 'data/getLinksCache', 'data': { 'sFlag': window.spiderSlaveFlag } });
+		sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 1, 'url': window.spiderSlaveApiActionList, 'data': { 'sFlag': window.spiderSlaveFlag } });
 		return;
 	}
 
@@ -338,7 +338,7 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
 		//send html to api tab
 		case 3:
 			if (window.tabUrlIds[tab.id]) {
-				sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': tab, 'url': window.spiderSlaveApi + 'data/recordLinkCacheIsDone', 'data': { 'id': window.tabUrlIds[tab.id], 'sResponse': req.html } });
+				sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': tab, 'url': window.spiderSlaveApiCb, 'data': { 'id': window.tabUrlIds[tab.id], 'sResponse': req.html } });
 				window.tabUrlIds[tab.id] = undefined;
 			}
 			break;

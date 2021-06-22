@@ -7,11 +7,12 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 	form.val('workerConfig', {
 		"spiderSlaveFlag": bg.spiderSlaveFlag
 		, "spiderSlaveApi": bg.spiderSlaveApi
+		, "spiderSlaveApiActionList": bg.spiderSlaveApiActionList
+		, "spiderSlaveApiCb": bg.spiderSlaveApiCb
 		, "spiderSlaveTabCount": bg.spiderSlaveTabCount
 		, "spiderSlaveGetUrlsDelay": bg.spiderSlaveGetUrlsDelay
 		, "spiderSlaveDelay": bg.spiderSlaveDelay
 		, "spiderSlaveOn": bg.spiderSlaveOn
-		, "spiderSlaveDebug": bg.spiderSlaveDebug
 	});
 	form.val('proxyConfig', {
 		"spiderProxyOn": bg.spiderProxyOn
@@ -27,6 +28,34 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 			$(this).removeClass('layui-icon-play').addClass('layui-icon-pause');
 			bg.workPlay();
 		}
+	});
+
+	$('#spiderSlaveApiTips').click(function() {
+		layer.tips(
+			'1、“拉取动作URL”和“上传结果URL”的请求，都是在“主页URL”页面下进行POST传输。<br/>'+
+			'2、“主页URL”、拉取动作URL和上传结果URL必须同一域名下，防止出现跨域问题。<br/>'
+			, '#spiderSlaveApiTips', {
+			tips: [1, '#3595CC'],
+			maxWidth: 400,
+			shade: [0.2, '#393D49'],
+			shadeClose:true,
+			time: 30000
+		});
+	});
+
+	$('#spiderSlaveApiActionListTips').click(function() {
+		var text = '{"code":0,"msg":"获取成功","data":[{"id":1,"url":"https://gitee.com/colin_86/MDword","type":1,"code":1}],"redirect":"","wait":3}';
+		var jsonPretty = JSON.stringify(JSON.parse(text),null,4);
+		layer.tips(
+			'<h2 style="line-height: 35px;">URL响应的JOSN格式:</h2>'+
+			'<pre style="background-color:white;color:black;padding:5px;">'+jsonPretty+'</pre>'
+			, '#spiderSlaveApiTips', {
+			tips: [1, '#3595CC'],
+			maxWidth: 400,
+			shade: [0.2, '#393D49'],
+			shadeClose:true,
+			time: 30000
+		});
 	});
 
 	//监听提交
@@ -51,12 +80,6 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 			data.field['spiderSlaveOn'] = true;
 		} else {
 			data.field['spiderSlaveOn'] = false;
-		}
-
-		if (data.field['spiderSlaveDebug']) {
-			data.field['spiderSlaveDebug'] = true;
-		} else {
-			data.field['spiderSlaveDebug'] = false;
 		}
 
 		chrome.storage.local.set(data.field, function () {

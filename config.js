@@ -1,10 +1,11 @@
 window.spiderSlaveFlag = 'worker1';
 window.spiderSlaveApi = "http://test.blog.com/";
+window.spiderSlaveApiActionList = "http://test.blog.com/data/getLinksCache";
+window.spiderSlaveApiCb = "http://test.blog.com/data/recordLinkCacheIsDone";
 window.spiderSlaveDelay = 2000;
 window.spiderSlaveGetUrlsDelay = 5000;
 window.spiderSlaveTabCount = 2;
 window.spiderSlaveOn = true;
-window.spiderSlaveDebug = false;
 window.spiderProxyOn = false;
 window.spiderProxyChangePerReqCount = 5;
 window.spiderProxyFetchApi = "http.tiqu.alibabaapi.com/getip3?num=2&type=2&pack=62956&port=1&lb=1&pb=4&gm=4&regions=";
@@ -33,14 +34,6 @@ initDeviceInfo(function(){
 			workPlay();
 		}
 	},true);
-	
-	if(window.spiderSlaveDebug) {
-		createTab('chrome://extensions/',function(tab) {});
-		createTab('chrome://extensions/',function(tab) {});
-		createTab('chrome://extensions/',function(tab) {});
-		createTab('chrome://extensions/',function(tab) {});
-		createTab('https://developer.chrome.com/docs/extensions/reference/windows/',function(tab) {});
-	}
 });
 
 function initDeviceInfo(cb) {
