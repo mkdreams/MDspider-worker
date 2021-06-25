@@ -47,9 +47,22 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 		var text = '{"code":0,"msg":"获取成功","data":[{"id":1,"url":"https://gitee.com/colin_86/MDword","type":1,"code":1}],"redirect":"","wait":3}';
 		var jsonPretty = JSON.stringify(JSON.parse(text),null,4);
 		layer.tips(
-			'<h2 style="line-height: 35px;">URL响应的JOSN格式:</h2>'+
+			'<h2 style="line-height: 35px;">响应的JOSN格式:</h2>'+
 			'<pre style="background-color:white;color:black;padding:5px;">'+jsonPretty+'</pre>'
-			, '#spiderSlaveApiTips', {
+			, '#spiderSlaveApiActionListTips', {
+			tips: [1, '#3595CC'],
+			maxWidth: 400,
+			shade: [0.2, '#393D49'],
+			shadeClose:true,
+			time: 30000
+		});
+	});
+
+	$('#spiderSlaveApiCbTips').click(function() {
+		layer.tips(
+			'<h2 style="line-height: 35px;">提交的POST数据:</h2>'+
+			'<pre style="background-color:white;color:black;padding:5px;">id=1&sResponse=PGhlYWQ%2BCgk8bWV0YS..HTML BASE64..BjaGFyc2V0PSJ1dGYt</pre>'
+			, '#spiderSlaveApiCbTips', {
 			tips: [1, '#3595CC'],
 			maxWidth: 400,
 			shade: [0.2, '#393D49'],
