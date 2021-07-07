@@ -4,6 +4,10 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 	var $ = layui.$;
 
 	var bg = chrome.extension.getBackgroundPage();
+	form.val('workerStatus', {
+		"spiderSlaveOn": bg.spiderSlaveOn
+	});
+	
 	form.val('workerConfig', {
 		"spiderSlaveFlag": bg.spiderSlaveFlag
 		, "spiderSlaveApi": bg.spiderSlaveApi
@@ -28,6 +32,18 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 			$(this).removeClass('layui-icon-play').addClass('layui-icon-pause');
 			bg.workPlay();
 		}
+	});
+
+	form.on('switch(spiderSlaveOn)', function(data){
+		chrome.storage.local.set({'spiderSlaveOn':data.elem.checked}, function () {
+			bg.loadConfig();
+			if(data.elem.checked) {
+				bg.workPlay();
+			}else{
+				bg.workPause();
+			}
+		});
+
 	});
 
 	$('#spiderSlaveApiTips').click(function() {
@@ -89,12 +105,6 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 
 	//监听提交
 	form.on('submit(workerConfig)', function (data) {
-		if (data.field['spiderSlaveOn']) {
-			data.field['spiderSlaveOn'] = true;
-		} else {
-			data.field['spiderSlaveOn'] = false;
-		}
-
 		chrome.storage.local.set(data.field, function () {
 			layer.msg('储存成功');
 		});

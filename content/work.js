@@ -88,7 +88,7 @@ chrome.runtime.onMessage.addListener(
 										blobToBase64(this.response,function(data){
 											window.spiderData = data.replace(/data\:[\s\S]+?;base64,/,'');
 										});
-									}if (this.readyState == 4 && this.status == 404) {
+									}if (this.readyState == 4) {
 										var blob = new Blob([this.status]);
 										blobToBase64(blob,function(data){
 											window.spiderData = data.replace(/data\:[\s\S]+?;base64,/,'');
