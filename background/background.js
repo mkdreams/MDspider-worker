@@ -224,8 +224,10 @@ function getHml(tab, info) {
 }
 
 function dealContent(tab, info, isInit) {
-	// 1:a,2:js,4:css,8:image,16:others,101:ajax,102:a without scroll
-	var typesToName = { 1: "a", 2: "js", 4: "css", 8: "image", 16: "others", 101: "ajax", 102: "a without scroll" };
+	// 1:a(jump and get data)
+	//2:js,4:css,8:image,16:others(ajax get data by get method)
+	//100:block run js,101:ajax,102:a without scroll
+	var typesToName = { 1: "a", 2: "js", 4: "css", 8: "image", 16: "others", 100:"run js block until all complete", 101: "ajax", 102: "a without scroll",201:'get cookies'};
 	tips(info['url'], typesToName[info['type']]);
 
 	if (!isInit) {//jump 
@@ -256,7 +258,22 @@ function dealContent(tab, info, isInit) {
 				});
 			}, 50);
 		}, 50);
-	} else {
+	} else if(info.type >=200 && info.type <= 299){
+		setTimeout(function () {
+			clearInterval(window.setInterval_waitToComplete[tab.id]);
+			window.setInterval_waitToComplete[tab.id] = setInterval(function (callback) {
+				chrome.tabs.get(tab.id, function (nowTab) {
+					backgroundConsole('tab info', nowTab.status);
+					if (nowTab.status == 'complete') {
+						clearInterval(window.setInterval_waitToComplete[tab.id]);
+						
+						eval('backgroundAction'+info.type+'(tab, info);');
+					}
+				});
+			}, 50);
+		}, 50);
+		
+	}else{
 		setTimeout(function () {
 			getHml(tab, info);
 		}, 50);
@@ -284,7 +301,7 @@ function getHtmlRun() {
 		}
 
 		window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
-		var urlId = getUrlInfo([1, 102]);//get one a
+		var urlId = getUrlInfo([1, 102, 201]);//get one a,or get cookies url
 		if (urlId == -1) {
 			sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 1, 'url': window.spiderSlaveApiActionList, 'data': { 'sFlag': window.spiderSlaveFlag } });
 			return;
@@ -370,6 +387,17 @@ function backgroundConsole(pre, obj) {
 	sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 3, 'obj': [pre, obj] });
 }
 
+function backgroundAction201(tab, info) {
+	chrome.cookies.getAll({'url':info.url},function(cookies) {
+		var blob = new Blob([JSON.stringify(cookies)]);
+		blobToBase64(blob,function(data){
+			var base64 = data.replace(/data\:[\s\S]+?;base64,/,'');
+			sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': tab, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': base64 } });
+			isDone(tab, info);
+		});
+	});
+
+}
 
 function tips(message, title) {
 	if (title == undefined) {
@@ -385,5 +413,4 @@ function tips(message, title) {
 			}
 		);
 	});
-
 }

@@ -1,14 +1,5 @@
 window.scrollIsEnd = true;
 
-function blobToBase64(blob, callback) {
-   var reader = new FileReader();
-   reader.readAsDataURL(blob);
-   reader.onload = function (e) {
-       callback(e.target.result);
-   }
-}
-
-
 function pageRunJs(jsStr) {
 	var tempDom = $("<div style=\"display:none;\" onclick=\"eval('"+jsStr.replace(/"/g,'&quot;')+"')\"></div>");
 	$("body").append(tempDom);
