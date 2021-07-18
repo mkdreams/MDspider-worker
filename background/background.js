@@ -236,12 +236,13 @@ function dealContent(tab, info, isInit) {
 
 	window.tabUrlIds[tab.id] = info['id'];
 
-	if (info.type == 100) {
-		setTimeout(function () {
-			sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': tab, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': '' } });
-			isDone(tab, info);
-		}, 1000);
-	} else if (info.type == 1 || info.type == 102) {
+	// if (info.type == 100) {
+	// 	setTimeout(function () {
+	// 		sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': tab, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': '' } });
+	// 		isDone(tab, info);
+	// 	}, 1000);
+	// } else 
+	if (info.type == 1 || info.type == 102) {
 		setTimeout(function () {
 			clearInterval(window.setInterval_waitToComplete[tab.id]);
 			window.setInterval_waitToComplete[tab.id] = setInterval(function (callback) {
@@ -345,7 +346,20 @@ function getHtmlRun() {
 		console.log('time out!', info);
 	}, 180000);
 
-	dealContent(window.spiderSlaveTabInfos['tabs'][tabId], window.spiderSlaveUrls[urlId]);
+
+	if(window.spiderSlaveHumanBehavior) {
+		// $.ajax({
+		// 	type: 'POST',
+		// 	url: window.spiderSlaveHumanBehaviorApi,
+		// 	data: {'x':100,'y':200},
+		// 	success: function(data){
+				
+		// 	},
+		// });
+		dealContent(window.spiderSlaveTabInfos['tabs'][tabId], window.spiderSlaveUrls[urlId]);
+	}else{
+		dealContent(window.spiderSlaveTabInfos['tabs'][tabId], window.spiderSlaveUrls[urlId]);
+	}
 }
 
 //api tab interface
@@ -389,9 +403,7 @@ function backgroundConsole(pre, obj) {
 
 function backgroundAction201(tab, info) {
 	chrome.cookies.getAll({'url':info.url},function(cookies) {
-		var blob = new Blob([JSON.stringify(cookies)]);
-		blobToBase64(blob,function(data){
-			var base64 = data.replace(/data\:[\s\S]+?;base64,/,'');
+		textToBase64(JSON.stringify(cookies),function(base64){
 			sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': tab, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': base64 } });
 			isDone(tab, info);
 		});

@@ -1,10 +1,27 @@
 window.scrollIsEnd = true;
 
 function pageRunJs(jsStr) {
-	var tempDom = $("<div style=\"display:none;\" onclick=\"eval('"+jsStr.replace(/"/g,'&quot;')+"')\"></div>");
+	var tempDom = $("<div id=\"MDspider-help-dom-result\" style=\"display:none;\" onclick=\"eval('\
+	"+
+	('function blobToBase64(blob, callback) {\
+		var reader = new FileReader();\
+		reader.readAsDataURL(blob);\
+		reader.onload = function (e) {\
+			callback(e.target.result.replace(/data\\\\:[\\\\s\\\\S]+?;base64,/,""));\
+		}\
+	 };\
+	 var textToBase64 = function(text, callback) {\
+		var blob = new Blob([text]);\
+		blobToBase64(blob,callback);\
+	};\
+	var r = (function () {'
+	+jsStr + '})();\
+	textToBase64(r==undefined?0:r,function(base64){\
+		this.innerHTML = base64;\
+	}.bind(this))')
+	.replace(/"/g,'&quot;')+"')\"></div>");
 	$("body").append(tempDom);
 	tempDom.click();
-	tempDom.remove();
 }
 
 chrome.runtime.onMessage.addListener(
@@ -42,20 +59,23 @@ chrome.runtime.onMessage.addListener(
 						return ;
 					}
 					
-					//1:a,2:js,4:css,8:image,16:others,101:ajax,102:a without scroll	
+					//1:a,2:js,4:css,8:image,16:others,100:run js,101:ajax,102:a without scroll	
 					console.log('request',request);
 					switch(request.info.type) {
 						case 2:
 						case 4:
 						case 8:
 						case 16:
+						case 100:
+							var tempDom = $('#MDspider-help-dom-result');
+							window.spiderData = tempDom.html();
+							tempDom[0].remove();
 						case 101:
 							break;
 						case 102:
 						default:
-							var blob = new Blob([document.getElementsByTagName('html')[0].innerHTML]);
-							blobToBase64(blob,function(data){
-								window.spiderData = data.replace(/data\:[\s\S]+?;base64,/,'');
+							textToBase64(document.getElementsByTagName('html')[0].innerHTML,function(base64){
+								window.spiderData = base64;
 							});
 							break;
 					}
@@ -76,13 +96,12 @@ chrome.runtime.onMessage.addListener(
 								var xhr = new XMLHttpRequest()
 								xhr.onreadystatechange = function () {
 									if (this.readyState == 4 && this.status == 200) {
-										blobToBase64(this.response,function(data){
-											window.spiderData = data.replace(/data\:[\s\S]+?;base64,/,'');
+										blobToBase64(this.response,function(base64){
+											window.spiderData = base64;
 										});
 									}if (this.readyState == 4) {
-										var blob = new Blob([this.status]);
-										blobToBase64(blob,function(data){
-											window.spiderData = data.replace(/data\:[\s\S]+?;base64,/,'');
+										textToBase64(this.status,function(base64){
+											window.spiderData = base64;
 										});
 									}
 								}
