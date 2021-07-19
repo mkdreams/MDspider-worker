@@ -60,7 +60,6 @@ chrome.runtime.onMessage.addListener(
 					}
 					
 					//1:a,2:js,4:css,8:image,16:others,100:run js,101:ajax,102:a without scroll	
-					console.log('request',request);
 					switch(request.info.type) {
 						case 2:
 						case 4:
@@ -112,7 +111,18 @@ chrome.runtime.onMessage.addListener(
 							case 100:
 								pageRunJs(request.info.url);
 								break;
-							case 102:
+							case 103:
+								var linkNodes = document.querySelectorAll("a");
+
+								for(var i = 0; i < linkNodes.length; i++) {
+									if(linkNodes[i].href.indexOf(request.info.url) > -1) {
+										var pos = Position.getViewport(linkNodes[i]);
+										console.log(linkNodes[i],pos);
+										break;
+									}
+								}
+								// Position.getViewport();
+								break;
 							default:
 								window.location.href=request.info.url;
 								break;

@@ -83,14 +83,14 @@ function createTab(url, callback, useBaseWindow) {
 			chrome.tabs.get(tabId, function (tab) {
 				//chrome://discards/ 
 				chrome.tabs.update(tab.id, { autoDiscardable: false }, function () {
-					callback && callback(tab);
+					callback && callback(tab,newWin);
 				});
 			});
 		} else {
 			chrome.tabs.create(tabOption, function (tab) {
 				//chrome://discards/ 
 				chrome.tabs.update(tab.id, { autoDiscardable: false }, function () {
-					callback && callback(tab);
+					callback && callback(tab,newWin);
 				});
 			});
 		}
@@ -233,6 +233,7 @@ function dealOneAction(tab, info, needJump) {
 		100: "run js block until all complete", 
 		101: "ajax", 
 		102: "a without scroll",
+		103: "a by click",
 		201: "get cookies"
 	};
 
@@ -308,9 +309,10 @@ function oneActionRun() {
 		}
 
 		window.spiderSlaveTabInfos['locked'] = true;
-		createTab(window.spiderSlaveUrls[urlId]['url'], function (tab) {
+		createTab(window.spiderSlaveUrls[urlId]['url'], function (tab,newWin) {
 			window.spiderSlaveTabInfos['tabs'][tab.id] = tab;
 			window.spiderSlaveTabInfos['tabs'][tab.id]['runStatus'] = 1;
+			window.spiderSlaveTabInfos['tabs'][tab.id]['win'] = newWin;
 			window.spiderSlaveTabInfos['locked'] = false;
 			dealOneAction(window.spiderSlaveTabInfos['tabs'][tab.id], window.spiderSlaveUrls[urlId], true);
 		});
