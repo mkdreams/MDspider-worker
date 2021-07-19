@@ -8,7 +8,6 @@ window.baseWindow = undefined;
 
 function enabledProxy() {
 	disabledProxy();
-
 	$.ajax({
 		url: window.spiderProxyFetchApi,
 		cache: false,
@@ -129,7 +128,7 @@ function workPlay() {
 	clearInterval(window.setInterval_getHtmlRun);
 	window.setInterval_getHtmlRun = setInterval(function () {
 		if (Object.keys(window.spiderSlaveUrls).length > 0) {
-			getHtmlRun();
+			oneActionRun();
 		}
 	}, window.spiderSlaveDelay);
 
@@ -200,14 +199,10 @@ function getUrlInfo(types) {
 function isDone(tab, info) {
 	window.spiderSlaveTabInfos['tabs'][tab.id]['runStatus'] = 0;
 	delete window.spiderSlaveUrls[info['id']];
-	console.log('spiderSlaveUrls', window.spiderSlaveUrls);
-	console.log('spiderSlaveTabInfos', window.spiderSlaveTabInfos);
 	clearTimeout(window.setTimeout_checkIsDie[tab.id]);
-
-	console.log('end', info.url);
 }
 
-
+//try every 50 ms
 function getHml(tab, info) {
 	clearInterval(window.setInterval_getHtml[tab.id]);
 	window.setInterval_getHtml[tab.id] = setInterval(function () {
@@ -223,14 +218,27 @@ function getHml(tab, info) {
 	}, 50);
 }
 
-function dealContent(tab, info, isInit) {
+function dealOneAction(tab, info, needJump) {
 	// 1:a(jump and get data)
 	//2:js,4:css,8:image,16:others(ajax get data by get method)
-	//100:block run js,101:ajax,102:a without scroll
-	var typesToName = { 1: "a", 2: "js", 4: "css", 8: "image", 16: "others", 100:"run js block until all complete", 101: "ajax", 102: "a without scroll",201:'get cookies'};
-	tips(info['url'], typesToName[info['type']]);
+	//100:block run js,101:ajax,
+	//102:a without scroll
+	//201:open the url,then read this url's cookies form the browser
+	var typesToName = { 
+		1: "a", 
+		2: "js", 
+		4: "css", 
+		8: "image", 
+		16: "others", 
+		100: "run js block until all complete", 
+		101: "ajax", 
+		102: "a without scroll",
+		201: "get cookies"
+	};
 
-	if (!isInit) {//jump 
+	actionRecords(info['url'], typesToName[info['type']]);
+
+	if (!needJump) {//jump
 		sendMessageToTabs(tab, { 'actiontype': 2, 'info': info });
 	}
 
@@ -242,7 +250,7 @@ function dealContent(tab, info, isInit) {
 	// 		isDone(tab, info);
 	// 	}, 1000);
 	// } else 
-	if (info.type == 1 || info.type == 102) {
+	if (info.type == 1 || info.type == 102 || info.type === 201) {
 		setTimeout(function () {
 			clearInterval(window.setInterval_waitToComplete[tab.id]);
 			window.setInterval_waitToComplete[tab.id] = setInterval(function (callback) {
@@ -250,30 +258,19 @@ function dealContent(tab, info, isInit) {
 					backgroundConsole('tab info', nowTab.status);
 					if (nowTab.status == 'complete') {
 						clearInterval(window.setInterval_waitToComplete[tab.id]);
-						if (info.type == 1) {
+						if (info.type === 1) {
 							//scroll 
 							sendMessageToTabs(nowTab, { 'actiontype': 3, 'info': info });
+							getHml(nowTab, info);
+						}else if(info.type === 201){
+							eval('backgroundAction'+info.type+'(tab, info);');
+						}else{
+							getHml(nowTab, info);
 						}
-						getHml(nowTab, info);
 					}
 				});
 			}, 50);
 		}, 50);
-	} else if(info.type >=200 && info.type <= 299){
-		setTimeout(function () {
-			clearInterval(window.setInterval_waitToComplete[tab.id]);
-			window.setInterval_waitToComplete[tab.id] = setInterval(function (callback) {
-				chrome.tabs.get(tab.id, function (nowTab) {
-					backgroundConsole('tab info', nowTab.status);
-					if (nowTab.status == 'complete') {
-						clearInterval(window.setInterval_waitToComplete[tab.id]);
-						
-						eval('backgroundAction'+info.type+'(tab, info);');
-					}
-				});
-			}, 50);
-		}, 50);
-		
 	}else{
 		setTimeout(function () {
 			getHml(tab, info);
@@ -282,19 +279,16 @@ function dealContent(tab, info, isInit) {
 }
 
 
-function getHtmlRun() {
+function oneActionRun() {
 	var urlId = getUrlInfo();
 	var tabId = getNextTab();
-
-	// console.log('urlId',urlId);
-	// console.log('tabId',tabId);
 
 	//wait 
 	if (urlId == -2) {
 		return;
 	}
 
-	//create one
+	//create one tab
 	if (tabId == -2) {
 		if (window.spiderSlaveTabInfos['locked']) {
 			window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
@@ -318,26 +312,28 @@ function getHtmlRun() {
 			window.spiderSlaveTabInfos['tabs'][tab.id] = tab;
 			window.spiderSlaveTabInfos['tabs'][tab.id]['runStatus'] = 1;
 			window.spiderSlaveTabInfos['locked'] = false;
-			dealContent(window.spiderSlaveTabInfos['tabs'][tab.id], window.spiderSlaveUrls[urlId], true);
+			dealOneAction(window.spiderSlaveTabInfos['tabs'][tab.id], window.spiderSlaveUrls[urlId], true);
 		});
 		return;
 	}
 
+	//get more actions
 	if (urlId == -1) {
 		sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 1, 'url': window.spiderSlaveApiActionList, 'data': { 'sFlag': window.spiderSlaveFlag } });
 		return;
 	}
 
 
+	//now tab is runing 
 	if (tabId < 0 || window.spiderSlaveTabInfos['tabs'][tabId]['runStatus'] == 1) {
 		window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
 		return;
 	}
 
-	// console.log('comming',window.spiderSlaveUrls[urlId].url);
+	//mark this tab,that is runing
 	window.spiderSlaveTabInfos['tabs'][tabId]['runStatus'] = 1
 
-	//try agin
+	//try agin after 3min
 	clearTimeout(window.setTimeout_checkIsDie[window.spiderSlaveTabInfos['tabs'][tabId].id]);
 	window.setTimeout_checkIsDie[window.spiderSlaveTabInfos['tabs'][tabId].id] = setTimeout(function () {
 		window.spiderSlaveTabInfos['tabs'][tabId]['runStatus'] = 0;
@@ -356,9 +352,9 @@ function getHtmlRun() {
 				
 		// 	},
 		// });
-		dealContent(window.spiderSlaveTabInfos['tabs'][tabId], window.spiderSlaveUrls[urlId]);
+		dealOneAction(window.spiderSlaveTabInfos['tabs'][tabId], window.spiderSlaveUrls[urlId]);
 	}else{
-		dealContent(window.spiderSlaveTabInfos['tabs'][tabId], window.spiderSlaveUrls[urlId]);
+		dealOneAction(window.spiderSlaveTabInfos['tabs'][tabId], window.spiderSlaveUrls[urlId]);
 	}
 }
 
@@ -393,7 +389,7 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
 function debugRun(type, url) {
 	window.spiderSlaveUrls['debug'] = { "id": "debug", "url": url, "type": type, "code": "debug" };
 	console.log(window.spiderSlaveUrls);
-	getHtmlRun();
+	oneActionRun();
 }
 
 //background console.log to api tab
@@ -411,7 +407,7 @@ function backgroundAction201(tab, info) {
 
 }
 
-function tips(message, title) {
+function actionRecords(message, title) {
 	if (title == undefined) {
 		var title = '当前事件';
 	}
