@@ -113,10 +113,24 @@ chrome.runtime.onMessage.addListener(
 								break;
 							case 103:
 								var linkNodes = document.querySelectorAll("a");
-
 								for(var i = 0; i < linkNodes.length; i++) {
 									if(linkNodes[i].href.indexOf(request.info.url) > -1) {
-										var pos = Position.getViewport(linkNodes[i]);
+										var pos = Position.getAbsolute(document,linkNodes[i]);
+
+										// if(pos.left < 0) {
+										// 	window.scroll(pos.left,0);
+										// }else if(pos.left > window.innerWidth){
+										// 	window.scroll(pos.left-10,0);
+										// }
+
+										// if(pos.top < 0) {
+										// 	window.scroll(0,pos.top);
+										// }else if(pos.top > window.innerHeight){
+										// 	window.scroll(0,pos.top-10);
+										// }
+
+										// console.log(linkNodes[i],pos);
+										// var pos = Position.getViewport(linkNodes[i]);
 										console.log(linkNodes[i],pos);
 										break;
 									}
