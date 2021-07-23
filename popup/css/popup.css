@@ -10,7 +10,7 @@
 .layui-input-block {
 	margin-left: 0;
 	margin-right: 8px;
-	width: 310px;
+	width: calc(100% - 190px);
 	float: left;
 }
 
@@ -31,7 +31,11 @@
 	margin-left: 50px;
 }
 
-.test .layui-input,.test .layui-textarea {
-	width: calc(100% - 85px);
-	float: left;
+.test .debug-actions{
+	width: 260px;
+}
+
+.test .layui-textarea {
+	min-height: 270px;
+	word-break: break-all;
 }

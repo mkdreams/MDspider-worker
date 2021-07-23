@@ -11,7 +11,7 @@
 </head>
 
 <body>
-	<div style="width:500px;">
+	<div style="width:600px;">
 		<div class="layui-collapse" lay-filter="main">
 			<div class="layui-colla-item">
 				<h2 class="layui-colla-title">状态及控制</h2>
@@ -21,7 +21,8 @@
 					<form class="layui-form" action="" lay-filter="workerStatus">
 						<div class="layui-form-item">
 							<div class="layui-input-block">
-								<input type="checkbox" name="spiderSlaveOn" lay-skin="switch" lay-filter="spiderSlaveOn" lay-text="ON|OFF">
+								<input type="checkbox" name="spiderSlaveOn" lay-skin="switch" lay-filter="spiderSlaveOn"
+									lay-text="ON|OFF">
 							</div>
 						</div>
 					</form>
@@ -37,23 +38,23 @@
 								<input type="text" name="spiderSlaveApi" lay-verify="required" autocomplete="off"
 									class="layui-input">
 							</div>
-							<i class="layui-icon layui-icon-tips" id="spiderSlaveApiTips"></i> 
+							<i class="layui-icon layui-icon-tips" id="spiderSlaveApiTips"></i>
 						</div>
 						<div class="layui-form-item">
 							<label class="layui-form-label">拉取动作URL</label>
 							<div class="layui-input-block">
-								<input type="text" name="spiderSlaveApiActionList" lay-verify="required" autocomplete="off"
-								class="layui-input">
+								<input type="text" name="spiderSlaveApiActionList" lay-verify="required"
+									autocomplete="off" class="layui-input">
 							</div>
-							<i class="layui-icon layui-icon-tips" id="spiderSlaveApiActionListTips"></i> 
+							<i class="layui-icon layui-icon-tips" id="spiderSlaveApiActionListTips"></i>
 						</div>
 						<div class="layui-form-item">
 							<label class="layui-form-label">上传结果URL</label>
 							<div class="layui-input-block">
 								<input type="text" name="spiderSlaveApiCb" lay-verify="required" autocomplete="off"
-								class="layui-input">
+									class="layui-input">
 							</div>
-							<i class="layui-icon layui-icon-tips" id="spiderSlaveApiCbTips"></i> 
+							<i class="layui-icon layui-icon-tips" id="spiderSlaveApiCbTips"></i>
 						</div>
 						<div class="layui-form-item">
 							<label class="layui-form-label">节点Flag</label>
@@ -131,28 +132,31 @@
 				<div class="layui-colla-item">
 					<h2 class="layui-colla-title">DEBUG</h2>
 					<div class="layui-colla-content test">
-						<div class="layui-row">
-							<div class="layui-form-item">
-								<label class="layui-form-label">
-									<select>
+						<form class="layui-form" action="" lay-filter="debugConfig">
+							<div class="layui-row">
+								<div class="layui-form-item debug-actions">
+									<select name="debugType" lay-filter="debugType">
 										<option value="1">网页</option>
 										<option value="8">图片</option>
 										<option value="4">CSS</option>
 										<option value="100">JS</option>
-										<option value="201" >获取COOKIES</option>
-										<option value="103" >模拟人行为</option>
+										<option value="201">获取COOKIES</option>
+										<option value="103">模拟人行为</option>
 									</select>
-								</label>
-								<div class="layui-input-block">
-									<input type="text" value="https://www.farseerbi.com/home/index/homepage.html" autocomplete="off" class="layui-input">
-									<div class="layui-btn test-run">执行</div>
+								</div>
+								<div class="layui-form-item">
+									<textarea name="debugActions" placeholder="" class="layui-textarea"></textarea>
+								</div>
+								<div class="layui-form-item">
+									<button class="layui-btn" lay-submit lay-filter="debugConfig">执行</button>
 								</div>
 							</div>
-						</div>
+						</form>
 					</div>
 				</div>
 			</div>
 		</div>
+	</div>
 </body>
 
 </html>

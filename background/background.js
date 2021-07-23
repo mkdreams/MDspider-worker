@@ -354,7 +354,11 @@ function oneActionRun() {
 				
 		// 	},
 		// });
-		dealOneAction(window.spiderSlaveTabInfos['tabs'][tabId], window.spiderSlaveUrls[urlId]);
+		if (window.spiderSlaveUrls[urlId]['type'] == 103) {
+			chrome.windows.update(window.spiderSlaveTabInfos['tabs'][tabId]['win']['id'],{'focused':true,'state':'fullscreen'},function() {
+				dealOneAction(window.spiderSlaveTabInfos['tabs'][tabId], window.spiderSlaveUrls[urlId]);
+			})
+		}
 	}else{
 		dealOneAction(window.spiderSlaveTabInfos['tabs'][tabId], window.spiderSlaveUrls[urlId]);
 	}
@@ -388,8 +392,13 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
 	}
 })
 
-function debugRun(type, url) {
-	window.spiderSlaveUrls['debug'] = { "id": "debug", "url": url, "type": type, "code": "debug" };
+function debugRun(debugActions) {
+	debugActions.data.forEach(function (v) {
+		if (!window.spiderSlaveUrls[v['id']]) {
+			window.spiderSlaveUrls[v['id']] = v;
+		}
+	});
+	// window.spiderSlaveUrls['debug'] = { "id": "debug", "url": url, "type": type, "code": "debug" };
 	console.log(window.spiderSlaveUrls);
 	oneActionRun();
 }

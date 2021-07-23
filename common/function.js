@@ -24,6 +24,12 @@ var Position = {};
         }
         var node = target;
         while(node != reference && node != document){
+            if(node.style.position === 'fixed') {
+                result.left = result.left + node.style.left;
+                result.top = result.top + node.style.top;
+                break;
+            }
+            
             result.left = result.left + node.offsetLeft + node.clientLeft;
             result.top = result.top + node.offsetTop + node.clientTop;
             node = node.parentNode;

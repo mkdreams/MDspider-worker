@@ -131,6 +131,9 @@ chrome.runtime.onMessage.addListener(
 
 										// console.log(linkNodes[i],pos);
 										// var pos = Position.getViewport(linkNodes[i]);
+
+
+
 										console.log(linkNodes[i],pos);
 										break;
 									}
