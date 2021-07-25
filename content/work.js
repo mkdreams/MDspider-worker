@@ -71,6 +71,8 @@ chrome.runtime.onMessage.addListener(
 							tempDom[0].remove();
 						case 101:
 							break;
+						case 103:
+							break;
 						case 102:
 						default:
 							textToBase64(document.getElementsByTagName('html')[0].innerHTML,function(base64){
@@ -117,6 +119,18 @@ chrome.runtime.onMessage.addListener(
 									if(linkNodes[i].href.indexOf(request.info.url) > -1) {
 										var pos = Position.getAbsolute(document,linkNodes[i]);
 
+										var xhr = new XMLHttpRequest()
+										xhr.onreadystatechange = function () {
+											if (this.readyState == 4 && this.status == 200) {
+												blobToBase64(this.response,function(base64){
+													window.spiderData = base64;
+												});
+											}
+										}
+										xhr.open('POST', request.info.spiderSlaveHumanBehaviorApi)
+										xhr.responseType = 'blob'
+										xhr.send(JSON.stringify(pos))
+										
 										// if(pos.left < 0) {
 										// 	window.scroll(pos.left,0);
 										// }else if(pos.left > window.innerWidth){
@@ -134,7 +148,7 @@ chrome.runtime.onMessage.addListener(
 
 
 
-										console.log(linkNodes[i],pos);
+										console.log(linkNodes[i],pos,request.info);
 										break;
 									}
 								}

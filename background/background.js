@@ -356,6 +356,8 @@ function oneActionRun() {
 		// });
 		if (window.spiderSlaveUrls[urlId]['type'] == 103) {
 			chrome.windows.update(window.spiderSlaveTabInfos['tabs'][tabId]['win']['id'],{'focused':true,'state':'fullscreen'},function() {
+				window.spiderSlaveUrls[urlId]['spiderSlaveHumanBehaviorApi'] = window.spiderSlaveHumanBehaviorApi;
+				window.spiderSlaveUrls[urlId]['win'] = window.spiderSlaveTabInfos['tabs'][tabId]['win'];
 				dealOneAction(window.spiderSlaveTabInfos['tabs'][tabId], window.spiderSlaveUrls[urlId]);
 			})
 		}

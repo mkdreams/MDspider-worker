@@ -151,6 +151,21 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 		}
 	];
 
+	var actionsTpl_103 = [
+		{
+			"id": "1",
+			"url": "https://www.farseerbi.com/home/member/login.html",
+			"type": 1,
+			"code": 1
+		},
+		{
+			"id": "2",
+			"url": "https://www.farseerbi.com/home/member/mi.html",
+			"type": 103,
+			"code": 1
+		},
+	];
+
 	form.on('select(debugType)', function(data){
 		if(eval('typeof(actionsTpl_'+data.value+') != "undefined"')) {
 			var actions = eval('actionsTpl_'+data.value);
