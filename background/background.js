@@ -202,23 +202,72 @@ function isDone(tab, info) {
 	clearTimeout(window.setTimeout_checkIsDie[tab.id]);
 }
 
-//try every 50 ms
-function getHml(tab, info) {
+
+function resultIsOk(tab, info, cb) {
 	clearInterval(window.setInterval_getHtml[tab.id]);
+	var comming = false;
 	window.setInterval_getHtml[tab.id] = setInterval(function () {
 		sendMessageToTabs(tab, { 'actiontype': 1, 'info': info }, function (res) {
-			if (res && res['scrollIsEnd'] == true) {
+			if (res && res['scrollIsEnd'] == true && comming == false) {
+				comming = true;
 				clearInterval(window.setInterval_getHtml[tab.id]);
-				if (res && res['html']) {
-					sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': tab, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': res.html } });
-				}
-				isDone(tab, info);
+
+				cb(res);
 			}
 		});
 	}, 50);
 }
 
+//try every 50 ms
+function getHml(tab, info) {
+	console.log('getHml',tab,info);
+	resultIsOk(tab, info, function(res) {
+		if (res && res['html']) {
+			sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': tab, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': res.html } });
+		}
+		isDone(tab, info);
+	}.bind(this));
+}
+
 function dealOneAction(tab, info, needJump) {
+	function reqComplete(cb) {
+		setTimeout(function () {
+			clearInterval(window.setInterval_waitToComplete[tab.id]);
+			window.setInterval_waitToComplete[tab.id] = setInterval(function (callback) {
+				chrome.tabs.get(tab.id, function (nowTab) {
+					if (nowTab.status == 'complete') {
+						clearInterval(window.setInterval_waitToComplete[tab.id]);
+						cb();
+					}
+				});
+			}.bind(this), 50);
+		}, 50);
+	}
+
+	function runSub(cb,index) {
+		if(index === undefined) {
+			index = 0;
+		}
+
+		if(info.param && info.param.sub) {
+			var subCount = info.param.sub.length;
+			if(subCount === index) {
+				cb();
+			}else{
+				var subInfo = info.param.sub[index++];
+				sendMessageToTabs(tab, { 'actiontype': 2, 'info': subInfo});
+				console.log('sub',tab, subInfo);
+				reqComplete(function() {
+					resultIsOk(tab, subInfo, function(res) {
+						runSub(cb,index);
+					}.bind(this));
+				}.bind(this));
+			}
+		}else{
+			cb();
+		}
+	}
+
 	// 1:a(jump and get data)
 	//2:js,4:css,8:image,16:others(ajax get data by get method)
 	//100:block run js,101:ajax,
@@ -245,37 +294,39 @@ function dealOneAction(tab, info, needJump) {
 
 	window.tabUrlIds[tab.id] = info['id'];
 
-	// if (info.type == 100) {
-	// 	setTimeout(function () {
-	// 		sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': tab, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': '' } });
-	// 		isDone(tab, info);
-	// 	}, 1000);
-	// } else 
-	if (info.type == 1 || info.type == 102 || info.type === 201) {
-		setTimeout(function () {
-			clearInterval(window.setInterval_waitToComplete[tab.id]);
-			window.setInterval_waitToComplete[tab.id] = setInterval(function (callback) {
-				chrome.tabs.get(tab.id, function (nowTab) {
-					backgroundConsole('tab info', nowTab.status);
-					if (nowTab.status == 'complete') {
-						clearInterval(window.setInterval_waitToComplete[tab.id]);
-						if (info.type === 1) {
-							//scroll 
-							sendMessageToTabs(nowTab, { 'actiontype': 3, 'info': info });
-							getHml(nowTab, info);
-						}else if(info.type === 201){
-							eval('backgroundAction'+info.type+'(tab, info);');
-						}else{
-							getHml(nowTab, info);
-						}
-					}
-				});
+	switch(info.type) {
+		case 1:
+			reqComplete(function() {
+				//scroll 
+				sendMessageToTabs(tab, { 'actiontype': 3, 'info': info });
+				resultIsOk(tab, info, function(res) {
+					runSub(function() {
+						getHml(tab, info);
+					}.bind(this))
+				}.bind(this));
+			}.bind(this));
+			break;
+		case 102:
+			reqComplete(function() {
+				runSub(function() {
+					getHml(tab, info);
+				}.bind(this))
+			});
+			break;
+		case 201:
+			reqComplete(function() {
+				runSub(function() {
+					eval('backgroundAction'+info.type+'(tab, info);');
+				}.bind(this))
+			});
+			break;
+		default:
+			setTimeout(function () {
+				runSub(function() {
+					getHml(tab, info);
+				}.bind(this))
 			}, 50);
-		}, 50);
-	}else{
-		setTimeout(function () {
-			getHml(tab, info);
-		}, 50);
+			break;
 	}
 }
 
@@ -296,13 +347,15 @@ function oneActionRun() {
 			return;
 		}
 
-		window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
+		if(window.spiderSlaveUrls[urlId]) {
+			window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
+		}
 		var urlId = getUrlInfo([1, 102, 201]);//get one a,or get cookies url
 		if (urlId == -1) {
 			sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 1, 'url': window.spiderSlaveApiActionList, 'data': { 'sFlag': window.spiderSlaveFlag } });
 			return;
 		}
-
+		
 		//wait 
 		if (urlId == -2) {
 			return;
@@ -341,25 +394,18 @@ function oneActionRun() {
 		window.spiderSlaveTabInfos['tabs'][tabId]['runStatus'] = 0;
 		clearInterval(window.setInterval_getHtml[window.spiderSlaveTabInfos['tabs'][tabId].id]);
 		clearInterval(window.setInterval_waitToComplete[window.spiderSlaveTabInfos['tabs'][tabId].id]);
-		console.log('time out!', info);
 	}, 180000);
 
 
 	if(window.spiderSlaveHumanBehavior) {
-		// $.ajax({
-		// 	type: 'POST',
-		// 	url: window.spiderSlaveHumanBehaviorApi,
-		// 	data: {'x':100,'y':200},
-		// 	success: function(data){
-				
-		// 	},
-		// });
 		if (window.spiderSlaveUrls[urlId]['type'] == 103) {
 			chrome.windows.update(window.spiderSlaveTabInfos['tabs'][tabId]['win']['id'],{'focused':true,'state':'fullscreen'},function() {
 				window.spiderSlaveUrls[urlId]['spiderSlaveHumanBehaviorApi'] = window.spiderSlaveHumanBehaviorApi;
 				window.spiderSlaveUrls[urlId]['win'] = window.spiderSlaveTabInfos['tabs'][tabId]['win'];
 				dealOneAction(window.spiderSlaveTabInfos['tabs'][tabId], window.spiderSlaveUrls[urlId]);
 			})
+		}else{
+			dealOneAction(window.spiderSlaveTabInfos['tabs'][tabId], window.spiderSlaveUrls[urlId]);
 		}
 	}else{
 		dealOneAction(window.spiderSlaveTabInfos['tabs'][tabId], window.spiderSlaveUrls[urlId]);
@@ -403,6 +449,13 @@ function debugRun(debugActions) {
 	// window.spiderSlaveUrls['debug'] = { "id": "debug", "url": url, "type": type, "code": "debug" };
 	console.log(window.spiderSlaveUrls);
 	oneActionRun();
+}
+
+function debugRunReset(debugActions) {
+	for(var id in window.spiderSlaveTabInfos['tabs']) {
+		window.spiderSlaveTabInfos['tabs'][id]['runStatus'] = 0;
+	}
+	window.spiderSlaveUrls = [] ;
 }
 
 //background console.log to api tab

@@ -15,7 +15,7 @@ function pageRunJs(jsStr) {
 		blobToBase64(blob,callback);\
 	};\
 	var r = (function () {'
-	+jsStr + '})();\
+	+jsStr.replace(/'/g,"\\'") + '})();\
 	textToBase64(r==undefined?0:r,function(base64){\
 		this.innerHTML = base64;\
 	}.bind(this))')
@@ -65,6 +65,7 @@ chrome.runtime.onMessage.addListener(
 						case 4:
 						case 8:
 						case 16:
+							break;
 						case 100:
 							var tempDom = $('#MDspider-help-dom-result');
 							window.spiderData = tempDom.html();
@@ -111,7 +112,13 @@ chrome.runtime.onMessage.addListener(
 								xhr.send()
 								break;
 							case 100:
-								pageRunJs(request.info.url);
+								if(request.info.param && request.info.param.delay) {
+									setTimeout(() => {
+										pageRunJs(request.info.url);
+									}, request.info.param.delay);
+								}else{
+									pageRunJs(request.info.url);
+								}
 								break;
 							case 103:
 								var linkNodes = document.querySelectorAll("a");
@@ -130,29 +137,9 @@ chrome.runtime.onMessage.addListener(
 										xhr.open('POST', request.info.spiderSlaveHumanBehaviorApi)
 										xhr.responseType = 'blob'
 										xhr.send(JSON.stringify(pos))
-										
-										// if(pos.left < 0) {
-										// 	window.scroll(pos.left,0);
-										// }else if(pos.left > window.innerWidth){
-										// 	window.scroll(pos.left-10,0);
-										// }
-
-										// if(pos.top < 0) {
-										// 	window.scroll(0,pos.top);
-										// }else if(pos.top > window.innerHeight){
-										// 	window.scroll(0,pos.top-10);
-										// }
-
-										// console.log(linkNodes[i],pos);
-										// var pos = Position.getViewport(linkNodes[i]);
-
-
-
-										console.log(linkNodes[i],pos,request.info);
 										break;
 									}
 								}
-								// Position.getViewport();
 								break;
 							default:
 								window.location.href=request.info.url;
@@ -163,22 +150,46 @@ chrome.runtime.onMessage.addListener(
 				//scroll
 				case 3:
 					if(request.info && request.info.type && request.info.type == 1) {
-						var maxHeight = document.body.scrollHeight;
-						var clientHeight = document.body.clientHeight*0.8;
-						var offset = document.body.clientHeight*-1;
 						window.scrollIsEnd = false;
-						window.setInterval_scroll = setInterval(function() {
-							window.scroll(0,offset);
-							offset += clientHeight;
-							if(offset > maxHeight) {
-					        	window.scrollIsEnd = true;
-								clearInterval(window.setInterval_scroll);
+
+						//default 1000
+						var scrollMaxCount = 1000;
+						if(request.info.param && request.info.param.scrollMaxCount) {
+							var scrollMaxCount = request.info.param.scrollMaxCount;
+						}
+
+						var count = 0;
+
+						var func_go = function() {
+							var maxHeight = document.body.scrollHeight;
+							var clientHeight = document.body.clientHeight*0.8;
+							var offset = document.body.clientHeight*-1;
+
+							if(request.info.param && request.info.param.clientHeight) {
+								clientHeight = request.info.param.clientHeight;
 							}
-							
-							if(document.body.scrollHeight > maxHeight){
-								maxHeight = document.body.scrollHeight;
-							}
-						},1500);
+
+							window.setInterval_scroll = setInterval(function() {
+								window.scroll(0,offset);
+								offset += clientHeight;
+								if(offset > maxHeight || count++ > scrollMaxCount) {
+									window.scrollIsEnd = true;
+									clearInterval(window.setInterval_scroll);
+								}
+								
+								if(document.body.scrollHeight > maxHeight){
+									maxHeight = document.body.scrollHeight;
+								}
+							},1500);
+						}.bind(this);
+
+						if(request.info.param && request.info.param.delay) {
+							setTimeout(() => {
+								func_go();
+							}, request.info.param.delay);
+						}else{
+							func_go();
+						}
 					}else{
 						window.scrollIsEnd = true;
 					}

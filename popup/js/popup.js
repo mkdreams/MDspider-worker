@@ -71,7 +71,7 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 	});
 
 	$('#spiderSlaveApiActionListTips').click(function () {
-		var text = '{"code":0,"msg":"获取成功","data":[{"id":1,"url":"https://gitee.com/colin_86/MDword","type":1,"code":1}],"redirect":"","wait":3}';
+		var text = '{"code":0,"data":[{"id":1,"url":"https://gitee.com/colin_86/MDword","type":1,"code":1}]}';
 		var jsonPretty = JSON.stringify(JSON.parse(text), null, 4);
 		layer.tips(
 			'<h2 style="line-height: 35px;">响应的JOSN格式:</h2>' +
@@ -127,10 +127,7 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 
 	var actionsTplF = {
 		"code": 0,
-		"msg": "获取成功",
-		"data": "--data--",
-		"redirect": "",
-		"wait": 3
+		"data": "--data--"
 	};
 
 	var actionsTpl_default = [
@@ -151,6 +148,15 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 		}
 	];
 
+	var actionsTpl_100 = [
+		{
+			"id": "debug",
+			"url": 'var more = document.evaluate(\'//div[text()="查看更多"]\', document, null, XPathResult.ANY_TYPE, null);var node = more.iterateNext();while(node) {node.click();node = more .iterateNext();}',
+			"type": 100,
+			"code": 1
+		}
+	];
+
 	var actionsTpl_103 = [
 		{
 			"id": "1",
@@ -162,6 +168,73 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 			"id": "2",
 			"url": "https://www.farseerbi.com/home/member/mi.html",
 			"type": 103,
+			"code": 1
+		},
+	];
+
+	var actionsTpl_501 = [
+		{
+			"id": "1",
+			"url": "https://www.facebook.com/?sk=favorites",
+			"type": 1,
+			"param": {
+				'scrollMaxCount':1
+				,'clientHeight':400
+				,'delay':3000
+				,'lockTab':1
+			},
+			"code": 1
+		},
+		{
+			"id": "2",
+			"url": "https://www.facebook.com/?sk=favorites",
+			"type": 1,
+			"param": {
+				'scrollMaxCount':3
+				,'clientHeight':400
+				,'delay':3000
+				,sub:[
+					{
+						"id": "3",
+						"url": "https://www.facebook.com/%E6%9D%B1%E6%96%B9%E6%97%A5%E5%A0%B1-638924839545704/",
+						"type": 102,
+						"code": 1
+					},
+					{
+						"id": "4",
+						"url": "var more = document.evaluate('//div[text()=\"查看更多\"]', document, null, XPathResult.ANY_TYPE, null);var node = more.iterateNext();while(node) {node.click();node = more .iterateNext();}",
+						"type": 100,
+						"param": {
+							'delay':1000
+						},
+						"code": 1
+					},
+					{
+						"id": "5",
+						"url": "https://www.facebook.com/mingpaoinews/",
+						"type": 102,
+						"code": 1
+					},
+					{
+						"id": "6",
+						"url": 'var more = document.evaluate(\'//div[text()="查看更多"]\', document, null, XPathResult.ANY_TYPE, null);var node = more .iterateNext();while(node) {node.click();node = more .iterateNext();}',
+						"type": 100,
+						"param": {
+							'delay':1000
+						},
+						"code": 1
+					}
+				]
+			},
+			"code": 1
+		},
+	];
+	var actionsTpl_502 = [
+		{
+			"id": "1",
+			"url": "https://www.farseerbi.com/home/index/product.html",
+			"type": 1,
+			"param": {'scrollMaxCount':200},
 			"code": 1
 		},
 	];
@@ -199,6 +272,16 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 
 			console.log(data.field['debugActions']);
 			bg.debugRun(JSON.parse(data.field['debugActions']));
+		});
+		return false;
+	});
+
+	form.on('submit(debugConfigReset)', function (data) {
+		chrome.storage.local.set(data.field, function () {
+			layer.msg('已重置');
+			bg.loadConfig();
+
+			bg.debugRunReset(JSON.parse(data.field['debugActions']));
 		});
 		return false;
 	});
