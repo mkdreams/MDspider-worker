@@ -182,22 +182,22 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 				,'clientHeight':400
 				,'delay':3000
 				,'lockTab':1
-			},
-			"code": 1
-		},
-		{
-			"id": "2",
-			"url": "https://www.facebook.com/?sk=favorites",
-			"type": 1,
-			"param": {
-				'scrollMaxCount':3
-				,'clientHeight':400
-				,'delay':3000
 				,sub:[
+					{
+						"id": "2",
+						"url": "https://www.facebook.com/%E6%9D%B1%E6%96%B9%E6%97%A5%E5%A0%B1-638924839545704/",
+						"type": 1,
+						"code": 1
+					},
 					{
 						"id": "3",
 						"url": "https://www.facebook.com/%E6%9D%B1%E6%96%B9%E6%97%A5%E5%A0%B1-638924839545704/",
 						"type": 102,
+						"param": {
+							'scrollMaxCount':10
+							,'clientHeight':400
+							,'delay':3000
+						},
 						"code": 1
 					},
 					{
@@ -209,14 +209,53 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 						},
 						"code": 1
 					},
+				]
+			},
+			"code": 1
+		},
+		{
+			"id": "5",
+			"url": "https://www.facebook.com/?sk=favorites",
+			"type": 1,
+			"param": {
+				'scrollMaxCount':3
+				,'clientHeight':400
+				,'delay':3000
+				,sub:[
 					{
-						"id": "5",
-						"url": "https://www.facebook.com/mingpaoinews/",
-						"type": 102,
+						"id": "6",
+						"url": "https://www.facebook.com/%E6%9D%B1%E6%96%B9%E6%97%A5%E5%A0%B1-638924839545704/",
+						"type": 1,
 						"code": 1
 					},
 					{
-						"id": "6",
+						"id": "7",
+						"url": "var more = document.evaluate('//div[text()=\"查看更多\"]', document, null, XPathResult.ANY_TYPE, null);var node = more.iterateNext();while(node) {node.click();node = more .iterateNext();}",
+						"type": 100,
+						"param": {
+							'delay':1000
+						},
+						"code": 1
+					},
+					{
+						"id": "8",
+						"url": "https://www.facebook.com/mingpaoinews/",
+						"type": 1,
+						"code": 1
+					},
+					{
+						"id": "9",
+						"url": "https://www.facebook.com/%E6%9D%B1%E6%96%B9%E6%97%A5%E5%A0%B1-638924839545704/",
+						"type": 102,
+						"param": {
+							'scrollMaxCount':10
+							,'clientHeight':400
+							,'delay':3000
+						},
+						"code": 1
+					},
+					{
+						"id": "10",
 						"url": 'var more = document.evaluate(\'//div[text()="查看更多"]\', document, null, XPathResult.ANY_TYPE, null);var node = more .iterateNext();while(node) {node.click();node = more .iterateNext();}',
 						"type": 100,
 						"param": {

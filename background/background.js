@@ -261,7 +261,7 @@ function dealOneAction(tab, info, needJump) {
 				sendMessageToTabs(tab, { 'actiontype': 2, 'info': subInfo});
 				console.log('sub',tab, subInfo);
 				reqComplete(tab, info, function(tab, info) {
-					resultIsOk(tab, subInfo, function(tab, info,res) {
+					resultIsOk(tab, subInfo, function(tab, subInfo,res) {
 						runSub(tab, info, cb, index);
 					});
 				});
@@ -274,7 +274,7 @@ function dealOneAction(tab, info, needJump) {
 	// 1:a(jump and get data)
 	//2:js,4:css,8:image,16:others(ajax get data by get method)
 	//100:block run js,101:ajax,
-	//102:a without scroll
+	//102:scroll
 	//201:open the url,then read this url's cookies form the browser
 	var typesToName = { 
 		1: "a", 
@@ -284,7 +284,7 @@ function dealOneAction(tab, info, needJump) {
 		16: "others", 
 		100: "run js block until all complete", 
 		101: "ajax", 
-		102: "a without scroll",
+		102: "scroll",
 		103: "a by click",
 		201: "get cookies"
 	};
@@ -299,18 +299,18 @@ function dealOneAction(tab, info, needJump) {
 
 	switch(info.type) {
 		case 1:
-			reqComplete(tab, info, function(tab,info) {
-				//scroll 
-				sendMessageToTabs(tab, { 'actiontype': 3, 'info': info });
-				resultIsOk(tab, info, function(tab, info, res) {
-					runSub(tab, info, function(tab, info) {
-						console.log('123456', tab, info);
-						getHml(tab, info);
-					})
-				});
-			});
-			break;
-		case 102:
+		// 	reqComplete(tab, info, function(tab,info) {
+		// 		//scroll 
+		// 		sendMessageToTabs(tab, { 'actiontype': 3, 'info': info });
+		// 		resultIsOk(tab, info, function(tab, info, res) {
+		// 			runSub(tab, info, function(tab, info) {
+		// 				console.log('123456', tab, info);
+		// 				getHml(tab, info);
+		// 			})
+		// 		});
+		// 	});
+		// 	break;
+		// case 102:
 			reqComplete(tab, info, function(tab, info) {
 				runSub(tab, info, function(tab, info) {
 					getHml(tab, info);

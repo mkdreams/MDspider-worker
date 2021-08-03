@@ -127,6 +127,47 @@ chrome.runtime.onMessage.addListener(
 									pageRunJs(request.info.url);
 								}
 								break;
+							case 102:
+								window.scrollIsEnd = false;
+								//default 1000
+								var scrollMaxCount = 1000;
+								if(request.info.param && request.info.param.scrollMaxCount) {
+									var scrollMaxCount = request.info.param.scrollMaxCount;
+								}
+
+								var count = 0;
+
+								var func_go = function() {
+									var maxHeight = document.body.scrollHeight;
+									var clientHeight = document.body.clientHeight*0.8;
+									var offset = document.body.clientHeight*-1;
+
+									if(request.info.param && request.info.param.clientHeight) {
+										clientHeight = request.info.param.clientHeight;
+									}
+
+									window.setInterval_scroll = setInterval(function() {
+										window.scroll(0,offset);
+										offset += clientHeight;
+										if(offset > maxHeight || count++ > scrollMaxCount) {
+											window.scrollIsEnd = true;
+											clearInterval(window.setInterval_scroll);
+										}
+										
+										if(document.body.scrollHeight > maxHeight){
+											maxHeight = document.body.scrollHeight;
+										}
+									},1500);
+								}.bind(this);
+
+								if(request.info.param && request.info.param.delay) {
+									setTimeout(() => {
+										func_go();
+									}, request.info.param.delay);
+								}else{
+									func_go();
+								}
+								break;
 							case 103:
 								var linkNodes = document.querySelectorAll("a");
 								for(var i = 0; i < linkNodes.length; i++) {
@@ -152,53 +193,6 @@ chrome.runtime.onMessage.addListener(
 								window.location.href=request.info.url;
 								break;
 						}
-					}
-					break;
-				//scroll
-				case 3:
-					if(request.info && request.info.type && request.info.type == 1) {
-						window.scrollIsEnd = false;
-
-						//default 1000
-						var scrollMaxCount = 1000;
-						if(request.info.param && request.info.param.scrollMaxCount) {
-							var scrollMaxCount = request.info.param.scrollMaxCount;
-						}
-
-						var count = 0;
-
-						var func_go = function() {
-							var maxHeight = document.body.scrollHeight;
-							var clientHeight = document.body.clientHeight*0.8;
-							var offset = document.body.clientHeight*-1;
-
-							if(request.info.param && request.info.param.clientHeight) {
-								clientHeight = request.info.param.clientHeight;
-							}
-
-							window.setInterval_scroll = setInterval(function() {
-								window.scroll(0,offset);
-								offset += clientHeight;
-								if(offset > maxHeight || count++ > scrollMaxCount) {
-									window.scrollIsEnd = true;
-									clearInterval(window.setInterval_scroll);
-								}
-								
-								if(document.body.scrollHeight > maxHeight){
-									maxHeight = document.body.scrollHeight;
-								}
-							},1500);
-						}.bind(this);
-
-						if(request.info.param && request.info.param.delay) {
-							setTimeout(() => {
-								func_go();
-							}, request.info.param.delay);
-						}else{
-							func_go();
-						}
-					}else{
-						window.scrollIsEnd = true;
 					}
 					break;
 				default:
