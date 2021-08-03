@@ -15,13 +15,13 @@ function sendMessageAction(tabId,sendInfoObj,callBack,frames) {
 		this.response = undefined;
 	}
 	
-	
+	console.log('send to '+tabId,sendInfoObj);
 	chrome.tabs.sendMessage(tabId, sendInfoObj,{frameId: 0}, function(msg) {
-		console.log(msg,'msg');
+		console.log('response '+tabId,msg);
 		if(callBack) {
 	        callBack(msg);
 		}
-	}.bind(this));
+	});
 }
 
 //向指定tab发送请求

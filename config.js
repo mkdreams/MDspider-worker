@@ -34,7 +34,9 @@ initDeviceInfo(function(){
 	createTab(window.spiderSlaveApi,function(tab) {
 		window.spiderSlaveTabInfos['api'] = tab;
 		if(window.spiderSlaveOn === true) {
-			workPlay();
+			setTimeout(function() {
+				workPlay();
+			},2000);
 		}
 	},true);
 });

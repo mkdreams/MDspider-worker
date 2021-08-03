@@ -26,6 +26,10 @@ function pageRunJs(jsStr) {
 
 chrome.runtime.onMessage.addListener(
 	function (request, sender, sendResponse) {
+		if(window.spiderData === undefined) {
+			window.spiderData = {};
+		}
+
 		//api request
 		if(request.admintype) {
 			switch(request.admintype) {
@@ -45,6 +49,7 @@ chrome.runtime.onMessage.addListener(
 					break;
 				case 3://console log from background
 					console.log('background',request.obj);
+					sendResponse('content: got it!');
 					break;
 				default:
 					break;
@@ -53,8 +58,8 @@ chrome.runtime.onMessage.addListener(
 			switch(request.actiontype) {
 				//get html 
 				case 1:
-					if(window.spiderData != undefined && window.scrollIsEnd) {
-						var data = {'html':window.spiderData,'scrollIsEnd':window.scrollIsEnd};
+					if(window.spiderData[request.info.id] != undefined && window.scrollIsEnd != undefined) {
+						var data = {'html':window.spiderData[request.info.id],'scrollIsEnd':window.scrollIsEnd};
 						sendResponse(data);
 						return ;
 					}
@@ -68,8 +73,11 @@ chrome.runtime.onMessage.addListener(
 							break;
 						case 100:
 							var tempDom = $('#MDspider-help-dom-result');
-							window.spiderData = tempDom.html();
-							tempDom[0].remove();
+							if(tempDom.length > 0) {
+								window.spiderData[request.info.id] = tempDom.html();
+								tempDom[0].remove();
+							}
+							break;
 						case 101:
 							break;
 						case 103:
@@ -77,8 +85,8 @@ chrome.runtime.onMessage.addListener(
 						case 102:
 						default:
 							textToBase64(document.getElementsByTagName('html')[0].innerHTML,function(base64){
-								window.spiderData = base64;
-							});
+								window.spiderData[request.info.id] = base64;
+							}.bind(this));
 							break;
 					}
 			        sendResponse({'html':'','scrollIsEnd':false});
@@ -88,7 +96,6 @@ chrome.runtime.onMessage.addListener(
 				case 2:
 					if(request.info.url) {
 						//1:a,2:js,4:css,8:image,16:others,100:runjs
-						window.spiderData = undefined;
 						switch(request.info.type) {
 							case 2:
 							case 4:
@@ -99,12 +106,12 @@ chrome.runtime.onMessage.addListener(
 								xhr.onreadystatechange = function () {
 									if (this.readyState == 4 && this.status == 200) {
 										blobToBase64(this.response,function(base64){
-											window.spiderData = base64;
-										});
+											window.spiderData[request.info.id] = base64;
+										}.bind(this));
 									}if (this.readyState == 4) {
 										textToBase64(this.status,function(base64){
-											window.spiderData = base64;
-										});
+											window.spiderData[request.info.id] = base64;
+										}.bind(this));
 									}
 								}
 								xhr.open('GET', request.info.url)
@@ -130,8 +137,8 @@ chrome.runtime.onMessage.addListener(
 										xhr.onreadystatechange = function () {
 											if (this.readyState == 4 && this.status == 200) {
 												blobToBase64(this.response,function(base64){
-													window.spiderData = base64;
-												});
+													window.spiderData[request.info.id] = base64;
+												}.bind(this));
 											}
 										}
 										xhr.open('POST', request.info.spiderSlaveHumanBehaviorApi)

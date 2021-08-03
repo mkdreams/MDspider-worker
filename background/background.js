@@ -134,10 +134,12 @@ function workPlay() {
 
 	clearInterval(window.setInterval_getLinksCache);
 	window.setInterval_getLinksCache = setInterval(function () {
-		if (Object.keys(window.spiderSlaveUrls).length == 0) {
+		var len = Object.keys(window.spiderSlaveUrls).length;
+		if (len === 0) {
 			sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 1, 'url': window.spiderSlaveApiActionList, 'data': { 'sFlag': window.spiderSlaveFlag } });
 		}
 	}, window.spiderSlaveGetUrlsDelay);
+
 	backgroundConsole('已开始', 1);
 }
 
@@ -212,17 +214,18 @@ function resultIsOk(tab, info, cb) {
 				comming = true;
 				clearInterval(window.setInterval_getHtml[tab.id]);
 
-				cb(res);
+				cb(tab, info, res);
 			}
-		});
-	}, 50);
+		}.bind(this));
+	}.bind(this), 50);
 }
 
 //try every 50 ms
 function getHml(tab, info) {
 	console.log('getHml',tab,info);
-	resultIsOk(tab, info, function(res) {
+	resultIsOk(tab, info, function(tab, info, res) {
 		if (res && res['html']) {
+			console.log('postHtml',tab,info);
 			sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': tab, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': res.html } });
 		}
 		isDone(tab, info);
@@ -230,21 +233,21 @@ function getHml(tab, info) {
 }
 
 function dealOneAction(tab, info, needJump) {
-	function reqComplete(cb) {
+	var reqComplete = function (tab,info,cb) {
 		setTimeout(function () {
 			clearInterval(window.setInterval_waitToComplete[tab.id]);
-			window.setInterval_waitToComplete[tab.id] = setInterval(function (callback) {
+			window.setInterval_waitToComplete[tab.id] = setInterval(function () {
 				chrome.tabs.get(tab.id, function (nowTab) {
 					if (nowTab.status == 'complete') {
 						clearInterval(window.setInterval_waitToComplete[tab.id]);
-						cb();
+						cb(nowTab,info);
 					}
 				});
-			}.bind(this), 50);
+			}, 50);
 		}, 50);
-	}
+	};
 
-	function runSub(cb,index) {
+	var runSub = function (tab, info, cb,index) {
 		if(index === undefined) {
 			index = 0;
 		}
@@ -252,21 +255,21 @@ function dealOneAction(tab, info, needJump) {
 		if(info.param && info.param.sub) {
 			var subCount = info.param.sub.length;
 			if(subCount === index) {
-				cb();
+				cb(tab, info);
 			}else{
 				var subInfo = info.param.sub[index++];
 				sendMessageToTabs(tab, { 'actiontype': 2, 'info': subInfo});
 				console.log('sub',tab, subInfo);
-				reqComplete(function() {
-					resultIsOk(tab, subInfo, function(res) {
-						runSub(cb,index);
-					}.bind(this));
-				}.bind(this));
+				reqComplete(tab, info, function(tab, info) {
+					resultIsOk(tab, subInfo, function(tab, info,res) {
+						runSub(tab, info, cb, index);
+					});
+				});
 			}
 		}else{
-			cb();
+			cb(tab, info);
 		}
-	}
+	};
 
 	// 1:a(jump and get data)
 	//2:js,4:css,8:image,16:others(ajax get data by get method)
@@ -296,35 +299,36 @@ function dealOneAction(tab, info, needJump) {
 
 	switch(info.type) {
 		case 1:
-			reqComplete(function() {
+			reqComplete(tab, info, function(tab,info) {
 				//scroll 
 				sendMessageToTabs(tab, { 'actiontype': 3, 'info': info });
-				resultIsOk(tab, info, function(res) {
-					runSub(function() {
+				resultIsOk(tab, info, function(tab, info, res) {
+					runSub(tab, info, function(tab, info) {
+						console.log('123456', tab, info);
 						getHml(tab, info);
-					}.bind(this))
-				}.bind(this));
-			}.bind(this));
+					})
+				});
+			});
 			break;
 		case 102:
-			reqComplete(function() {
-				runSub(function() {
+			reqComplete(tab, info, function(tab, info) {
+				runSub(tab, info, function(tab, info) {
 					getHml(tab, info);
-				}.bind(this))
+				})
 			});
 			break;
 		case 201:
-			reqComplete(function() {
-				runSub(function() {
+			reqComplete(tab, info,function(tab, info) {
+				runSub(tab, info, function(tab, info) {
 					eval('backgroundAction'+info.type+'(tab, info);');
-				}.bind(this))
+				})
 			});
 			break;
 		default:
 			setTimeout(function () {
-				runSub(function() {
+				runSub(tab, info, function(tab, info) {
 					getHml(tab, info);
-				}.bind(this))
+				})
 			}, 50);
 			break;
 	}
@@ -447,15 +451,15 @@ function debugRun(debugActions) {
 		}
 	});
 	// window.spiderSlaveUrls['debug'] = { "id": "debug", "url": url, "type": type, "code": "debug" };
-	console.log(window.spiderSlaveUrls);
-	oneActionRun();
+	// console.log(Object.keys(window.spiderSlaveUrls).length,window.spiderSlaveUrls);
+	workPlay();
 }
 
 function debugRunReset(debugActions) {
 	for(var id in window.spiderSlaveTabInfos['tabs']) {
 		window.spiderSlaveTabInfos['tabs'][id]['runStatus'] = 0;
 	}
-	window.spiderSlaveUrls = [] ;
+	window.spiderSlaveUrls = {};
 }
 
 //background console.log to api tab
