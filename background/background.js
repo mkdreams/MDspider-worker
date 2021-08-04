@@ -206,12 +206,17 @@ function isDone(tab, info) {
 
 
 function resultIsOk(tab, info, cb) {
-	clearInterval(window.setInterval_getHtml[tab.id]);
 	var comming = false;
+	clearInterval(window.setInterval_getHtml[tab.id]);
 	window.setInterval_getHtml[tab.id] = setInterval(function () {
+		if(comming === true) {
+			return ;
+		}
+		comming = true;
+
 		sendMessageToTabs(tab, { 'actiontype': 1, 'info': info }, function (res) {
-			if (res && res['scrollIsEnd'] == true && comming == false) {
-				comming = true;
+			comming = false;
+			if (res && res['actionComplete'] == true) {
 				clearInterval(window.setInterval_getHtml[tab.id]);
 
 				cb(tab, info, res);
@@ -232,45 +237,55 @@ function getHml(tab, info) {
 	}.bind(this));
 }
 
-function dealOneAction(tab, info, needJump) {
-	var reqComplete = function (tab,info,cb) {
-		setTimeout(function () {
-			clearInterval(window.setInterval_waitToComplete[tab.id]);
-			window.setInterval_waitToComplete[tab.id] = setInterval(function () {
-				chrome.tabs.get(tab.id, function (nowTab) {
-					if (nowTab.status == 'complete') {
-						clearInterval(window.setInterval_waitToComplete[tab.id]);
-						cb(nowTab,info);
-					}
-				});
-			}, 50);
-		}, 50);
-	};
-
-	var runSub = function (tab, info, cb,index) {
-		if(index === undefined) {
-			index = 0;
-		}
-
-		if(info.param && info.param.sub) {
-			var subCount = info.param.sub.length;
-			if(subCount === index) {
-				cb(tab, info);
-			}else{
-				var subInfo = info.param.sub[index++];
-				sendMessageToTabs(tab, { 'actiontype': 2, 'info': subInfo});
-				console.log('sub',tab, subInfo);
-				reqComplete(tab, info, function(tab, info) {
-					resultIsOk(tab, subInfo, function(tab, subInfo,res) {
-						runSub(tab, info, cb, index);
-					});
-				});
+function runActionComplete(tab,info,cb) {
+	setTimeout(function () {
+		var comming = false;
+		clearInterval(window.setInterval_waitToComplete[tab.id]);
+		window.setInterval_waitToComplete[tab.id] = setInterval(function () {
+			if(comming === true) {
+				return ;
 			}
-		}else{
-			cb(tab, info);
-		}
-	};
+			comming = true;
 
+			chrome.tabs.get(tab.id, function (nowTab) {
+				comming = false;
+				
+				if (nowTab.status == 'complete') {
+					clearInterval(window.setInterval_waitToComplete[tab.id]);
+					resultIsOk(nowTab, info, function(nowTab, info, res) {
+						cb(nowTab,info);
+					});
+				}
+			});
+		}, 50);
+	}, 50);
+};
+
+function runSub(tab, info, cb, index) {
+	if(index === undefined) {
+		index = 0;
+	}
+
+	if(info.param && info.param.sub) {
+		var subCount = info.param.sub.length;
+		if(subCount === index) {
+			cb(tab, info);
+		}else{
+			var subInfo = info.param.sub[index++];
+			//run action
+			console.log('sub',tab, index, subInfo);
+			sendMessageToTabs(tab, { 'actiontype': 2, 'info': subInfo},function() {
+				runActionComplete(tab, info, function(tab, info) {
+					runSub(tab, info, cb, index);
+				});
+			});
+		}
+	}else{
+		cb(tab, info);
+	}
+};
+
+function dealOneAction(tab, info, needJump) {
 	// 1:a(jump and get data)
 	//2:js,4:css,8:image,16:others(ajax get data by get method)
 	//100:block run js,101:ajax,
@@ -289,48 +304,41 @@ function dealOneAction(tab, info, needJump) {
 		201: "get cookies"
 	};
 
-	actionRecords(info['url'], typesToName[info['type']]);
-
-	if (!needJump) {//jump
-		sendMessageToTabs(tab, { 'actiontype': 2, 'info': info });
+	function actionDoneCb() {
+		switch(info.type) {
+			case 1:
+				runActionComplete(tab, info, function(tab, info) {
+					runSub(tab, info, function(tab, info) {
+						getHml(tab, info);
+					},0)
+				});
+				break;
+			case 201:
+				runActionComplete(tab, info,function(tab, info) {
+					runSub(tab, info, function(tab, info) {
+						eval('backgroundAction'+info.type+'(tab, info);');
+					})
+				});
+				break;
+			default:
+				setTimeout(function () {
+					runSub(tab, info, function(tab, info) {
+						getHml(tab, info);
+					})
+				}, 50);
+				break;
+		}
 	}
 
-	window.tabUrlIds[tab.id] = info['id'];
+	actionRecords(info['url'], typesToName[info['type']]);
 
-	switch(info.type) {
-		case 1:
-		// 	reqComplete(tab, info, function(tab,info) {
-		// 		//scroll 
-		// 		sendMessageToTabs(tab, { 'actiontype': 3, 'info': info });
-		// 		resultIsOk(tab, info, function(tab, info, res) {
-		// 			runSub(tab, info, function(tab, info) {
-		// 				console.log('123456', tab, info);
-		// 				getHml(tab, info);
-		// 			})
-		// 		});
-		// 	});
-		// 	break;
-		// case 102:
-			reqComplete(tab, info, function(tab, info) {
-				runSub(tab, info, function(tab, info) {
-					getHml(tab, info);
-				})
-			});
-			break;
-		case 201:
-			reqComplete(tab, info,function(tab, info) {
-				runSub(tab, info, function(tab, info) {
-					eval('backgroundAction'+info.type+'(tab, info);');
-				})
-			});
-			break;
-		default:
-			setTimeout(function () {
-				runSub(tab, info, function(tab, info) {
-					getHml(tab, info);
-				})
-			}, 50);
-			break;
+	window.tabUrlIds[tab.id] = info['id'];
+	if (!needJump) {//jump
+		sendMessageToTabs(tab, { 'actiontype': 2, 'info': info },function() {
+			actionDoneCb();
+		});
+	}else{
+		actionDoneCb();
 	}
 }
 
