@@ -8,7 +8,8 @@ function restoreData(bg, form) {
 		, "spiderSlaveApi": bg.spiderSlaveApi
 		, "spiderSlaveApiActionList": bg.spiderSlaveApiActionList
 		, "spiderSlaveApiCb": bg.spiderSlaveApiCb
-		, "spiderSlaveTabCount": bg.spiderSlaveTabCount
+		, "spiderSlaveWinCount": bg.spiderSlaveWinCount
+		, "spiderSlavePerWinTabCount": bg.spiderSlavePerWinTabCount
 		, "spiderSlaveGetUrlsDelay": bg.spiderSlaveGetUrlsDelay
 		, "spiderSlaveDelay": bg.spiderSlaveDelay
 		, "spiderSlaveOn": bg.spiderSlaveOn
@@ -27,7 +28,6 @@ function restoreData(bg, form) {
 }
 
 layui.use(['element', 'layer', 'form', 'jquery'], function () {
-	var element = layui.element;
 	var form = layui.form;
 	var $ = layui.$;
 
@@ -278,6 +278,72 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 		},
 	];
 
+	var actionsTpl_503 = [
+		{
+			"id": "random",
+			"url": "https://www.farseerbi.com/home/index/homepage.html",
+			"type": 1,
+			"param": {'lockTab':1},
+			"code": 1
+		},
+		{
+			"id": "random",
+			"url": "https://www.farseerbi.com/home/index/product.html",
+			"type": 1,
+			"param": {'lockTab':1},
+			"code": 1
+		},
+		{
+			"id": "random",
+			"url": "https://www.farseerbi.com/home/index/casestudy.html",
+			"type": 1,
+			"param": {'lockTab':1},
+			"code": 1
+		},
+		{
+			"id": "random",
+			"url": "https://stackoverflow.com/",
+			"type": 1,
+			"param": {'lockTab':1},
+			"code": 1
+		},
+		{
+			"id": "random",
+			"url": "https://stackoverflow.com/questions",
+			"type": 1,
+			"param": {'lockTab':1},
+			"code": 1
+		},
+		{
+			"id": "random",
+			"url": "https://www.farseerbi.com/home/index/contact.html",
+			"type": 1,
+			"param": {'lockTab':1},
+			"code": 1
+		},
+		{
+			"id": "random",
+			"url": "https://stackoverflow.com/tags",
+			"type": 1,
+			"param": {'lockTab':1,'lockTabByUrl':'https://stackoverflow.com'},
+			"code": 1
+		},
+		{
+			"id": "random",
+			"url": "https://www.farseerbi.com/home/index/downloads.html",
+			"type": 1,
+			"param": {'lockTab':1},
+			"code": 1
+		},
+		{
+			"id": "random",
+			"url": "https://www.farseerbi.com/home/member/login.html",
+			"type": 1,
+			"param": {'lockTab':1},
+			"code": 1
+		},
+	];
+
 	form.on('select(debugType)', function(data){
 		if(eval('typeof(actionsTpl_'+data.value+') != "undefined"')) {
 			var actions = eval('actionsTpl_'+data.value);
@@ -289,6 +355,7 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 		var actionsString = '';
 		var index = 0;
 		actions.forEach(v => {
+			actions.id = 'RANDOM'+index;
 			actionsString += "        "+JSON.stringify(v);
 			if(actions.length !== index+1) {
 				actionsString += ",\r";

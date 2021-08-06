@@ -1,11 +1,13 @@
+window.spiderSlaveOn = true;
 window.spiderSlaveFlag = 'worker1';
 window.spiderSlaveApi = "http://test.blog.com/";
 window.spiderSlaveApiActionList = "http://test.blog.com/data/getLinksCache";
 window.spiderSlaveApiCb = "http://test.blog.com/data/recordLinkCacheIsDone";
-window.spiderSlaveDelay = 2000;
 window.spiderSlaveGetUrlsDelay = 5000;
-window.spiderSlaveTabCount = 2;
-window.spiderSlaveOn = true;
+window.spiderSlaveWinCount = 2;
+window.spiderSlavePerWinTabCount = 1;
+window.spiderSlaveLockTabTimeout = 180000;
+
 window.spiderProxyOn = false;
 window.spiderProxyChangePerReqCount = 5;
 window.spiderProxyFetchApi = "http.tiqu.alibabaapi.com/getip3?num=2&type=2&pack=62956&port=1&lb=1&pb=4&gm=4&regions=";
@@ -55,13 +57,13 @@ function initDeviceInfo(cb) {
 				window.baseInfo['height'] = info[0].bounds.height;
 				window.baseInfo['width'] = info[0].bounds.width;
 				
-				window.spiderSlaveTabCount = parseInt(window.spiderSlaveTabCount);
-				window.baseInfo['xCount'] = Math.ceil(Math.sqrt(window.spiderSlaveTabCount+1));
+				window.spiderSlaveWinCount = parseInt(window.spiderSlaveWinCount);
+				window.baseInfo['xCount'] = Math.ceil(Math.sqrt(window.spiderSlaveWinCount+1));
 				if(window.baseInfo['xCount'] < 3) {
-					window.baseInfo['xCount'] = window.spiderSlaveTabCount+1;
+					window.baseInfo['xCount'] = window.spiderSlaveWinCount+1;
 					window.baseInfo['yCount'] = 1;
 				}else{
-					window.baseInfo['yCount'] = Math.ceil((window.spiderSlaveTabCount+1)/window.baseInfo['xCount']);
+					window.baseInfo['yCount'] = Math.ceil((window.spiderSlaveWinCount+1)/window.baseInfo['xCount']);
 				}
 				window.baseInfo['perHeight'] = parseInt(window.baseInfo['height']/window.baseInfo['yCount']);
 				window.baseInfo['perWidth'] = parseInt(window.baseInfo['width']/window.baseInfo['xCount']);

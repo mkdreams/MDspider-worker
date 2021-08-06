@@ -5,6 +5,7 @@ window.setInterval_waitToComplete = {};
 window.setTimeout_checkIsDie = {};
 window.tabUrlIds = {};
 window.baseWindow = undefined;
+window.setInterval_getLinksCache_lastRunTime = new Date().getTime();
 
 function enabledProxy() {
 	disabledProxy();
@@ -130,13 +131,13 @@ function workPlay() {
 		if (Object.keys(window.spiderSlaveUrls).length > 0) {
 			oneActionRun();
 		}
-	}, window.spiderSlaveDelay);
+	}, 100);
 
 	clearInterval(window.setInterval_getLinksCache);
 	window.setInterval_getLinksCache = setInterval(function () {
 		var len = Object.keys(window.spiderSlaveUrls).length;
 		if (len === 0) {
-			sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 1, 'url': window.spiderSlaveApiActionList, 'data': { 'sFlag': window.spiderSlaveFlag } });
+			pullActions();
 		}
 	}, window.spiderSlaveGetUrlsDelay);
 
@@ -147,6 +148,14 @@ function workPause() {
 	clearInterval(window.setInterval_getHtmlRun);
 	clearInterval(window.setInterval_getLinksCache);
 	backgroundConsole('已暂停', 1);
+}
+
+function pullActions() {
+	var timestamp = new Date().getTime();
+	if(timestamp - window.setInterval_getLinksCache_lastRunTime > window.spiderSlaveGetUrlsDelay) {
+		window.setInterval_getLinksCache_lastRunTime = timestamp;
+		sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 1, 'url': window.spiderSlaveApiActionList, 'data': { 'sFlag': window.spiderSlaveFlag } });
+	}
 }
 
 function getNextTab() {
@@ -163,7 +172,7 @@ function getNextTab() {
 	}
 
 	//need create tab
-	if (index == -1 && tabLen < window.spiderSlaveTabCount) {
+	if (index == -1 && tabLen < window.spiderSlaveWinCount) {
 		return -2;
 	}
 
@@ -177,7 +186,12 @@ function getUrlInfo(types) {
 		//js 阻塞式运行
 		if (window.spiderSlaveUrls[id]['type'] == 100) {
 			if ((!types || types.indexOf(window.spiderSlaveUrls[id]['type']) > -1)
-				&& (!window.spiderSlaveUrls[id]['runStartTime'] || window.spiderSlaveUrls[id]['runStartTime'] < needAgain)) {
+				&& (!window.spiderSlaveUrls[id]['runStartTime'] || window.spiderSlaveUrls[id]['runStartTime'] < needAgain)
+				// && (
+				// 	(!window.spiderSlaveUrls[id].param || !window.spiderSlaveUrls[id].param.lockTab || window.spiderSlaveUrls[id].param.lockTab != 1)
+				// 	 || window.spiderSlaveUrls[id]['runStartTime'] < needAgain
+				// 	)
+				) {
 				window.spiderSlaveUrls[id]['runStartTime'] = nowTimeStamp;
 				return id;
 			} else {
@@ -362,9 +376,9 @@ function oneActionRun() {
 		if(window.spiderSlaveUrls[urlId]) {
 			window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
 		}
-		var urlId = getUrlInfo([1, 102, 201]);//get one a,or get cookies url
+		var urlId = getUrlInfo([1, 201]);//get one a,or get cookies url
 		if (urlId == -1) {
-			sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 1, 'url': window.spiderSlaveApiActionList, 'data': { 'sFlag': window.spiderSlaveFlag } });
+			pullActions();
 			return;
 		}
 		
@@ -386,7 +400,7 @@ function oneActionRun() {
 
 	//get more actions
 	if (urlId == -1) {
-		sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 1, 'url': window.spiderSlaveApiActionList, 'data': { 'sFlag': window.spiderSlaveFlag } });
+		pullActions();
 		return;
 	}
 
