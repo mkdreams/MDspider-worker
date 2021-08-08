@@ -13,6 +13,9 @@ function textToBase64(text, callback) {
     blobToBase64(blob,callback);
 }
 
+function getObjectLen(obj) {
+    return Object.keys(obj).length;
+}
 
 var Position = {};
 (function () {

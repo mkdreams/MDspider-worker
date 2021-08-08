@@ -33,7 +33,7 @@ window.spiderSlaveHumanBehaviorApi = 'http://127.0.0.1:8686';
 window.baseInfo = {};
 initDeviceInfo(function(){
 	//init and create api tab
-	createTab(window.spiderSlaveApi,function(tab) {
+	autoCreateTab(window.spiderSlaveApi,function(tab) {
 		window.spiderSlaveTabInfos['api'] = tab;
 		if(window.spiderSlaveOn === true) {
 			setTimeout(function() {

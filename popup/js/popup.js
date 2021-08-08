@@ -304,14 +304,14 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 			"id": "random",
 			"url": "https://stackoverflow.com/",
 			"type": 1,
-			"param": {'lockTab':1},
+			"param": {'lockTab':0},
 			"code": 1
 		},
 		{
 			"id": "random",
 			"url": "https://stackoverflow.com/questions",
 			"type": 1,
-			"param": {'lockTab':1},
+			"param": {'lockTab':0},
 			"code": 1
 		},
 		{
@@ -325,7 +325,7 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 			"id": "random",
 			"url": "https://stackoverflow.com/tags",
 			"type": 1,
-			"param": {'lockTab':1,'lockTabByUrl':'https://stackoverflow.com'},
+			"param": {'lockTab':0,'lockTabFlag':'https://stackoverflow.com'},
 			"code": 1
 		},
 		{
@@ -355,7 +355,7 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 		var actionsString = '';
 		var index = 0;
 		actions.forEach(v => {
-			actions.id = 'RANDOM'+index;
+			v.id = 'RANDOM'+index;
 			actionsString += "        "+JSON.stringify(v);
 			if(actions.length !== index+1) {
 				actionsString += ",\r";

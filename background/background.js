@@ -1,4 +1,4 @@
-window.spiderSlaveTabInfos = { 'locked': false, 'api': {}, 'tabs': {} };
+window.spiderSlaveTabInfos = { 'locked': false, 'api': {}, 'tabs': {}, 'wins':{} };
 window.spiderSlaveUrls = {};
 window.setInterval_getHtml = {};
 window.setInterval_waitToComplete = {};
@@ -6,6 +6,7 @@ window.setTimeout_checkIsDie = {};
 window.tabUrlIds = {};
 window.baseWindow = undefined;
 window.setInterval_getLinksCache_lastRunTime = new Date().getTime();
+window.lockTabFlagToTab = {};
 
 function enabledProxy() {
 	disabledProxy();
@@ -73,8 +74,8 @@ function disabledProxy() {
 
 var windowLeftOffset = 0;
 var windowTopOffset = 0;
-function createTab(url, callback, useBaseWindow) {
-	var createOneTab = function (newWin, tabId) {
+function autoCreateTab(url, cb, useBaseWindow) {
+	function createOneTab(newWin, tabId) {
 		var tabOption = { 'url': url };
 		if (newWin) {
 			tabOption['windowId'] = newWin.id;
@@ -82,16 +83,25 @@ function createTab(url, callback, useBaseWindow) {
 
 		if (tabId) {
 			chrome.tabs.get(tabId, function (tab) {
+				if(newWin) {
+					tab['win'] = newWin;
+					window.spiderSlaveTabInfos['wins'][newWin.id]['useTabs'][tab['id']] = tab;
+				}
 				//chrome://discards/ 
 				chrome.tabs.update(tab.id, { autoDiscardable: false }, function () {
-					callback && callback(tab,newWin);
+					cb && cb(tab);
 				});
 			});
 		} else {
 			chrome.tabs.create(tabOption, function (tab) {
+				if(newWin) {
+					tab['win'] = newWin;
+					window.spiderSlaveTabInfos['wins'][newWin.id]['useTabs'][tab['id']] = tab;
+				}
+
 				//chrome://discards/ 
 				chrome.tabs.update(tab.id, { autoDiscardable: false }, function () {
-					callback && callback(tab,newWin);
+					cb && cb(tab);
 				});
 			});
 		}
@@ -99,31 +109,69 @@ function createTab(url, callback, useBaseWindow) {
 
 	if (useBaseWindow) {
 		createOneTab();
-	} else {
-		windowLeftOffset += window.baseInfo['perWidth'];
-		if (windowLeftOffset + window.baseInfo['perWidth'] - 10 >= window.baseInfo['width']) {
-			windowLeftOffset = 0;
-			windowTopOffset += window.baseInfo['perHeight'];
-		}
+		return ;
+	}
 
-		console.log({ focused: true, state: 'normal', 'url': url, top: windowTopOffset, left: windowLeftOffset, height: window.baseInfo['perHeight'], width: window.baseInfo['perWidth'] })
+	windowLeftOffset += window.baseInfo['perWidth'];
+	if (windowLeftOffset + window.baseInfo['perWidth'] - 10 >= window.baseInfo['width']) {
+		windowLeftOffset = 0;
+		windowTopOffset += window.baseInfo['perHeight'];
+	}
 
+	if(getObjectLen(window.spiderSlaveTabInfos['wins']) < window.spiderSlaveWinCount) {
 		chrome.windows.create({ focused: true, state: 'normal', 'url': url, top: windowTopOffset, left: windowLeftOffset, height: window.baseInfo['perHeight'], width: window.baseInfo['perWidth'] }, function (newWin) {
-			console.log('newWin', newWin);
+			window.spiderSlaveTabInfos['wins'][newWin.id] = newWin;
+			window.spiderSlaveTabInfos['wins'][newWin.id]['useTabs'] = {};
 			createOneTab(newWin, newWin.tabs.length > 0 ? newWin.tabs[0]['id'] : 0);
 		});
+	}else{
+		for (var i in window.spiderSlaveTabInfos['wins']) {
+			if(getObjectLen(window.spiderSlaveTabInfos['wins'][i]['useTabs']) < window.spiderSlavePerWinTabCount) {
+				createOneTab(window.spiderSlaveTabInfos['wins'][i], 0);
+			}
+		}
 	}
+}
+
+function removeTabCb(tabId,IsCloseWin) {
+	if(window.spiderSlaveTabInfos['tabs'][tabId]) {
+		clearTimeout(window.setTimeout_checkIsDie[window.spiderSlaveTabInfos['tabs'][tabId].id]);
+		clearInterval(window.setInterval_getHtml[window.spiderSlaveTabInfos['tabs'][tabId].id]);
+		clearInterval(window.setInterval_waitToComplete[window.spiderSlaveTabInfos['tabs'][tabId].id]);
+		var winId = window.spiderSlaveTabInfos['tabs'][tabId]['win']['id'];
+		delete window.spiderSlaveTabInfos['wins'][winId]['useTabs'][tabId];
+		delete window.spiderSlaveTabInfos['tabs'][tabId];
+		if(IsCloseWin === true) {
+			delete window.spiderSlaveTabInfos['wins'][winId];
+		}
+	}
+
+	console.log('close tab!', tabId);
 }
 
 function workPlay() {
 	workPause();
 
-	chrome.tabs.onRemoved.addListener(function (tabId) {
-		clearTimeout(window.setTimeout_checkIsDie[window.spiderSlaveTabInfos['tabs'][tabId].id]);
-		clearInterval(window.setInterval_getHtml[window.spiderSlaveTabInfos['tabs'][tabId].id]);
-		clearInterval(window.setInterval_waitToComplete[window.spiderSlaveTabInfos['tabs'][tabId].id]);
-		delete window.spiderSlaveTabInfos['tabs'][tabId];
-		console.log('close tab!', tabId);
+	//close tab
+	chrome.tabs.onRemoved.addListener(removeTabCb);
+
+
+	//close win
+	chrome.windows.onRemoved.addListener(function (winId) {
+		if(window.spiderSlaveTabInfos['wins'][winId]) {
+			var tabCount = getObjectLen(window.spiderSlaveTabInfos['wins'][winId]['useTabs']);
+			var c = 0;
+			for(var i in window.spiderSlaveTabInfos['wins'][winId]['useTabs']) {
+				if(++c == tabCount) {
+					var closeWin = true;
+				}else{
+					var closeWin = false;
+				}
+				removeTabCb(window.spiderSlaveTabInfos['wins'][winId]['useTabs'][i],closeWin);
+			}
+		}
+
+		console.log('close win!', winId);
 	});
 
 	clearInterval(window.setInterval_getHtmlRun);
@@ -158,27 +206,6 @@ function pullActions() {
 	}
 }
 
-function getNextTab() {
-	var index = -1;//all is busy
-	var tabLen = 0;
-	for (var i in window.spiderSlaveTabInfos['tabs']) {
-		tabLen++;
-		if (window.spiderSlaveTabInfos['tabs'][i]['runStatus'] == 1) {
-			continue;
-		}
-
-		index = i;
-		break;
-	}
-
-	//need create tab
-	if (index == -1 && tabLen < window.spiderSlaveWinCount) {
-		return -2;
-	}
-
-	return index;
-}
-
 function getUrlInfo(types) {
 	var nowTimeStamp = new Date().getTime();
 	var needAgain = nowTimeStamp - 300000;
@@ -187,10 +214,6 @@ function getUrlInfo(types) {
 		if (window.spiderSlaveUrls[id]['type'] == 100) {
 			if ((!types || types.indexOf(window.spiderSlaveUrls[id]['type']) > -1)
 				&& (!window.spiderSlaveUrls[id]['runStartTime'] || window.spiderSlaveUrls[id]['runStartTime'] < needAgain)
-				// && (
-				// 	(!window.spiderSlaveUrls[id].param || !window.spiderSlaveUrls[id].param.lockTab || window.spiderSlaveUrls[id].param.lockTab != 1)
-				// 	 || window.spiderSlaveUrls[id]['runStartTime'] < needAgain
-				// 	)
 				) {
 				window.spiderSlaveUrls[id]['runStartTime'] = nowTimeStamp;
 				return id;
@@ -209,6 +232,153 @@ function getUrlInfo(types) {
 	}
 
 	return -1;
+}
+
+function getNextTab(urlId) {
+
+	var urlNowRunTabId = getLockTabId(urlId);
+
+	var needLock = (urlNowRunTabId !== false);
+
+	//all is busy
+	var index = -1;
+	var tabLen = 0;
+	for (var i in window.spiderSlaveTabInfos['tabs']) {
+		tabLen++;
+		if (window.spiderSlaveTabInfos['tabs'][i]['runStatus'] == 1) {
+			continue;
+		}
+
+		if(needLock && i != urlNowRunTabId) {
+			continue;
+		}
+
+		if(!needLock && window.lockTabFlagToTab[i]) {
+			continue;
+		}
+
+		index = i;
+		break;
+	}
+
+	console.log('getnexttab',urlId,index,needLock,urlNowRunTabId);
+	
+	//need create tab
+	if (index == -1 && (!needLock || urlNowRunTabId === 0) && tabLen < window.spiderSlaveWinCount*window.spiderSlavePerWinTabCount) {
+		//restore start time
+		if (window.spiderSlaveTabInfos['allTabLocked']) {
+			window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
+			return -2;
+		}
+
+		if(!window.spiderSlaveUrls[urlId] || [1, 201].indexOf(window.spiderSlaveUrls[urlId]['type']) == -1) {
+			//get one a,or get cookies url
+			urlId = getUrlInfo([1, 201]);
+		}
+
+		if (urlId == -1) {
+			pullActions();
+			return -2;
+		}
+		
+		//block 
+		if (urlId == -2) {
+			return -2;
+		}
+
+		window.spiderSlaveTabInfos['allTabLocked'] = true;
+		autoCreateTab(window.spiderSlaveUrls[urlId]['url'], function (tab) {
+			window.spiderSlaveTabInfos['tabs'][tab.id] = tab;
+			window.spiderSlaveTabInfos['tabs'][tab.id]['runStatus'] = 1;
+			window.spiderSlaveTabInfos['allTabLocked'] = false;
+
+			//record lock tab info
+			getLockTabId(urlId,tab.id)
+
+			dealOneAction(window.spiderSlaveTabInfos['tabs'][tab.id], window.spiderSlaveUrls[urlId], true);
+		});
+	}
+
+	return index;
+}
+
+function getLockTabId(urlId,tabId) {
+	if(window.spiderSlaveUrls[urlId] && window.spiderSlaveUrls[urlId]['param'] && window.spiderSlaveUrls[urlId]['param']['lockTab']) {
+		if(window.spiderSlaveUrls[urlId]['param']['lockTabFlag']) {
+			var lockTabFlag = window.spiderSlaveUrls[urlId]['param']['lockTabFlag'];
+		}else{
+			var res = window.spiderSlaveUrls[urlId]['url'].match(/^(http|https)\:\/\/[^\/$]+?(?=[\/|$])/g);
+			if(res[0]) {
+				var lockTabFlag = res[0];
+			}else{
+				var lockTabFlag = 'tempLockTabFlag';
+			}
+		}
+
+		if(window.lockTabFlagToTab[lockTabFlag]) {
+			var r = window.lockTabFlagToTab[lockTabFlag];
+		}else{
+			var r = 0;
+		}
+
+		if(tabId) {
+			window.lockTabFlagToTab[lockTabFlag] = tabId;
+			window.lockTabFlagToTab[tabId] = lockTabFlag;
+		}
+
+		return r;
+	}
+
+	return false;
+}
+
+function oneActionRun() {
+	var urlId = getUrlInfo();
+	var tabId = getNextTab(urlId);
+	//block
+	if (urlId == -2 || tabId == -2) {
+		return;
+	}
+
+
+	//get more actions
+	if (urlId == -1) {
+		pullActions();
+		return;
+	}
+
+
+	//now tab is runing 
+	if (tabId < 0 || window.spiderSlaveTabInfos['tabs'][tabId]['runStatus'] == 1) {
+		window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
+		return;
+	}
+
+	//mark this tab,that is runing
+	window.spiderSlaveTabInfos['tabs'][tabId]['runStatus'] = 1
+
+	//try agin after 3min
+	clearTimeout(window.setTimeout_checkIsDie[window.spiderSlaveTabInfos['tabs'][tabId].id]);
+	window.setTimeout_checkIsDie[window.spiderSlaveTabInfos['tabs'][tabId].id] = setTimeout(function () {
+		window.spiderSlaveTabInfos['tabs'][tabId]['runStatus'] = 0;
+		clearInterval(window.setInterval_getHtml[window.spiderSlaveTabInfos['tabs'][tabId].id]);
+		clearInterval(window.setInterval_waitToComplete[window.spiderSlaveTabInfos['tabs'][tabId].id]);
+	}, 180000);
+
+
+	if(window.spiderSlaveHumanBehavior) {
+		if (window.spiderSlaveUrls[urlId]['type'] == 103) {
+			chrome.windows.update(window.spiderSlaveTabInfos['tabs'][tabId]['win']['id'],{'focused':true,'state':'fullscreen'},function() {
+				window.spiderSlaveUrls[urlId]['spiderSlaveHumanBehaviorApi'] = window.spiderSlaveHumanBehaviorApi;
+				window.spiderSlaveUrls[urlId]['win'] = window.spiderSlaveTabInfos['tabs'][tabId]['win'];
+				dealOneAction(window.spiderSlaveTabInfos['tabs'][tabId], window.spiderSlaveUrls[urlId]);
+			})
+		}else{
+			dealOneAction(window.spiderSlaveTabInfos['tabs'][tabId], window.spiderSlaveUrls[urlId]);
+		}
+	}else{
+		dealOneAction(window.spiderSlaveTabInfos['tabs'][tabId], window.spiderSlaveUrls[urlId]);
+	}
 }
 
 
@@ -353,88 +523,6 @@ function dealOneAction(tab, info, needJump) {
 		});
 	}else{
 		actionDoneCb();
-	}
-}
-
-
-function oneActionRun() {
-	var urlId = getUrlInfo();
-	var tabId = getNextTab();
-
-	//wait 
-	if (urlId == -2) {
-		return;
-	}
-
-	//create one tab
-	if (tabId == -2) {
-		if (window.spiderSlaveTabInfos['locked']) {
-			window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
-			return;
-		}
-
-		if(window.spiderSlaveUrls[urlId]) {
-			window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
-		}
-		var urlId = getUrlInfo([1, 201]);//get one a,or get cookies url
-		if (urlId == -1) {
-			pullActions();
-			return;
-		}
-		
-		//wait 
-		if (urlId == -2) {
-			return;
-		}
-
-		window.spiderSlaveTabInfos['locked'] = true;
-		createTab(window.spiderSlaveUrls[urlId]['url'], function (tab,newWin) {
-			window.spiderSlaveTabInfos['tabs'][tab.id] = tab;
-			window.spiderSlaveTabInfos['tabs'][tab.id]['runStatus'] = 1;
-			window.spiderSlaveTabInfos['tabs'][tab.id]['win'] = newWin;
-			window.spiderSlaveTabInfos['locked'] = false;
-			dealOneAction(window.spiderSlaveTabInfos['tabs'][tab.id], window.spiderSlaveUrls[urlId], true);
-		});
-		return;
-	}
-
-	//get more actions
-	if (urlId == -1) {
-		pullActions();
-		return;
-	}
-
-
-	//now tab is runing 
-	if (tabId < 0 || window.spiderSlaveTabInfos['tabs'][tabId]['runStatus'] == 1) {
-		window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
-		return;
-	}
-
-	//mark this tab,that is runing
-	window.spiderSlaveTabInfos['tabs'][tabId]['runStatus'] = 1
-
-	//try agin after 3min
-	clearTimeout(window.setTimeout_checkIsDie[window.spiderSlaveTabInfos['tabs'][tabId].id]);
-	window.setTimeout_checkIsDie[window.spiderSlaveTabInfos['tabs'][tabId].id] = setTimeout(function () {
-		window.spiderSlaveTabInfos['tabs'][tabId]['runStatus'] = 0;
-		clearInterval(window.setInterval_getHtml[window.spiderSlaveTabInfos['tabs'][tabId].id]);
-		clearInterval(window.setInterval_waitToComplete[window.spiderSlaveTabInfos['tabs'][tabId].id]);
-	}, 180000);
-
-
-	if(window.spiderSlaveHumanBehavior) {
-		if (window.spiderSlaveUrls[urlId]['type'] == 103) {
-			chrome.windows.update(window.spiderSlaveTabInfos['tabs'][tabId]['win']['id'],{'focused':true,'state':'fullscreen'},function() {
-				window.spiderSlaveUrls[urlId]['spiderSlaveHumanBehaviorApi'] = window.spiderSlaveHumanBehaviorApi;
-				window.spiderSlaveUrls[urlId]['win'] = window.spiderSlaveTabInfos['tabs'][tabId]['win'];
-				dealOneAction(window.spiderSlaveTabInfos['tabs'][tabId], window.spiderSlaveUrls[urlId]);
-			})
-		}else{
-			dealOneAction(window.spiderSlaveTabInfos['tabs'][tabId], window.spiderSlaveUrls[urlId]);
-		}
-	}else{
-		dealOneAction(window.spiderSlaveTabInfos['tabs'][tabId], window.spiderSlaveUrls[urlId]);
 	}
 }
 
