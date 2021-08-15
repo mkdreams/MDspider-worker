@@ -206,7 +206,7 @@ function pullActions() {
 	}
 }
 
-function getUrlInfo(types) {
+function getUrlInfo(types,domain) {
 	var nowTimeStamp = new Date().getTime();
 	var needAgain = nowTimeStamp - 300000;
 	for (var id in window.spiderSlaveUrls) {
@@ -222,9 +222,15 @@ function getUrlInfo(types) {
 			}
 		}
 
+		if(domain) {
+			console.log(domain,window.spiderSlaveUrls[id],window.spiderSlaveUrls[id]['url'].indexOf(domain));
+		}
+
 		if (window.spiderSlaveUrls[id]
 			&& (!types || types.indexOf(window.spiderSlaveUrls[id]['type']) > -1)
 			&& (!window.spiderSlaveUrls[id]['runStartTime'] || window.spiderSlaveUrls[id]['runStartTime'] < needAgain)
+			&& (!domain || (window.spiderSlaveUrls[id]['param'] && window.spiderSlaveUrls[id]['param']['lockTab'] && window.spiderSlaveUrls[id]['param']['lockTabFlag'] && window.spiderSlaveUrls[id]['param']['lockTabFlag'].indexOf(domain) > -1) 
+				|| (window.spiderSlaveUrls[id]['param'] && window.spiderSlaveUrls[id]['param']['lockTab'] && window.spiderSlaveUrls[id]['url'].indexOf(domain) > -1))
 		) {
 			window.spiderSlaveUrls[id]['runStartTime'] = nowTimeStamp;
 			return id;
@@ -243,10 +249,16 @@ function getNextTab(urlId) {
 	//all is busy
 	var index = -1;
 	var tabLen = 0;
+
+	var canRunTabs = [];
 	for (var i in window.spiderSlaveTabInfos['tabs']) {
 		tabLen++;
 		if (window.spiderSlaveTabInfos['tabs'][i]['runStatus'] == 1) {
 			continue;
+		}
+
+		if(window.lockTabFlagToTab[i]) {
+			canRunTabs.push(i);
 		}
 
 		if(needLock && i != urlNowRunTabId) {
@@ -261,14 +273,15 @@ function getNextTab(urlId) {
 		break;
 	}
 
-	console.log('getnexttab',urlId,index,needLock,urlNowRunTabId);
 	
 	//need create tab
 	if (index == -1 && (!needLock || urlNowRunTabId === 0) && tabLen < window.spiderSlaveWinCount*window.spiderSlavePerWinTabCount) {
+		console.log('create tab',urlId,index);
+
 		//restore start time
 		if (window.spiderSlaveTabInfos['allTabLocked']) {
 			window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
-			return -2;
+			return [urlId,-2];
 		}
 
 		if(!window.spiderSlaveUrls[urlId] || [1, 201].indexOf(window.spiderSlaveUrls[urlId]['type']) == -1) {
@@ -278,12 +291,12 @@ function getNextTab(urlId) {
 
 		if (urlId == -1) {
 			pullActions();
-			return -2;
+			return [urlId,-2];
 		}
 		
 		//block 
 		if (urlId == -2) {
-			return -2;
+			return [urlId,-2];
 		}
 
 		window.spiderSlaveTabInfos['allTabLocked'] = true;
@@ -297,9 +310,31 @@ function getNextTab(urlId) {
 
 			dealOneAction(window.spiderSlaveTabInfos['tabs'][tab.id], window.spiderSlaveUrls[urlId], true);
 		});
+	}else if(index == -1 && canRunTabs.length > 0) {
+		//restore start time
+		if (window.spiderSlaveTabInfos['allTabLocked']) {
+			window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
+			return [urlId,-2];
+		}
+		
+		if(window.spiderSlaveUrls[urlId]) {
+			window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
+		}
+
+		urlId = getUrlInfo(undefined,window.lockTabFlagToTab[canRunTabs[0]]);
+
+		console.log('block tab run',urlId,canRunTabs[0],window.spiderSlaveUrls[urlId],window.lockTabFlagToTab[canRunTabs[0]]);
+
+		if (urlId == -1) {
+			return [urlId,-2];
+		}
+
+		return [urlId,canRunTabs[0]];
 	}
 
-	return index;
+	console.log('default run',urlId,index,window.spiderSlaveUrls[urlId],canRunTabs);
+
+	return [urlId,index];
 }
 
 function getLockTabId(urlId,tabId) {
@@ -334,7 +369,10 @@ function getLockTabId(urlId,tabId) {
 
 function oneActionRun() {
 	var urlId = getUrlInfo();
-	var tabId = getNextTab(urlId);
+	var runInfo = getNextTab(urlId);
+	urlId = runInfo[0];
+	var tabId = runInfo[1];
+
 	//block
 	if (urlId == -2 || tabId == -2) {
 		return;
@@ -347,12 +385,14 @@ function oneActionRun() {
 		return;
 	}
 
+	console.log('real run',window.spiderSlaveUrls[urlId],tabId);
 
 	//now tab is runing 
 	if (tabId < 0 || window.spiderSlaveTabInfos['tabs'][tabId]['runStatus'] == 1) {
 		window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
 		return;
 	}
+
 
 	//mark this tab,that is runing
 	window.spiderSlaveTabInfos['tabs'][tabId]['runStatus'] = 1

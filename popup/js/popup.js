@@ -316,16 +316,16 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 		},
 		{
 			"id": "random",
-			"url": "https://www.farseerbi.com/home/index/contact.html",
+			"url": "https://stackoverflow.com/tags",
 			"type": 1,
-			"param": {'lockTab':1},
+			"param": {'lockTab':0,'lockTabFlag':'https://stackoverflow.com'},
 			"code": 1
 		},
 		{
 			"id": "random",
-			"url": "https://stackoverflow.com/tags",
+			"url": "https://www.farseerbi.com/home/index/contact.html",
 			"type": 1,
-			"param": {'lockTab':0,'lockTabFlag':'https://stackoverflow.com'},
+			"param": {'lockTab':1},
 			"code": 1
 		},
 		{
