@@ -1,11 +1,14 @@
 window.spiderSlaveOn = true;
 window.spiderSlaveFlag = 'worker1';
-window.spiderSlaveApi = "http://test.blog.com/";
-window.spiderSlaveApiActionList = "http://test.blog.com/data/getLinksCache";
-window.spiderSlaveApiCb = "http://test.blog.com/data/recordLinkCacheIsDone";
+window.spiderSlaveApiActionList = "http://cwoods.online/blog/tool/requestdetails.html";
+window.spiderSlaveApiCb = "http://cwoods.online/blog/tool/requestdetails.html";
+
+var spiderSlaveApiInfo = window.spiderSlaveApiActionList.match(/^(http|https)\:\/\/[^\/$]+?(?=[\/|$])/g);
+window.spiderSlaveApi = spiderSlaveApiInfo[0];
+
 window.spiderSlaveGetUrlsDelay = 5000;
 window.spiderSlaveWinCount = 2;
-window.spiderSlavePerWinTabCount = 1;
+window.spiderSlavePerWinTabCount = 3;
 window.spiderSlaveLockTabTimeout = 180000;
 
 window.spiderProxyOn = false;

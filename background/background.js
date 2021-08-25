@@ -83,6 +83,11 @@ function autoCreateTab(url, cb, useBaseWindow) {
 
 		if (tabId) {
 			chrome.tabs.get(tabId, function (tab) {
+				if(tab === undefined) {
+					window.spiderSlaveTabInfos['allTabLocked'] = false;
+					return ;
+				}
+
 				if(newWin) {
 					tab['win'] = newWin;
 					window.spiderSlaveTabInfos['wins'][newWin.id]['useTabs'][tab['id']] = tab;
@@ -94,6 +99,11 @@ function autoCreateTab(url, cb, useBaseWindow) {
 			});
 		} else {
 			chrome.tabs.create(tabOption, function (tab) {
+				if(tab === undefined) {
+					window.spiderSlaveTabInfos['allTabLocked'] = false;
+					return ;
+				}
+
 				if(newWin) {
 					tab['win'] = newWin;
 					window.spiderSlaveTabInfos['wins'][newWin.id]['useTabs'][tab['id']] = tab;
@@ -133,16 +143,21 @@ function autoCreateTab(url, cb, useBaseWindow) {
 	}
 }
 
-function removeTabCb(tabId,IsCloseWin) {
+function removeTabCb(tabId) {
 	if(window.spiderSlaveTabInfos['tabs'][tabId]) {
 		clearTimeout(window.setTimeout_checkIsDie[window.spiderSlaveTabInfos['tabs'][tabId].id]);
 		clearInterval(window.setInterval_getHtml[window.spiderSlaveTabInfos['tabs'][tabId].id]);
 		clearInterval(window.setInterval_waitToComplete[window.spiderSlaveTabInfos['tabs'][tabId].id]);
 		var winId = window.spiderSlaveTabInfos['tabs'][tabId]['win']['id'];
-		delete window.spiderSlaveTabInfos['wins'][winId]['useTabs'][tabId];
-		delete window.spiderSlaveTabInfos['tabs'][tabId];
-		if(IsCloseWin === true) {
-			delete window.spiderSlaveTabInfos['wins'][winId];
+		if(window.spiderSlaveTabInfos['wins'][winId]) {
+			delete window.spiderSlaveTabInfos['wins'][winId]['useTabs'][tabId];
+		}
+		if(window.spiderSlaveTabInfos['tabs'][tabId]) {
+			delete window.spiderSlaveTabInfos['tabs'][tabId];
+		}
+		if(window.lockTabFlagToTab[tabId]) {
+			delete window.lockTabFlagToTab[window.lockTabFlagToTab[tabId]];
+			delete window.lockTabFlagToTab[tabId];
 		}
 	}
 
@@ -159,19 +174,13 @@ function workPlay() {
 	//close win
 	chrome.windows.onRemoved.addListener(function (winId) {
 		if(window.spiderSlaveTabInfos['wins'][winId]) {
-			var tabCount = getObjectLen(window.spiderSlaveTabInfos['wins'][winId]['useTabs']);
-			var c = 0;
 			for(var i in window.spiderSlaveTabInfos['wins'][winId]['useTabs']) {
-				if(++c == tabCount) {
-					var closeWin = true;
-				}else{
-					var closeWin = false;
-				}
-				removeTabCb(window.spiderSlaveTabInfos['wins'][winId]['useTabs'][i],closeWin);
+				removeTabCb(window.spiderSlaveTabInfos['wins'][winId]['useTabs'][i]['id']);
 			}
 		}
 
 		console.log('close win!', winId);
+		delete window.spiderSlaveTabInfos['wins'][winId];
 	});
 
 	clearInterval(window.setInterval_getHtmlRun);
@@ -423,10 +432,12 @@ function oneActionRun() {
 }
 
 
-function isDone(tab, info) {
+function isDone(tab, info, isError) {
 	window.spiderSlaveTabInfos['tabs'][tab.id]['runStatus'] = 0;
-	delete window.spiderSlaveUrls[info['id']];
-	clearTimeout(window.setTimeout_checkIsDie[tab.id]);
+	if(isError !== undefined) {
+		delete window.spiderSlaveUrls[info['id']];
+		clearTimeout(window.setTimeout_checkIsDie[tab.id]);
+	}
 }
 
 
@@ -475,7 +486,10 @@ function runActionComplete(tab,info,cb) {
 			chrome.tabs.get(tab.id, function (nowTab) {
 				comming = false;
 				
-				if (nowTab.status == 'complete') {
+				if(nowTab === undefined) {
+					clearInterval(window.setInterval_waitToComplete[tab.id]);
+					isDone(tab, info, true);
+				}else if (nowTab.status == 'complete') {
 					clearInterval(window.setInterval_waitToComplete[tab.id]);
 					resultIsOk(nowTab, info, function(nowTab, info, res) {
 						cb(nowTab,info);

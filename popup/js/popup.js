@@ -370,7 +370,6 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 		);
 	});
 
-	// $("select[name=debugType]").siblings("div.layui-form-select").find('dl dd[lay-value=1]').click();
 	form.on('submit(debugConfig)', function (data) {
 		chrome.storage.local.set(data.field, function () {
 			layer.msg('正在执行');
