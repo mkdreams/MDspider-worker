@@ -343,10 +343,11 @@ function getLockTabId(urlId,tabId) {
 			var lockTabFlag = window.spiderSlaveUrls[urlId]['param']['lockTabFlag'];
 		}else{
 			var res = window.spiderSlaveUrls[urlId]['url'].match(/^(http|https)\:\/\/[^\/$]+?(?=[\/|$])/g);
-			if(res[0]) {
+			if(res && res[0]) {
 				var lockTabFlag = res[0];
 			}else{
 				var lockTabFlag = 'tempLockTabFlag';
+				console.log('tempLockTabFlag',window.spiderSlaveUrls[urlId]);
 			}
 		}
 
