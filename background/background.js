@@ -231,10 +231,6 @@ function getUrlInfo(types,domain) {
 			}
 		}
 
-		if(domain) {
-			console.log(domain,window.spiderSlaveUrls[id],window.spiderSlaveUrls[id]['url'].indexOf(domain));
-		}
-
 		if (window.spiderSlaveUrls[id]
 			&& (!types || types.indexOf(window.spiderSlaveUrls[id]['type']) > -1)
 			&& (!window.spiderSlaveUrls[id]['runStartTime'] || window.spiderSlaveUrls[id]['runStartTime'] < needAgain)
@@ -332,16 +328,12 @@ function getNextTab(urlId) {
 
 		urlId = getUrlInfo(undefined,window.lockTabFlagToTab[canRunTabs[0]]);
 
-		console.log('block tab run',urlId,canRunTabs[0],window.spiderSlaveUrls[urlId],window.lockTabFlagToTab[canRunTabs[0]]);
-
 		if (urlId == -1) {
 			return [urlId,-2];
 		}
 
 		return [urlId,canRunTabs[0]];
 	}
-
-	console.log('default run',urlId,index,window.spiderSlaveUrls[urlId],canRunTabs);
 
 	return [urlId,index];
 }
@@ -356,7 +348,6 @@ function getLockTabId(urlId,tabId) {
 				var lockTabFlag = res[0];
 			}else{
 				var lockTabFlag = 'tempLockTabFlag';
-				console.log('tempLockTabFlag',window.spiderSlaveUrls[urlId]);
 			}
 		}
 
@@ -395,8 +386,6 @@ function oneActionRun() {
 		return;
 	}
 
-	console.log('real run',window.spiderSlaveUrls[urlId],tabId);
-
 	//now tab is runing 
 	if (tabId < 0 || window.spiderSlaveTabInfos['tabs'][tabId]['runStatus'] == 1) {
 		window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
@@ -434,7 +423,7 @@ function oneActionRun() {
 
 function isDone(tab, info, isError) {
 	window.spiderSlaveTabInfos['tabs'][tab.id]['runStatus'] = 0;
-	if(isError !== undefined) {
+	if(isError === undefined) {
 		delete window.spiderSlaveUrls[info['id']];
 		clearTimeout(window.setTimeout_checkIsDie[tab.id]);
 	}
@@ -463,10 +452,8 @@ function resultIsOk(tab, info, cb) {
 
 //try every 50 ms
 function getHml(tab, info) {
-	console.log('getHml',tab,info);
 	resultIsOk(tab, info, function(tab, info, res) {
 		if (res && res['html']) {
-			console.log('postHtml',tab,info);
 			sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': tab, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': res.html } });
 		}
 		isDone(tab, info);
@@ -474,6 +461,11 @@ function getHml(tab, info) {
 }
 
 function runActionComplete(tab,info,cb) {
+	if(info.param && info.param.delay) {
+		var delay = info.param.delay;
+	}else{
+		var delay = 50;
+	}
 	setTimeout(function () {
 		var comming = false;
 		clearInterval(window.setInterval_waitToComplete[tab.id]);
@@ -497,7 +489,7 @@ function runActionComplete(tab,info,cb) {
 				}
 			});
 		}, 50);
-	}, 50);
+	}, delay);
 };
 
 function runSub(tab, info, cb, index) {
@@ -512,7 +504,6 @@ function runSub(tab, info, cb, index) {
 		}else{
 			var subInfo = info.param.sub[index++];
 			//run action
-			console.log('sub',tab, index, subInfo);
 			sendMessageToTabs(tab, { 'actiontype': 2, 'info': subInfo},function() {
 				runActionComplete(tab, info, function(tab, info) {
 					runSub(tab, info, cb, index);
@@ -615,8 +606,6 @@ function debugRun(debugActions) {
 			window.spiderSlaveUrls[v['id']] = v;
 		}
 	});
-	// window.spiderSlaveUrls['debug'] = { "id": "debug", "url": url, "type": type, "code": "debug" };
-	// console.log(Object.keys(window.spiderSlaveUrls).length,window.spiderSlaveUrls);
 	workPlay();
 }
 
