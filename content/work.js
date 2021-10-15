@@ -113,7 +113,7 @@ chrome.runtime.onMessage.addListener(
 											window.spiderData[request.info.id] = base64;
 											window.actionComplete = true;
 										}.bind(this));
-									}if (this.readyState == 4) {
+									}else if (this.readyState == 4) {
 										textToBase64(this.status,function(base64){
 											window.spiderData[request.info.id] = base64;
 											window.actionComplete = true;

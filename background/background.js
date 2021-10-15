@@ -454,7 +454,7 @@ function resultIsOk(tab, info, cb) {
 function getHml(tab, info) {
 	resultIsOk(tab, info, function(tab, info, res) {
 		if (res && res['html']) {
-			sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': tab, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': res.html } });
+			sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': res.html } });
 		}
 		isDone(tab, info);
 	}.bind(this));
