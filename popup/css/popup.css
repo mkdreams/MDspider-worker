@@ -1,0 +1,41 @@
+.pointer{
+	cursor: pointer;
+}
+
+.layui-form-label {
+	width: 100px;
+	float: left;
+}
+
+.layui-input-block {
+	margin-left: 0;
+	margin-right: 8px;
+	width: calc(100% - 190px);
+	float: left;
+}
+
+.layui-form-item .layui-icon {
+	float: left;
+	font-size: 20px; 
+	color: #FF5722;
+	line-height: 36px;
+	cursor: pointer;
+}
+
+.test .layui-form-label {
+	width: 55px;
+	padding: 9px 15px 9px 0;
+}
+
+.test .layui-input-block {
+	margin-left: 50px;
+}
+
+.test .debug-actions{
+	width: 260px;
+}
+
+.test .layui-textarea {
+	min-height: 270px;
+	word-break: break-all;
+}
