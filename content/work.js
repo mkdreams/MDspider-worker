@@ -129,11 +129,15 @@ chrome.runtime.onMessage.addListener(
 								if(request.info.param && request.info.param.delay) {
 									setTimeout(() => {
 										pageRunJs(request.info.url);
-										window.actionComplete = true;
+										setTimeout(() => {
+											window.actionComplete = true;
+										},200);
 									}, request.info.param.delay);
 								}else{
 									pageRunJs(request.info.url);
-									window.actionComplete = true;
+									setTimeout(() => {
+										window.actionComplete = true;
+									},200);
 								}
 								break;
 							case 102:
