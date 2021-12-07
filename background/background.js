@@ -555,7 +555,7 @@ function dealOneAction(tab, info, needJump) {
 					runSub(tab, info, function(tab, info) {
 						getHml(tab, info);
 					})
-				}, 50);
+				}, 100);
 				break;
 		}
 	}
