@@ -537,6 +537,7 @@ function dealOneAction(tab, info, needJump) {
 	function actionDoneCb() {
 		switch(info.type) {
 			case 1:
+			case 101:
 				runActionComplete(tab, info, function(tab, info) {
 					runSub(tab, info, function(tab, info) {
 						getHml(tab, info);
