@@ -488,7 +488,7 @@ function runActionComplete(tab,info,cb) {
 					});
 				}
 			});
-		}, 50);
+		}, 100);
 	}, delay);
 };
 
