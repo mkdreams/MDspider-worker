@@ -220,7 +220,7 @@ function getUrlInfo(types,domain) {
 	var needAgain = nowTimeStamp - 300000;
 	for (var id in window.spiderSlaveUrls) {
 		//js 阻塞式运行
-		if (window.spiderSlaveUrls[id]['type'] == 100) {
+		if (window.spiderSlaveUrls[id]['type'] == 100 && !window.spiderSlaveUrls[id]['param']['lockTab']) {
 			if ((!types || types.indexOf(window.spiderSlaveUrls[id]['type']) > -1)
 				&& (!window.spiderSlaveUrls[id]['runStartTime'] || window.spiderSlaveUrls[id]['runStartTime'] < needAgain)
 				) {
