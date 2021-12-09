@@ -454,9 +454,22 @@ function resultIsOk(tab, info, cb) {
 function getHml(tab, info) {
 	resultIsOk(tab, info, function(tab, info, res) {
 		if (res && res['html']) {
-			sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': res.html } });
+			//sub save data
+			if(!info['results']) {
+				info['results'] = [];
+			}
+
+			info['results'].push(res['html']);
 		}
-		isDone(tab, info);
+
+		if(info['cb']) {
+			info['cb'](info);
+		}
+		
+		if(info['isEnd'] === true) {
+			sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': info['results'][0] } });
+			isDone(tab, info);
+		}
 	}.bind(this));
 }
 
@@ -500,17 +513,33 @@ function runSub(tab, info, cb, index) {
 	if(info.param && info.param.sub) {
 		var subCount = info.param.sub.length;
 		if(subCount === index) {
+			info['isEnd'] = true;
 			cb(tab, info);
 		}else{
 			var subInfo = info.param.sub[index++];
 			//run action
 			sendMessageToTabs(tab, { 'actiontype': 2, 'info': subInfo},function() {
 				runActionComplete(tab, info, function(tab, info) {
-					runSub(tab, info, cb, index);
+					if(subInfo.param && subInfo.param.save) {
+						subInfo['isEnd'] = false;
+						if(info['results']) {
+							subInfo['results'] = info['results'];
+						}
+						subInfo['cb'] = function(subInfo) {
+							info['results'] = subInfo['results'];
+							runSub(tab, info, cb, index);
+						}.bind(this);
+
+						getHml(tab, subInfo);
+					}else{
+						runSub(tab, info, cb, index);
+					}
+
 				});
 			});
 		}
 	}else{
+		info['isEnd'] = true;
 		cb(tab, info);
 	}
 };
