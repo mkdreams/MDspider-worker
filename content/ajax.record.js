@@ -25,7 +25,8 @@ var ajaxRecordString = 'var OrgOpen = window.XMLHttpRequest.prototype.open;'
                     'url: url,'+
                     'responseText: self.responseText'+
                 '};'+
-                'window.ajaxRecordListRestult[url] = self.responseText;'+
+                'if(!window.ajaxRecordListRestult[url]) window.ajaxRecordListRestult[url] = [];'+
+                'window.ajaxRecordListRestult[url].push(self.responseText);'+
                 'console.log(response);'+
             '}'+
         '}, false);'+
