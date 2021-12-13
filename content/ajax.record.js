@@ -1,22 +1,9 @@
 var ajaxRecordString = 'var OrgOpen = window.XMLHttpRequest.prototype.open;'
     +'var OrgSend = window.XMLHttpRequest.prototype.send;'
-    +'window.ajaxRecordList = [];'
     +'window.ajaxRecordListRestult = [];'
-    +'function whiteListFilter(url) {'+
-    	'return true;'+
-    	'for(var i=0;i < window.ajaxRecordList.length;i++) {'+
-			'if(url.indexOf(window.ajaxRecordList[i]) > -1) {'+
-				'return true;'+
-			'}'+
-    	'}'+
-	'}'
     +'window.XMLHttpRequest.prototype.open = function() {'+
 		'var method = arguments[0];'+
 		'var url = arguments[1];'+
-		'if(whiteListFilter(url) !== true) {'+
-			'OrgOpen.apply(this,[].slice.call(arguments));'+
-            'return;'+
-        '}'+
         'this.addEventListener("readystatechange", function(event) {'+
             'if(this.readyState == 4){'+
                 'var self = this;'+
@@ -25,7 +12,11 @@ var ajaxRecordString = 'var OrgOpen = window.XMLHttpRequest.prototype.open;'
                     'url: url,'+
                     'responseText: self.responseText'+
                 '};'+
-                'if(!window.ajaxRecordListRestult[url]) window.ajaxRecordListRestult[url] = [];'+
+                'if(window.ajaxRecordListRestult.length > 50) return;'+
+                'if(window.ajaxRecordListRestult[url] && window.ajaxRecordListRestult[url].length > 50) return;'+
+                'if(!window.ajaxRecordListRestult[url]) {'+
+                    'window.ajaxRecordListRestult[url] = [];'+
+                '}'+
                 'window.ajaxRecordListRestult[url].push(self.responseText);'+
                 'console.log(response);'+
             '}'+
