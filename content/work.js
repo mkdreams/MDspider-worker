@@ -1,6 +1,6 @@
 window.actionComplete = true;
 
-function pageRunJs(jsStr) {
+function pageRunJs(jsStr,cb) {
 	var tempDom = $("<div id=\"MDspider-help-dom-result\" style=\"display:none;\" onclick=\"eval('\
 	"+
 	('function blobToBase64(blob, callback) {\
@@ -22,6 +22,18 @@ function pageRunJs(jsStr) {
 	.replace(/"/g,'&quot;')+"')\"></div>");
 	$("body").append(tempDom);
 	tempDom.click();
+
+	if(cb) {
+		setTimeout(function() {
+			var tempDom = $('#MDspider-help-dom-result');
+			if(tempDom.length > 0) {
+				cb(tempDom.html());
+				tempDom[0].remove();
+			}else{
+				cb();
+			}
+		},200);
+	}
 }
 
 chrome.runtime.onMessage.addListener(
@@ -163,6 +175,13 @@ chrome.runtime.onMessage.addListener(
 									window.setInterval_scroll = setInterval(function() {
 										window.scroll(0,offset);
 										offset += clientHeight;
+										pageRunJs(request.info.url,function(base64) {
+											if(base64 === 'dHJ1ZQ==') {
+												window.actionComplete = true;
+												clearInterval(window.setInterval_scroll);
+											}
+										});
+
 										if(offset > maxHeight || count++ > scrollMaxCount) {
 											window.actionComplete = true;
 											clearInterval(window.setInterval_scroll);
