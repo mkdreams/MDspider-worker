@@ -467,8 +467,20 @@ function getHml(tab, info) {
 		}
 		
 		if(info['isEnd'] === true) {
-			sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': info['results'][0] } });
-			isDone(tab, info);
+			var maxLen = 2621440;
+			if(info['results'][0].length > maxLen) {
+				var totalLen = info['results'][0].length;
+				for(var i = 0;i <= totalLen;i = i+maxLen) {
+					sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 4, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'],'betch':i, 'sResponse': info['results'][0].slice(i,i+maxLen) } });
+				}
+				sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 4, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'] } },function() {
+					isDone(tab, info);
+				});
+			}else{
+				sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': info['results'][0] } },function() {
+					isDone(tab, info);
+				});
+			}
 		}
 	}.bind(this));
 }
