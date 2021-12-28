@@ -1,5 +1,5 @@
-var ajaxRecordString = 'var OrgOpen = window.XMLHttpRequest.prototype.open;'
-    +'var OrgSend = window.XMLHttpRequest.prototype.send;'
+var ajaxRecordString = 'window.XMLHttpRequest.prototype.OrgOpen = window.XMLHttpRequest.prototype.open;'
+    +'window.XMLHttpRequest.prototype.OrgSend = window.XMLHttpRequest.prototype.send;'
     +'window.ajaxRecordListRestult = [];'
     +'window.XMLHttpRequest.prototype.open = function() {'+
 		'var method = arguments[0];'+
@@ -21,10 +21,10 @@ var ajaxRecordString = 'var OrgOpen = window.XMLHttpRequest.prototype.open;'
                 'console.log(response);'+
             '}'+
         '}, false);'+
-        'OrgOpen.apply(this,[].slice.call(arguments));'+
+        'this.OrgOpen(...arguments);'+
     '};'+
     'window.XMLHttpRequest.prototype.send = function() {'+
-        'OrgSend.call(this,[].slice.call(arguments));'+
+        'this.OrgSend(...arguments);'+
     '};'+
     'console.log("ajax records loaded!");';
 
