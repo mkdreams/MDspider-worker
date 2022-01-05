@@ -674,6 +674,10 @@ function backgroundAction201(tab, info) {
 }
 
 function actionRecords(message, title) {
+	if(window.notify_tips === false) {
+		return ;
+	}
+	
 	if (title == undefined) {
 		var title = '当前事件';
 	}

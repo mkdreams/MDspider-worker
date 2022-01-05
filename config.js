@@ -1,3 +1,4 @@
+window.notify_tips = false;
 window.spiderSlaveOn = true;
 window.spiderSlaveFlag = 'worker1';
 window.spiderSlaveApiActionList = "http://cwoods.online/blog/tool/requestdetails.html";
