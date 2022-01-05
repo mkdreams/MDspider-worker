@@ -1,4 +1,4 @@
-function restoreData(bg, form) {
+function restoreData(bg, form, $) {
 	form.val('workerStatus', {
 		"spiderSlaveOn": bg.spiderSlaveOn
 	});
@@ -25,6 +25,8 @@ function restoreData(bg, form) {
 		"debugType": bg.debugType
 		, "debugActions": bg.debugActions
 	});
+
+	$('#workCreateFlag').html(bg.workCreateFlag);
 }
 
 layui.use(['element', 'layer', 'form', 'jquery'], function () {
@@ -32,8 +34,7 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 	var $ = layui.$;
 
 	var bg = chrome.extension.getBackgroundPage();
-	restoreData(bg, form);
-
+	restoreData(bg, form, $);
 
 	$('#worker_status').click(function () {
 		if ($(this).hasClass('layui-icon-pause')) {//now play
@@ -55,6 +56,13 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 			}
 		});
 
+	});
+
+	$("input[name=spiderSlaveApi]").on("input",function(e){
+		form.val('workerConfig', {
+			"spiderSlaveApiActionList": bg.spiderSlaveApiActionList.replace(bg.spiderSlaveApi,$(this).val())
+			, "spiderSlaveApiCb": bg.spiderSlaveApiCb.replace(bg.spiderSlaveApi,$(this).val())
+		});
 	});
 
 	$('#spiderSlaveApiTips').click(function () {

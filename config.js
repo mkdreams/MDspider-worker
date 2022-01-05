@@ -89,6 +89,11 @@ function loadConfig(cb) {
 		for(var key in result) {
 			window[key] = result[key];
 		}
+
+		if(!window['workCreateFlag']) {
+			window['workCreateFlag'] = Number(Math.random().toString().substr(3,5) + Date.now()).toString(36);
+			chrome.storage.local.set({'workCreateFlag':window['workCreateFlag']});
+		}
 		
 		cb && cb();
 	});
