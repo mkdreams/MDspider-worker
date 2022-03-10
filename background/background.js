@@ -491,6 +491,8 @@ function runActionComplete(tab,info,cb) {
 	}else{
 		var delay = 50;
 	}
+
+	var commingTime = new Date().getTime();
 	setTimeout(function () {
 		var comming = false;
 		clearInterval(window.setInterval_waitToComplete[tab.id]);
@@ -506,7 +508,8 @@ function runActionComplete(tab,info,cb) {
 				if(nowTab === undefined) {
 					clearInterval(window.setInterval_waitToComplete[tab.id]);
 					isDone(tab, info, true);
-				}else if (nowTab.status == 'complete') {
+				//max run time: 30 s
+				}else if (nowTab.status == 'complete' || (new Date().getTime() - commingTime > 30000)) {
 					clearInterval(window.setInterval_waitToComplete[tab.id]);
 					resultIsOk(nowTab, info, function(nowTab, info, res) {
 						cb(nowTab,info);
