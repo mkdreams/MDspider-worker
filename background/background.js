@@ -2,6 +2,7 @@ window.spiderSlaveTabInfos = { 'locked': false, 'api': {}, 'tabs': {}, 'wins':{}
 window.spiderSlaveUrls = {};
 window.setInterval_getHtml = {};
 window.setInterval_waitToComplete = {};
+window.tabLocked = {};
 window.setTimeout_checkIsDie = {};
 window.tabUrlIds = {};
 window.baseWindow = undefined;
@@ -422,29 +423,67 @@ function oneActionRun() {
 
 
 function isDone(tab, info, isError) {
-	window.spiderSlaveTabInfos['tabs'][tab.id]['runStatus'] = 0;
 	if(isError === undefined) {
+		window.spiderSlaveTabInfos['tabs'][tab.id]['runStatus'] = 0;
 		delete window.spiderSlaveUrls[info['id']];
 		clearTimeout(window.setTimeout_checkIsDie[tab.id]);
+	}else{
+		if(window.spiderSlaveUrls[info['id']]['runCount'] === undefined) {
+			window.spiderSlaveUrls[info['id']]['runCount'] = 0;
+		}
+		window.spiderSlaveUrls[info['id']]['runCount']++;
+
+		//try 5 times
+		if(window.spiderSlaveUrls[info['id']]['runCount'] > 5) {
+			sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': 'ZmFsc2U=' } },function() {
+				var clearInfo = function(tab,info) {
+					removeTabCb(tab.id);
+					
+					delete window.spiderSlaveUrls[info['id']];
+					clearTimeout(window.setTimeout_checkIsDie[tab.id]);
+				}
+
+				chrome.tabs.query({windowId:tab.windowId},function(tabs) {
+					if(tabs && tabs.length > 1) {
+						chrome.tabs.remove(tab.id,function() {
+							clearInfo(tab,info);
+						});
+					}else{
+						clearInfo(tab,info);
+					}
+				})
+			});
+		}else{
+			window.spiderSlaveTabInfos['tabs'][tab.id]['runStatus'] = 0;
+			window.spiderSlaveUrls[info['id']]['runStartTime'] = undefined;
+		}
+
 	}
 }
 
 
 function resultIsOk(tab, info, cb) {
-	var comming = false;
+	window.tabLocked[tab.id] = false;
 	clearInterval(window.setInterval_getHtml[tab.id]);
 	window.setInterval_getHtml[tab.id] = setInterval(function () {
-		if(comming === true) {
+		if(window.tabLocked[tab.id] === true) {
 			return ;
 		}
-		comming = true;
+		window.tabLocked[tab.id] = true;
 
 		sendMessageToTabs(tab, { 'actiontype': 1, 'info': info }, function (res) {
-			comming = false;
+			window.tabLocked[tab.id] = false;
+			console.log('res111',res);
 			if (res && res['actionComplete'] == true) {
 				clearInterval(window.setInterval_getHtml[tab.id]);
 
 				cb(tab, info, res);
+			}
+
+			if(res === undefined) {
+				clearInterval(window.setInterval_getHtml[tab.id]);
+
+				isDone(tab, info, true);
 			}
 		}.bind(this));
 	}.bind(this), 50);
@@ -494,16 +533,16 @@ function runActionComplete(tab,info,cb) {
 
 	var commingTime = new Date().getTime();
 	setTimeout(function () {
-		var comming = false;
+		window.tabLocked[tab.id] = false;
 		clearInterval(window.setInterval_waitToComplete[tab.id]);
 		window.setInterval_waitToComplete[tab.id] = setInterval(function () {
-			if(comming === true) {
+			if(window.tabLocked[tab.id] === true) {
 				return ;
 			}
-			comming = true;
+			window.tabLocked[tab.id] = true;
 
 			chrome.tabs.get(tab.id, function (nowTab) {
-				comming = false;
+				window.tabLocked[tab.id] = false;
 				
 				if(nowTab === undefined) {
 					clearInterval(window.setInterval_waitToComplete[tab.id]);

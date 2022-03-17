@@ -378,6 +378,44 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 		}
 	];
 
+	var actionsTpl_505 = [
+		{
+			"id": "random",
+			"url": "https://lihkg.com1",
+			"type": 1,
+			"param": {
+				'scrollMaxCount':1,
+				"lockTab": 1,
+				"lockTabFlag": "siteId-43",
+				"delay": 3000
+			},
+			"code": 1
+		},
+		{
+			"id": "random",
+			"url": "https://lihkg.com",
+			"type": 1,
+			"param": {
+				'scrollMaxCount':1,
+				"lockTab": 1,
+				"lockTabFlag": "siteId-43",
+				"delay": 3000
+			},
+			"code": 1
+		},
+		{
+			"id": "random",
+			"url": "https://lihkg.com/api_v2/thread/2715272/page/1?order=reply_time",
+			"type": 101,
+			"param": {
+				"lockTab": 1,
+				"lockTabFlag": "siteId-43",
+				"delay": 10000
+			},
+			"code": "ed886b4525c3b66bcb546676ed4f3752"
+		}
+	];
+
 	form.on('select(debugType)', function(data){
 		if(eval('typeof(actionsTpl_'+data.value+') != "undefined"')) {
 			var actions = eval('actionsTpl_'+data.value);
