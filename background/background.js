@@ -330,6 +330,7 @@ function getNextTab(urlId) {
 		urlId = getUrlInfo(undefined,window.lockTabFlagToTab[canRunTabs[0]]);
 
 		if (urlId == -1) {
+			pullActions();
 			return [urlId,-2];
 		}
 
