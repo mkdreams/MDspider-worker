@@ -1,4 +1,4 @@
-window.spiderSlaveTabInfos = { 'locked': false, 'api': {}, 'tabs': {}, 'wins':{} };
+window.spiderSlaveTabInfos = { 'locked': false, 'fixedWins':{}, 'api': {}, 'tabs': {}, 'wins':{} };
 window.spiderSlaveUrls = {};
 window.spiderSlaveDeletedUrls = {};
 window.setInterval_getHtml = {};
@@ -145,10 +145,6 @@ function autoCreateTab(url, cb, useBaseWindow, urlInfo) {
 	}
 
 	if(urlInfo && urlInfo['param'] && urlInfo['param']['fixed'] == 1) {
-		if(window.spiderSlaveTabInfos['fixedWins'] === undefined) {
-			window.spiderSlaveTabInfos['fixedWins'] = {};
-		}
-
 		chrome.windows.create({ focused: true, state: 'normal', 'url': url, top: 150, left: getObjectLen(window.spiderSlaveTabInfos['fixedWins'])*300, height: window.baseInfo['height']-150, width: 600 }, function (newWin) {
 			window.spiderSlaveTabInfos['fixedWins'][newWin.id] = newWin;
 			createOneTab(newWin, newWin.tabs.length > 0 ? newWin.tabs[0]['id'] : 0);
