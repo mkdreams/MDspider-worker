@@ -19,8 +19,8 @@ window.spiderProxyFetchApi = "http.tiqu.alibabaapi.com/getip3?num=2&type=2&pack=
 window.spiderSlaveHumanBehavior = true;
 window.spiderSlaveHumanBehaviorApi = 'http://127.0.0.1:8686';
 
-// window.spiderSlaveHealthCheckApi = undefined;
-window.spiderSlaveHealthCheckApi = 'http://127.0.0.1:8686/check';
+window.spiderSlaveHealthCheckApi = undefined;
+// window.spiderSlaveHealthCheckApi = 'http://127.0.0.1:8686/check';
 
 window.baseInfo = {};
 initDeviceInfo(function(){
