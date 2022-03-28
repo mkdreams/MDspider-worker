@@ -19,20 +19,8 @@ window.spiderProxyFetchApi = "http.tiqu.alibabaapi.com/getip3?num=2&type=2&pack=
 window.spiderSlaveHumanBehavior = true;
 window.spiderSlaveHumanBehaviorApi = 'http://127.0.0.1:8686';
 
-//var config = {
-//  mode: "pac_script",
-//  pacScript: {
-////	  data: "function FindProxyForURL(url, host) {\n" +
-////			  "  alert(url);\n" +
-////	          "  if (host == 'www.baidu.com')\n" +
-////	          "    return 'PROXY 127.0.0.1:1080';\n" +
-////	          "  return 'DIRECT';\n" +
-////	          "}"
-//	  url:"http://127.0.0.1/think5.1-layui-blog/pac.php"
-//	  ,mandatory: true
-//  }
-//};
-
+// window.spiderSlaveHealthCheckApi = undefined;
+window.spiderSlaveHealthCheckApi = 'http://127.0.0.1:8686/check';
 
 window.baseInfo = {};
 initDeviceInfo(function(){
@@ -69,7 +57,7 @@ function initDeviceInfo(cb) {
 				}else{
 					window.baseInfo['yCount'] = Math.ceil((window.spiderSlaveWinCount+1)/window.baseInfo['xCount']);
 				}
-				window.baseInfo['perHeight'] = parseInt(window.baseInfo['height']/window.baseInfo['yCount']);
+				window.baseInfo['perHeight'] = parseInt(window.baseInfo['height']/window.baseInfo['yCount'])-150;
 				window.baseInfo['perWidth'] = parseInt(window.baseInfo['width']/window.baseInfo['xCount']);
 				
 				if(window.spiderSlaveOn === false) {
