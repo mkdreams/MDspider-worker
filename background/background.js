@@ -9,6 +9,16 @@ window.baseWindow = undefined;
 window.setInterval_getLinksCache_lastRunTime = new Date().getTime();
 window.lockTabFlagToTab = {};
 
+//health check
+if(window.spiderSlaveHealthCheckApi !== undefined) {
+	setInterval(function () {
+		$.ajax({
+			url: window.spiderSlaveHealthCheckApi,
+			cache: false,
+		});
+	}, 300000);
+}
+
 function enabledProxy() {
 	disabledProxy();
 	$.ajax({
@@ -75,7 +85,7 @@ function disabledProxy() {
 
 var windowLeftOffset = 0;
 var windowTopOffset = 0;
-function autoCreateTab(url, cb, useBaseWindow) {
+function autoCreateTab(url, cb, useBaseWindow, urlInfo) {
 	function createOneTab(newWin, tabId) {
 		var tabOption = { 'url': url };
 		if (newWin) {
@@ -91,7 +101,9 @@ function autoCreateTab(url, cb, useBaseWindow) {
 
 				if(newWin) {
 					tab['win'] = newWin;
-					window.spiderSlaveTabInfos['wins'][newWin.id]['useTabs'][tab['id']] = tab;
+					if(window.spiderSlaveTabInfos['wins'] && window.spiderSlaveTabInfos['wins'][newWin.id]) {
+						window.spiderSlaveTabInfos['wins'][newWin.id]['useTabs'][tab['id']] = tab;
+					}
 				}
 				//chrome://discards/ 
 				chrome.tabs.update(tab.id, { autoDiscardable: false }, function () {
@@ -107,7 +119,9 @@ function autoCreateTab(url, cb, useBaseWindow) {
 
 				if(newWin) {
 					tab['win'] = newWin;
-					window.spiderSlaveTabInfos['wins'][newWin.id]['useTabs'][tab['id']] = tab;
+					if(window.spiderSlaveTabInfos['wins'] && window.spiderSlaveTabInfos['wins'][newWin.id]) {
+						window.spiderSlaveTabInfos['wins'][newWin.id]['useTabs'][tab['id']] = tab;
+					}
 				}
 
 				//chrome://discards/ 
@@ -127,6 +141,18 @@ function autoCreateTab(url, cb, useBaseWindow) {
 	if (windowLeftOffset + window.baseInfo['perWidth'] - 10 >= window.baseInfo['width']) {
 		windowLeftOffset = 0;
 		windowTopOffset += window.baseInfo['perHeight'];
+	}
+
+	if(urlInfo && urlInfo['param'] && urlInfo['param']['fixed'] == 1) {
+		if(window.spiderSlaveTabInfos['fixedWins'] === undefined) {
+			window.spiderSlaveTabInfos['fixedWins'] = {};
+		}
+
+		chrome.windows.create({ focused: true, state: 'normal', 'url': url, top: 150, left: getObjectLen(window.spiderSlaveTabInfos['fixedWins'])*300, height: window.baseInfo['height']-150, width: 600 }, function (newWin) {
+			window.spiderSlaveTabInfos['fixedWins'][newWin.id] = newWin;
+			createOneTab(newWin, newWin.tabs.length > 0 ? newWin.tabs[0]['id'] : 0);
+		});
+		return ;
 	}
 
 	if(getObjectLen(window.spiderSlaveTabInfos['wins']) < window.spiderSlaveWinCount) {
@@ -178,6 +204,10 @@ function workPlay() {
 			for(var i in window.spiderSlaveTabInfos['wins'][winId]['useTabs']) {
 				removeTabCb(window.spiderSlaveTabInfos['wins'][winId]['useTabs'][i]['id']);
 			}
+		}
+
+		if(window.spiderSlaveTabInfos['fixedWins'][winId]) {
+			delete window.spiderSlaveTabInfos['fixedWins'][winId];
 		}
 
 		console.log('close win!', winId);
@@ -315,7 +345,7 @@ function getNextTab(urlId) {
 			getLockTabId(urlId,tab.id)
 
 			dealOneAction(window.spiderSlaveTabInfos['tabs'][tab.id], window.spiderSlaveUrls[urlId], true);
-		});
+		},false,window.spiderSlaveUrls[urlId]);
 	}else if(index == -1 && canRunTabs.length > 0) {
 		//restore start time
 		if (window.spiderSlaveTabInfos['allTabLocked']) {

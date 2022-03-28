@@ -1,15 +1,15 @@
 window.notify_tips = false;
 window.spiderSlaveOn = true;
-window.spiderSlaveFlag = 'worker1';
-window.spiderSlaveApiActionList = "http://cwoods.online/blog/tool/requestdetails.html";
-window.spiderSlaveApiCb = "http://cwoods.online/blog/tool/requestdetails.html";
+window.spiderSlaveFlag = 'slave2';
+window.spiderSlaveApiActionList = "http://corp.admin.com/ir/NewsBase/getLinksCache";
+window.spiderSlaveApiCb = "http://corp.admin.com/ir/NewsBase/recordLinkCacheIsDone";
 
 var spiderSlaveApiInfo = window.spiderSlaveApiActionList.match(/^(http|https)\:\/\/[^\/$]+?(?=[\/|$])/g);
 window.spiderSlaveApi = spiderSlaveApiInfo[0];
 
 window.spiderSlaveGetUrlsDelay = 5000;
-window.spiderSlaveWinCount = 2;
-window.spiderSlavePerWinTabCount = 3;
+window.spiderSlaveWinCount = 1;
+window.spiderSlavePerWinTabCount = 5;
 window.spiderSlaveLockTabTimeout = 180000;
 
 window.spiderProxyOn = false;

@@ -190,6 +190,7 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 				,'clientHeight':400
 				,'delay':3000
 				,'lockTab':1
+				,'fixed':1
 				,sub:[
 					{
 						"id": "2",
@@ -229,6 +230,7 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 				'scrollMaxCount':3
 				,'clientHeight':400
 				,'delay':3000
+				,'fixed':1
 				,sub:[
 					{
 						"id": "6",
@@ -291,7 +293,7 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 			"id": "random",
 			"url": "https://www.farseerbi.com/home/index/homepage.html",
 			"type": 1,
-			"param": {'lockTab':1},
+			"param": {'lockTab':1,'fixed':1},
 			"code": 1
 		},
 		{
