@@ -26,6 +26,10 @@ var ajaxRecordString = 'window.XMLHttpRequest.prototype.OrgOpen = window.XMLHttp
     'window.XMLHttpRequest.prototype.send = function() {'+
         'this.OrgSend(...arguments);'+
     '};'+
+    'Object.defineProperty(document, "visibilityState", {'+
+        'configurable: true,'+
+        'get: function() { return "visible"; }'+
+    '});'+
     'console.log("ajax records loaded!");';
 
 pageRunJs(ajaxRecordString);
