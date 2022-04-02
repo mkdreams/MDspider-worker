@@ -1,5 +1,6 @@
-window.spiderSlaveTabInfos = { 'locked': false, 'api': {}, 'tabs': {}, 'wins':{} };
+window.spiderSlaveTabInfos = { 'locked': false, 'fixedWins':{}, 'api': {}, 'tabs': {}, 'wins':{} };
 window.spiderSlaveUrls = {};
+window.spiderSlaveDeletedUrls = {};
 window.setInterval_getHtml = {};
 window.setInterval_waitToComplete = {};
 window.tabLocked = {};
@@ -144,10 +145,6 @@ function autoCreateTab(url, cb, useBaseWindow, urlInfo) {
 	}
 
 	if(urlInfo && urlInfo['param'] && urlInfo['param']['fixed'] == 1) {
-		if(window.spiderSlaveTabInfos['fixedWins'] === undefined) {
-			window.spiderSlaveTabInfos['fixedWins'] = {};
-		}
-
 		chrome.windows.create({ focused: true, state: 'normal', 'url': url, top: 150, left: getObjectLen(window.spiderSlaveTabInfos['fixedWins'])*300, height: window.baseInfo['height']-150, width: 600 }, function (newWin) {
 			window.spiderSlaveTabInfos['fixedWins'][newWin.id] = newWin;
 			createOneTab(newWin, newWin.tabs.length > 0 ? newWin.tabs[0]['id'] : 0);
@@ -456,6 +453,7 @@ function oneActionRun() {
 function isDone(tab, info, isError) {
 	if(isError === undefined) {
 		window.spiderSlaveTabInfos['tabs'][tab.id]['runStatus'] = 0;
+		window.spiderSlaveDeletedUrls[info['id']] = new Date().getTime();
 		delete window.spiderSlaveUrls[info['id']];
 		clearTimeout(window.setTimeout_checkIsDie[tab.id]);
 	}else{
@@ -469,7 +467,7 @@ function isDone(tab, info, isError) {
 			sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': 'ZmFsc2U=' } },function() {
 				var clearInfo = function(tab,info) {
 					removeTabCb(tab.id);
-					
+					window.spiderSlaveDeletedUrls[info['id']] = new Date().getTime();
 					delete window.spiderSlaveUrls[info['id']];
 					clearTimeout(window.setTimeout_checkIsDie[tab.id]);
 				}
@@ -705,10 +703,18 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
 				break;
 			}
 			req.data.data.forEach(function (v) {
-				if (!window.spiderSlaveUrls[v['id']]) {
+				if (!window.spiderSlaveUrls[v['id']] && !window.spiderSlaveDeletedUrls[v['id']]) {
 					window.spiderSlaveUrls[v['id']] = v;
 				}
 			});
+
+			//clean deleted urls,keep 20 min
+			var compareTime = new Date().getTime() - 1200000;
+			for(var id in window.spiderSlaveDeletedUrls) {
+				if(window.spiderSlaveDeletedUrls[id] < compareTime) {
+					delete window.spiderSlaveDeletedUrls[id];
+				}
+			}
 			break;
 		default:
 			break;
