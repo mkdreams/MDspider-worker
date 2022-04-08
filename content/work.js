@@ -52,40 +52,11 @@ chrome.runtime.onMessage.addListener(
 						url: request.url,
 						data: request.data,
 						success: function(data){
-							if(request.admintype === 1) {
-								chrome.runtime.sendMessage({'type':2,'tab':request.tab,'data':data});
-							}
 						},
 					});
 					break;
 				case 3://console log from background
 					sendResponse('content: got it!');
-					break;
-				case 4://stack
-					if(request.data['sResponse'] === undefined) {
-						request.data['sResponse'] = window.spiderStackData[request.data['id']];
-						delete window.spiderStackData[request.data['id']];
-
-						$.ajax({
-							type: 'POST',
-							url: request.url,
-							data: request.data,
-							success: function(data){
-								if(request.admintype === 1) {
-									chrome.runtime.sendMessage({'type':2,'tab':request.tab,'data':data});
-								}
-							},
-						});
-					}else{
-						if(window.spiderStackData === undefined) {
-							window.spiderStackData = {};
-						}
-	
-						if(window.spiderStackData[request.data['id']] === undefined) {
-							window.spiderStackData[request.data['id']] = '';
-						}
-						window.spiderStackData[request.data['id']] += request.data['sResponse'];
-					}
 					break;
 				default:
 					break;

