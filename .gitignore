@@ -2,3 +2,5 @@
 .buildpath
 .project
 .settings
+bug.n/data/data/*
+bug.n/data/log.txt
