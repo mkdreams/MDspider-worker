@@ -1,0 +1,1 @@
+.\bugn.exe .\data
