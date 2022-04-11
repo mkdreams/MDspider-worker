@@ -1,1 +1,1 @@
-.\bugn.exe .\data
+start /b .\bugn.exe .\data
