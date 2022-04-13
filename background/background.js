@@ -470,7 +470,7 @@ function isDone(tab, info, isError) {
 
 		//try 5 times
 		if(window.spiderSlaveUrls[info['id']]['runCount'] > 5) {
-			sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': 'ZmFsc2U=','sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function() {
+			ajaxPost(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': 'ZmFsc2U=','sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function() {
 				var clearInfo = function(tab,info) {
 					removeTabCb(tab.id);
 					window.spiderSlaveDeletedUrls[info['id']] = new Date().getTime();
@@ -689,7 +689,7 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
 		//send html to api tab
 		case 3:
 			if (window.tabUrlIds[tab.id]) {
-				sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': tab, 'url': window.spiderSlaveApiCb, 'data': { 'id': window.tabUrlIds[tab.id], 'sResponse': req.html } });
+				ajaxPost(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': tab, 'url': window.spiderSlaveApiCb, 'data': { 'id': window.tabUrlIds[tab.id], 'sResponse': req.html } });
 				window.tabUrlIds[tab.id] = undefined;
 			}
 			break;
@@ -716,7 +716,7 @@ function debugRunReset(debugActions) {
 
 //background console.log to api tab
 function backgroundConsole(pre, obj) {
-	sendMessageToTabs(window.spiderSlaveTabInfos['api'], { 'admintype': 3, 'obj': [pre, obj] });
+	console.log(pre, obj);
 }
 
 function backgroundAction201(tab, info) {
