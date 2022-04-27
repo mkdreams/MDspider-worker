@@ -227,7 +227,7 @@ function pullActions() {
 	var timestamp = new Date().getTime();
 	if(timestamp - window.setInterval_getLinksCache_lastRunTime > window.spiderSlaveGetUrlsDelay) {
 		window.setInterval_getLinksCache_lastRunTime = timestamp;
-		ajaxPost(window.spiderSlaveTabInfos['api'], { 'admintype': 1, 'url': window.spiderSlaveApiActionList, 'data': { 'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function(data) {
+		ajaxPost({ 'admintype': 1, 'url': window.spiderSlaveApiActionList, 'data': { 'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function(data) {
 			if (!(data.data instanceof Array)) {
 				return;
 			}
@@ -470,7 +470,7 @@ function isDone(tab, info, isError) {
 
 		//try 5 times
 		if(window.spiderSlaveUrls[info['id']]['runCount'] > 5) {
-			ajaxPost(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': 'ZmFsc2U=','sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function() {
+			ajaxPost({ 'admintype': 2, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': 'ZmFsc2U=','sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function() {
 				var clearInfo = function(tab,info) {
 					removeTabCb(tab.id);
 					window.spiderSlaveDeletedUrls[info['id']] = new Date().getTime();
@@ -541,7 +541,7 @@ function getHml(tab, info) {
 		}
 		
 		if(info['isEnd'] === true) {
-			ajaxPost(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': info['results'][0],'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function() {
+			ajaxPost({ 'admintype': 2, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': info['results'][0],'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function() {
 				isDone(tab, info);
 			},function() {
 				isDone(tab, info, true);
@@ -689,7 +689,7 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
 		//send html to api tab
 		case 3:
 			if (window.tabUrlIds[tab.id]) {
-				ajaxPost(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': tab, 'url': window.spiderSlaveApiCb, 'data': { 'id': window.tabUrlIds[tab.id], 'sResponse': req.html } });
+				ajaxPost({ 'admintype': 2, 'tab': tab, 'url': window.spiderSlaveApiCb, 'data': { 'id': window.tabUrlIds[tab.id], 'sResponse': req.html } });
 				window.tabUrlIds[tab.id] = undefined;
 			}
 			break;
@@ -722,7 +722,7 @@ function backgroundConsole(pre, obj) {
 function backgroundAction201(tab, info) {
 	chrome.cookies.getAll({'url':info.url},function(cookies) {
 		textToBase64(JSON.stringify(cookies),function(base64){
-			ajaxPost(window.spiderSlaveTabInfos['api'], { 'admintype': 2, 'tab': tab, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': base64 } },function() {
+			ajaxPost({ 'admintype': 2, 'tab': tab, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': base64 } },function() {
 				isDone(tab, info);
 			},function() {
 				isDone(tab, info,true);
@@ -731,12 +731,18 @@ function backgroundAction201(tab, info) {
 	});
 }
 
-function ajaxPost(tab,request,cb,errorcb) {
+function ajaxPost(request,cb,errorcb) {
 	$.ajax({
 		type: 'POST',
 		url: request.url,
 		data: request.data,
 		success: function(data){
+			if(typeof(data) == 'string') {
+				actionRecords(request.url +' :'+data.substr(0,50), 'BACKEND AJAX', 'POST DATA');
+			}else{
+				actionRecords(request.url +' :'+JSON.stringify(data).substr(0,50), 'BACKEND AJAX', 'POST DATA');
+			}
+
 			if(cb !== undefined) {
 				cb(data);
 			}
@@ -749,22 +755,22 @@ function ajaxPost(tab,request,cb,errorcb) {
 	});
 }
 
-function actionRecords(message, title) {
-	if(window.notify_tips === false) {
-		return ;
-	}
-	
-	if (title == undefined) {
-		var title = '当前事件';
+function actionRecords(message, title, type) {
+	if(window.MDspiderLogs === undefined) {
+		window.MDspiderLogs = {};
 	}
 
-	chrome.notifications.clear('notify_tips', function () {
-		chrome.notifications.create(
-			'notify_tips', // notifyId
-			{ "type": "basic", "iconUrl": "popup/images/colin.png", "title": title, "message": message },
-			function (notifyId) {
+	if(type === undefined) {
+		type = 'ACTIONS LOG';
+	}
 
-			}
-		);
-	});
+	if(window.MDspiderLogs[type] === undefined) {
+		window.MDspiderLogs[type] = [];
+	}
+
+	if(window.MDspiderLogs[type].length > 50) {
+		window.MDspiderLogs[type].shift();
+	}
+
+	window.MDspiderLogs[type].push({title:title,message:message,time:new Date()})
 }

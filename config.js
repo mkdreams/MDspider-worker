@@ -25,14 +25,11 @@ window.spiderSlaveHealthCheckApi = undefined;
 window.baseInfo = {};
 initDeviceInfo(function(){
 	//init and create api tab
-	autoCreateTab(window.spiderSlaveApi,function(tab) {
-		window.spiderSlaveTabInfos['api'] = tab;
-		if(window.spiderSlaveOn === true) {
-			setTimeout(function() {
-				workPlay();
-			},2000);
-		}
-	},true);
+	if(window.spiderSlaveOn === true) {
+		setTimeout(function() {
+			workPlay();
+		},2000);
+	}
 });
 
 function initDeviceInfo(cb) {
