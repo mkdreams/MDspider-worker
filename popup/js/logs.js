@@ -6,8 +6,6 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 	var bg = chrome.extension.getBackgroundPage();
 
 	element.on('tab(logs)', function(){
-		var id = this.getAttribute('lay-id');
-		// $('#tab-content-'+this.getAttribute('lay-id'))
 		var html = '';
 		if(bg.MDspiderLogs && bg.MDspiderLogs['POST DATA']) {
 			bg.MDspiderLogs['POST DATA'].forEach(v => {
