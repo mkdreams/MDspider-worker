@@ -227,25 +227,65 @@ function pullActions() {
 	var timestamp = new Date().getTime();
 	if(timestamp - window.setInterval_getLinksCache_lastRunTime > window.spiderSlaveGetUrlsDelay) {
 		window.setInterval_getLinksCache_lastRunTime = timestamp;
-		ajaxPost({ 'admintype': 1, 'url': window.spiderSlaveApiActionList, 'data': { 'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function(data) {
-			if (!(data.data instanceof Array)) {
-				return;
+		//websocket
+		console.log(window.spiderSlaveApiActionList.indexOf("ws"));
+		if(window.spiderSlaveApiActionList.indexOf("ws") === 0) {
+			if(window.pullactionsws === undefined) {
+				window.pullactionsws = new WebSocket(window.spiderSlaveApiActionList);
+				window.pullactionsws.onopen = function(evt) {
+					console.log('ws',"Connection open ...",window.spiderSlaveApiActionList);
+					window.pullactionsws.send(JSON.stringify({'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag}));
+				};
+				window.pullactionsws.onmessage = function(evt) {
+					console.log('ws',"Received Message: " + evt.data);
+					console.log(evt)
+					datas = evt.data.split("\r\n\r\n");
+					datas.forEach(function (str) {
+						v = JSON.parse(str)
+						if(v['id'] == undefined) {
+							v['id'] = Number(Math.random().toString().substr(3,5) + Date.now()).toString(36);
+						}
+						console.log(v);
+						if (!window.spiderSlaveUrls[v['id']] && !window.spiderSlaveDeletedUrls[v['id']]) {
+							window.spiderSlaveUrls[v['id']] = v;
+						}
+					});
+		
+					//clean deleted urls,keep 20 min
+					var compareTime = new Date().getTime() - 1200000;
+					for(var id in window.spiderSlaveDeletedUrls) {
+						if(window.spiderSlaveDeletedUrls[id] < compareTime) {
+							delete window.spiderSlaveDeletedUrls[id];
+						}
+					}
+					console.log(datas)
+				};
+				window.pullactionsws.onclose = function(evt) {
+					console.log('ws',"Connection closed.");
+					window.pullactionsws = undefined;
+				};
 			}
-
-			data.data.forEach(function (v) {
-				if (!window.spiderSlaveUrls[v['id']] && !window.spiderSlaveDeletedUrls[v['id']]) {
-					window.spiderSlaveUrls[v['id']] = v;
+		}else{
+			ajaxPost({ 'admintype': 1, 'url': window.spiderSlaveApiActionList, 'data': { 'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function(data) {
+				if (!(data.data instanceof Array)) {
+					return;
+				}
+	
+				data.data.forEach(function (v) {
+					if (!window.spiderSlaveUrls[v['id']] && !window.spiderSlaveDeletedUrls[v['id']]) {
+						window.spiderSlaveUrls[v['id']] = v;
+					}
+				});
+	
+				//clean deleted urls,keep 20 min
+				var compareTime = new Date().getTime() - 1200000;
+				for(var id in window.spiderSlaveDeletedUrls) {
+					if(window.spiderSlaveDeletedUrls[id] < compareTime) {
+						delete window.spiderSlaveDeletedUrls[id];
+					}
 				}
 			});
-
-			//clean deleted urls,keep 20 min
-			var compareTime = new Date().getTime() - 1200000;
-			for(var id in window.spiderSlaveDeletedUrls) {
-				if(window.spiderSlaveDeletedUrls[id] < compareTime) {
-					delete window.spiderSlaveDeletedUrls[id];
-				}
-			}
-		});
+		}
 	}
 }
 
@@ -693,6 +733,27 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
 				window.tabUrlIds[tab.id] = undefined;
 			}
 			break;
+		//2xx pop - 
+		case 201:
+			switch (req.data) {
+				case 'workPause':
+					sendResponse(workPause());
+					break;
+				case 'workPlay':
+					sendResponse(workPlay());
+					break;
+				case 'loadConfig':
+					sendResponse(loadConfig());
+					break;
+				case 'debugRun':
+					sendResponse(debugRun(req.pagrams));
+					break;
+				case 'debugRunReset':
+					sendResponse(debugRunReset(req.pagrams));
+					break;
+			}
+			
+			break;
 		default:
 			break;
 	}
@@ -732,27 +793,65 @@ function backgroundAction201(tab, info) {
 }
 
 function ajaxPost(request,cb,errorcb) {
-	$.ajax({
-		type: 'POST',
-		url: request.url,
-		data: request.data,
-		success: function(data){
-			if(typeof(data) == 'string') {
-				actionRecords(request.url +' :'+data.substr(0,50), 'BACKEND AJAX', 'POST DATA');
-			}else{
-				actionRecords(request.url +' :'+JSON.stringify(data).substr(0,50), 'BACKEND AJAX', 'POST DATA');
-			}
-
-			if(cb !== undefined) {
-				cb(data);
-			}
+	fetch(request.url, {
+		method: 'POST',
+		headers: {
+			"Content-Type": "application/x-www-form-urlencoded",
 		},
-		error: function (xhr, textStatus, errorThrown) {
-			if(errorcb !== undefined) {
-				errorcb();
-			}
+		body: new URLSearchParams(request.data).toString(),
+	})
+	.then(response => {
+		return response.text();
+	})
+	.then(data => {
+		try {
+			data = JSON.parse(data); // Try to parse the response as JSON
+		} catch(err) {
+			// data = data;
+		}
+
+		if(typeof(data) == 'string') {
+			actionRecords(request.url +' :'+data.substr(0,50), 'BACKEND AJAX', 'POST DATA');
+		}else{
+			actionRecords(request.url +' :'+JSON.stringify(data).substr(0,50), 'BACKEND AJAX', 'POST DATA');
+		}
+
+		console.log('success',data)
+
+		if(cb !== undefined) {
+			cb(data);
+		}
+	})
+	.catch((error) => {
+		console.log('error',error)
+		if(errorcb !== undefined) {
+			errorcb();
 		}
 	});
+
+	// $.ajax({
+	// 	type: 'POST',
+	// 	url: request.url,
+	// 	data: request.data,
+	// 	success: function(data){
+	// 		if(typeof(data) == 'string') {
+	// 			actionRecords(request.url +' :'+data.substr(0,50), 'BACKEND AJAX', 'POST DATA');
+	// 		}else{
+	// 			actionRecords(request.url +' :'+JSON.stringify(data).substr(0,50), 'BACKEND AJAX', 'POST DATA');
+	// 		}
+
+	// 		console.log(data)
+
+	// 		if(cb !== undefined) {
+	// 			cb(data);
+	// 		}
+	// 	},
+	// 	error: function (xhr, textStatus, errorThrown) {
+	// 		if(errorcb !== undefined) {
+	// 			errorcb();
+	// 		}
+	// 	}
+	// });
 }
 
 function actionRecords(message, title, type) {

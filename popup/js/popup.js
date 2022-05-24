@@ -33,26 +33,47 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 	var form = layui.form;
 	var $ = layui.$;
 
-	var bg = chrome.extension.getBackgroundPage();
-	restoreData(bg, form, $);
+	// chrome.runtime.sendMessage({type: 201,data:'return window.spiderSlaveOn;'}, function(response) {
+	// 	//some code
+	// });
+
+	var bg = {};
+	chrome.storage.local.get(null, function(result) {
+		for(var key in result) {
+			bg[key] = result[key];
+		}
+
+		console.log('bg',bg);
+		restoreData(bg, form, $);
+	});
 
 	$('#worker_status').click(function () {
 		if ($(this).hasClass('layui-icon-pause')) {//now play
 			$(this).removeClass('layui-icon-pause').addClass('layui-icon-play');
-			bg.workPause();
+			chrome.runtime.sendMessage({type: 201,data:'workPause'}, function(response) {
+				//some code
+			});
 		} else {//now pause
 			$(this).removeClass('layui-icon-play').addClass('layui-icon-pause');
-			bg.workPlay();
+			chrome.runtime.sendMessage({type: 201,data:'workPlay'}, function(response) {
+				//some code
+			});
 		}
 	});
 
 	form.on('switch(spiderSlaveOn)', function (data) {
-		chrome.storage.local.set({ 'spiderSlaveOn': data.elem.checked }, function () {
-			bg.loadConfig();
+		chrome.storage.local.set({'spiderSlaveOn': data.elem.checked }, function () {
+			chrome.runtime.sendMessage({type: 201,data:'loadConfig'}, function(response) {
+				//some code
+			});
 			if (data.elem.checked) {
-				bg.workPlay();
+				chrome.runtime.sendMessage({type: 201,data:'workPlay'}, function(response) {
+					//some code
+				});
 			} else {
-				bg.workPause();
+				chrome.runtime.sendMessage({type: 201,data:'workPause'}, function(response) {
+					//some code
+				});
 			}
 		});
 
@@ -118,7 +139,9 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 			layer.msg('储存成功');
 		});
 
-		bg.loadConfig();
+		chrome.runtime.sendMessage({type: 201,data:'loadConfig'}, function(response) {
+			//some code
+		});
 		return false;
 	});
 
@@ -128,7 +151,9 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 			layer.msg('储存成功');
 		});
 
-		bg.loadConfig();
+		chrome.runtime.sendMessage({type: 201,data:'loadConfig'}, function(response) {
+			//some code
+		});
 		return false;
 	});
 
@@ -447,10 +472,14 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 	form.on('submit(debugConfig)', function (data) {
 		chrome.storage.local.set(data.field, function () {
 			layer.msg('正在执行');
-			bg.loadConfig();
+			chrome.runtime.sendMessage({type: 201,data:'loadConfig'}, function(response) {
+				//some code
+			});
 
 			console.log(data.field['debugActions']);
-			bg.debugRun(JSON.parse(data.field['debugActions']));
+			chrome.runtime.sendMessage({type: 201,data:'debugRun','pagrams':JSON.parse(data.field['debugActions'])}, function(response) {
+				//some code
+			});
 		});
 		return false;
 	});
@@ -458,9 +487,13 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 	form.on('submit(debugConfigReset)', function (data) {
 		chrome.storage.local.set(data.field, function () {
 			layer.msg('已重置');
-			bg.loadConfig();
+			chrome.runtime.sendMessage({type: 201,data:'loadConfig'}, function(response) {
+				//some code
+			});
 
-			bg.debugRunReset(JSON.parse(data.field['debugActions']));
+			chrome.runtime.sendMessage({type: 201,data:'debugRunReset','pagrams':JSON.parse(data.field['debugActions'])}, function(response) {
+				//some code
+			});
 		});
 		return false;
 	});

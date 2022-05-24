@@ -1,29 +1,28 @@
 {
-	"manifest_version": 2,
+	"manifest_version": 3,
 	"version": "1.0.0.0",
 	"name": "MDspider",
 	"short_name": "MDS",
 	"description": "Tool for data extraction from websites",
-	"permissions": ["<all_urls>", "tabs", "notifications", "system.display","system.memory", "storage", "unlimitedStorage", "downloads", "webNavigation", "cookies", "proxy"],
+	"permissions": ["background","tabs", "notifications", "system.display","system.memory", "storage", "unlimitedStorage", "downloads", "webNavigation", "cookies", "proxy"],
+	"host_permissions": [
+		"*://*.example.org/"
+	],
 	"icons": {
 		"16": "popup/images/colin.png"
 	},
-	"browser_action": {
+	"action": {
 		"default_icon": {
 			"16": "popup/images/colin.png"
 		},
 		"default_title": "MDspider",
 		"default_popup": "popup/popup.html"
 	},
-	"content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
+	"content_security_policy": {
+		"extension_pages":"script-src 'self'; object-src 'self';"
+	},
 	"background":{
-		"scripts":[
-			"common/jquery-2.0.3.js",
-	    	"common/function.js",
-	    	"background/background.js",
-	    	"config.js",
-	    	"background/run_time_api.js"
-    	]
+		"service_worker":"bg-loader.js"
 	},
 	"content_scripts": [
 		{
