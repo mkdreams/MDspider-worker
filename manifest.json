@@ -20,6 +20,7 @@
 		"scripts":[
 			"common/jquery-2.0.3.js",
 	    	"common/function.js",
+	    	"background/extension_action.js",
 	    	"background/background.js",
 	    	"config.js",
 	    	"background/run_time_api.js"
@@ -32,6 +33,7 @@
 				"common/jquery-2.0.3.js",
 			    "common/function.js",
 				"content/js.cookie.min.js",
+				"content/html2canvas.min.js",
 			    "content/work.js"
 			],
 			"all_frames": false,

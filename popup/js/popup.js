@@ -147,6 +147,34 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 		}
 	];
 
+	var actionsTpl_201 = [
+		{
+			"id": "debug",
+			"url": "https://www.farseerbi.com/home/index/homepage.html",
+			"type": 1,
+			"param": {
+				'delay':1000
+				,'lockTab':1
+				,'save':0
+				,sub:[
+					{
+						"id": "2",
+						"url": "https://www.farseerbi.com/home/index/homepage.html",
+						"action": "getCookies",
+						"type": 200,
+						"param": {
+							'delay':2000,
+							'save':1,
+							'lockTab':1
+						},
+						"code": 1
+					}
+				]
+			},
+			"code": 1,
+		}
+	];
+
 	var actionsTpl_1 = [
 		{
 			"id": "debug",
@@ -165,17 +193,222 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 		}
 	];
 
+	var fbName = 'cc103';
 	var actionsTpl_103 = [
 		{
 			"id": "1",
-			"url": "https://www.farseerbi.com/home/member/login.html",
+			"url": "https://www.facebook.com/r.php?locale=zh_CN",
 			"type": 1,
+			"param": {
+				'delay':3000
+				,'lockTab':1
+				,sub:[
+					{
+						"id": "2",
+						"url": "$('input[name=lastname]')[0]",
+						"type": 103,
+						"param": {
+							'delay':3000
+							,'method':"input"
+							,'text':"ni"
+							,'lockTab':1
+						},
+						"code": 1
+					},
+					{
+						"id": "3",
+						"url": "$('input[name=firstname]')[0]",
+						"type": 103,
+						"param": {
+							'delay':3000
+							,'method':"input"
+							,'text':"ga"
+							,'lockTab':1
+						},
+						"code": 1
+					},
+					{
+						"id": "3",
+						"url": "$('input[name=reg_email__]')[0]",
+						"type": 103,
+						"param": {
+							'delay':3000
+							,'method':"input"
+							,'text':"http://127.0.0.1:81/api/PostfixApi/newemail?name="+fbName
+							,'lockTab':1
+						},
+						"code": 1
+					},
+					{
+						"id": "3",
+						"url": "$('input[name=reg_email_confirmation__]')[0]",
+						"type": 103,
+						"param": {
+							'delay':3000
+							,'method':"input"
+							,'text':fbName+"@igpartner.com"
+							,'lockTab':1
+						},
+						"code": 1
+					},
+					{
+						"id": "3",
+						"url": "$('input[name=reg_passwd__]')[0]",
+						"type": 103,
+						"param": {
+							'delay':3000
+							,'method':"input"
+							,'text':"Ccl1234"
+							,'lockTab':1
+						},
+						"code": 1
+					},
+					{
+						"id": "4",
+						"url": "$('input[name=lastname]')[0]",
+						"type": 103,
+						"param": {
+							'delay':3000
+							,'method':"click"
+							,'lockTab':1
+						},
+						"code": 1
+					},
+					{
+						"id": "4",
+						"url": "$('input[name=sex]')[0]",
+						"type": 103,
+						"param": {
+							'delay':3000
+							,'method':"click"
+							,'lockTab':1
+						},
+						"code": 1
+					},
+					{
+						"id": "4",
+						"url": "$('select[name=birthday_year]')[0]",
+						"type": 103,
+						"param": {
+							'delay':3000
+							,'method':"select"
+							,'index':22
+							,'lockTab':1
+						},
+						"code": 1
+					},
+					{
+						"id": "4",
+						"url": "$('select[name=birthday_year]')[0]",
+						"type": 103,
+						"param": {
+							'delay':3000
+							,'method':"click"
+							,'lockTab':1
+						},
+						"code": 1
+					},
+					{
+						"id": "4",
+						"url": "$('button[name=websubmit]')[0]",
+						"type": 103,
+						"param": {
+							'delay':3000
+							,'method':"click"
+							,'lockTab':1
+						},
+						"code": 1
+					},
+					{
+						"id": "3",
+						"url": "$('input[name=code]')[0]",
+						"type": 103,
+						"param": {
+							'delay':15000
+							,'predelay':20000
+							,'method':"input"
+							,'text':"http://127.0.0.1:81/api/PostfixApi/getFacebookCode?email="+fbName+"@igpartner.com"
+							,'lockTab':1
+						},
+						"code": 1
+					},
+					{
+						"id": "3",
+						"url": "$('button[name=confirm]')[0]",
+						"type": 103,
+						"param": {
+							'delay':3000
+							,'method':"click"
+							,'lockTab':1
+						},
+						"code": 1
+					},
+					{
+						"id": "3",
+						"url": "$('a[role=button]')[0]",
+						"type": 103,
+						"param": {
+							'delay':3000
+							,'method':"click"
+							,'lockTab':1
+						},
+						"code": 1
+					},
+				]
+			},
 			"code": 1
 		},
+	];
+
+	var actionsTpl_104 = [
 		{
-			"id": "2",
-			"url": "https://www.farseerbi.com/home/member/mi.html",
-			"type": 103,
+			"id": "1",
+			"url": "https://www.97caijing.com/article/119515",
+			"type": 1,
+			"param": {
+				'delay':3000
+				,'lockTab':1
+				,'musave':1
+				,sub:[
+					{
+						"id": "2",
+						"url": "$('.stock-block-box')",
+						"type": 104,
+						"param": {
+							'delay':3000
+							,'lockTab':1
+							,'save':1
+						},
+						"code": 1
+					}
+				]
+			},
+			"code": 1
+		},
+	];
+
+	var actionsTpl_105 = [
+		{
+			"id": "1",
+			"url": "https://www.google.com/sorry/index?continue=https://www.google.com/&q=EgQIFQsFGNyZkJYGIhDAT5GDa6MdBKEqxECUHPxlMgFyShNTT1JSWV9NRVJJU19NRVNTQUdF",
+			"type": 1,
+			"param": {
+				'delay':3000
+				,'lockTab':1
+				,sub:[
+					{
+						"id": "2",
+						"url": "document.getElementById('recaptcha-anchor')",
+						"type": 103,
+						"param": {
+							'delay':3000
+							,'method':"click"
+							,'lockTab':1
+						},
+						"code": 1
+					}
+				]
+			},
 			"code": 1
 		},
 	];
@@ -419,10 +652,19 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 	];
 
 	form.on('select(debugType)', function(data){
-		if(eval('typeof(actionsTpl_'+data.value+') != "undefined"')) {
-			var actions = eval('actionsTpl_'+data.value);
+		loadTestActions(data.value);
+	});
+
+	$('#debugrefreshactions').click(function() {
+		loadTestActions($('select[lay-filter=debugType]').val());
+		return false;
+	});
+
+	function loadTestActions(value){
+		if(eval('typeof(actionsTpl_'+value+') != "undefined"')) {
+			var actions = eval('actionsTpl_'+value);
 		}else{
-			actionsTpl_default[0]['type'] = parseInt(data.value);
+			actionsTpl_default[0]['type'] = parseInt(value);
 			var actions = actionsTpl_default;
 		}
 
@@ -442,7 +684,7 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 				'debugActions':JSON.stringify(actionsTplF,null,4).replace('"--data--"',["[\r"+actionsString+"\r    ]"])
 			}
 		);
-	});
+	}
 
 	form.on('submit(debugConfig)', function (data) {
 		chrome.storage.local.set(data.field, function () {

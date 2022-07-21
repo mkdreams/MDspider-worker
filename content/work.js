@@ -107,7 +107,14 @@ chrome.runtime.onMessage.addListener(
 					window.spiderData = {};//clean data before run action
 
 					if(request.info.url) {
-						//1:a,2:js,4:css,8:image,16:others,100:runjs
+						//1:a,
+						// 2:js,
+						// 4:css,
+						// 8:image,
+						// 16:others,
+						// 100:runjs
+						// 103:human action
+						// 104:html screenshot
 						switch(request.info.type) {
 							case 2:
 							case 4:
@@ -199,28 +206,144 @@ chrome.runtime.onMessage.addListener(
 								}
 								break;
 							case 103:
-								//todo 
+								//click
+								//input
 								window.actionComplete = false;
-								var linkNodes = document.querySelectorAll("a");
-								for(var i = 0; i < linkNodes.length; i++) {
-									if(linkNodes[i].href.indexOf(request.info.url) > -1) {
-										var pos = Position.getAbsolute(document,linkNodes[i]);
-
-										var xhr = new XMLHttpRequest()
-										xhr.onreadystatechange = function () {
-											if (this.readyState == 4 && this.status == 200) {
-												blobToBase64(this.response,function(base64){
-													window.spiderData[request.info.id] = base64;
-												}.bind(this));
-											}
+								var func_go = function() {
+									var pos = getRandomPos(domCenter(eval(request.info.url)));
+									if(request.info.param && request.info.param.method) {
+										switch(request.info.param.method) {
+											case 'click':
+												xhrPost(request.info.spiderSlaveHumanBehaviorApi,{
+													id:4,
+													method:"Arith.MoveSmooth",
+													params:[[pos[0],pos[1]]]
+												}).then(function(response){
+													return xhrPost(request.info.spiderSlaveHumanBehaviorApi,{
+														id:4,
+														method:"Arith.Click",
+														params:[['left',false]]
+													})
+												}).then(function(response){
+													blobToBase64(response,function(base64){
+														window.spiderData[request.info.id] = base64;
+														window.actionComplete = true;
+													}.bind(this));
+												});
+												break;
+											case 'input':
+												xhrPost(request.info.spiderSlaveHumanBehaviorApi,{
+													id:4,
+													method:"Arith.MoveSmooth",
+													params:[[pos[0],pos[1]]]
+												}).then(function(response){
+													return xhrPost(request.info.spiderSlaveHumanBehaviorApi,{
+														id:4,
+														method:"Arith.Click",
+														params:[['left',false]]
+													})
+												}).then(function(response){
+													//动态输入内容
+													if(request.info.param.text && request.info.param.text.indexOf("http") === 0) {
+														return xhrPost(request.info.param.text,{},function(resolve,reject,nowresponse){
+															xhrPost(request.info.spiderSlaveHumanBehaviorApi,{
+																id:4,
+																method:"Arith.TypeStr",
+																params:[[nowresponse]]
+															}).then(function(response){
+																resolve(response);
+															});
+														},'text')
+													}else{
+														return xhrPost(request.info.spiderSlaveHumanBehaviorApi,{
+															id:4,
+															method:"Arith.TypeStr",
+															params:[[request.info.param.text?request.info.param.text:'']]
+														})
+													}
+												}).then(function(response){
+													blobToBase64(response,function(base64){
+														window.spiderData[request.info.id] = base64;
+														window.actionComplete = true;
+													}.bind(this));
+												});
+												break;
+											case 'select':
+												xhrPost(request.info.spiderSlaveHumanBehaviorApi,{
+													id:4,
+													method:"Arith.MoveSmooth",
+													params:[[pos[0],pos[1]]]
+												}).then(function(response){
+													return xhrPost(request.info.spiderSlaveHumanBehaviorApi,{
+														id:4,
+														method:"Arith.Click",
+														params:[['left',false]]
+													})
+												}).then(function(response){
+													return xhrPost(request.info.spiderSlaveHumanBehaviorApi,{
+														id:4,
+														method:"Arith.KeyTap",
+														params:[['down',request.info.param.index?request.info.param.index:1]]
+													})
+												}).then(function(response){
+													blobToBase64(response,function(base64){
+														window.spiderData[request.info.id] = base64;
+														window.actionComplete = true;
+													}.bind(this));
+												});
+												break;
 										}
-										xhr.open('POST', request.info.spiderSlaveHumanBehaviorApi)
-										xhr.responseType = 'blob'
-										xhr.send(JSON.stringify(pos))
-										break;
 									}
 								}
+
+								if(request.info.param && request.info.param.delay) {
+									setTimeout(() => {
+										func_go();
+									}, request.info.param.delay);
+								}else{
+									func_go();
+								}
 								break;
+							case 104:
+								window.actionComplete = false;
+								if(request.info.param && request.info.param.delay) {
+									var action = new Promise(function(resolve,reject) {
+										setTimeout(function(){
+											resolve(1);
+										},request.info.param.delay)
+									});
+								}else{
+									var action = new Promise(function(resolve,reject) {
+										resolve(1);
+									});
+								}
+								action.then(function() {
+									var doms = eval(request.info.url);
+									var promiseArr = [];
+									for(var domidx in doms) {
+										domTemp = doms[domidx];
+										var isDOM = domTemp instanceof (HTMLElement);
+										if(isDOM) {
+											var p = new Promise(function(resolve,reject) {
+												html2canvas(domTemp).then(function(canvas) {
+													canvas.toBlob(function(blob) {
+														blobToBase64(blob,function(base64){
+															resolve(base64);
+														}.bind(this));
+													});
+												});
+											});
+
+											promiseArr.push(p);
+										}
+									}
+
+									Promise.all(promiseArr).then((result) => {
+										window.spiderData[request.info.id] = result;
+										window.actionComplete = true;
+									})
+								});
+								break;		
 							default:
 								window.location.href=request.info.url;
 								break;

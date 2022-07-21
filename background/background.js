@@ -227,25 +227,64 @@ function pullActions() {
 	var timestamp = new Date().getTime();
 	if(timestamp - window.setInterval_getLinksCache_lastRunTime > window.spiderSlaveGetUrlsDelay) {
 		window.setInterval_getLinksCache_lastRunTime = timestamp;
-		ajaxPost({ 'admintype': 1, 'url': window.spiderSlaveApiActionList, 'data': { 'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function(data) {
-			if (!(data.data instanceof Array)) {
-				return;
+		//websocket
+		if(window.spiderSlaveApiActionList.indexOf("ws") === 0) {
+			if(window.pullactionsws === undefined) {
+				window.pullactionsws = new WebSocket(window.spiderSlaveApiActionList);
+				window.pullactionsws.onopen = function(evt) {
+					console.log('ws',"Connection open ...",window.spiderSlaveApiActionList);
+					window.pullactionsws.send(JSON.stringify({type:0,'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag}));
+				};
+				window.pullactionsws.onmessage = function(evt) {
+					datas = evt.data.split("\n");
+					datas.forEach(function (str) {
+						v = JSON.parse(str)
+						if(v['id'] == undefined) {
+							v['id'] = Number(Math.random().toString().substr(3,5) + Date.now()).toString(36);
+						}
+						console.log(v);
+						if (!window.spiderSlaveUrls[v['id']] && !window.spiderSlaveDeletedUrls[v['id']]) {
+							window.spiderSlaveUrls[v['id']] = v;
+						}
+					});
+		
+					//clean deleted urls,keep 20 min
+					var compareTime = new Date().getTime() - 1200000;
+					for(var id in window.spiderSlaveDeletedUrls) {
+						if(window.spiderSlaveDeletedUrls[id] < compareTime) {
+							delete window.spiderSlaveDeletedUrls[id];
+						}
+					}
+					console.log(datas)
+				};
+				window.pullactionsws.onclose = function(evt) {
+					console.log('ws',"Connection closed.");
+					window.pullactionsws = undefined;
+				};
+			}else{
+				window.pullactionsws.send(JSON.stringify({type:1,'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag}));
 			}
-
-			data.data.forEach(function (v) {
-				if (!window.spiderSlaveUrls[v['id']] && !window.spiderSlaveDeletedUrls[v['id']]) {
-					window.spiderSlaveUrls[v['id']] = v;
+		}else{
+			ajaxPost({ 'admintype': 1, 'url': window.spiderSlaveApiActionList, 'data': { 'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function(data) {
+				if (!(data.data instanceof Array)) {
+					return;
+				}
+	
+				data.data.forEach(function (v) {
+					if (!window.spiderSlaveUrls[v['id']] && !window.spiderSlaveDeletedUrls[v['id']]) {
+						window.spiderSlaveUrls[v['id']] = v;
+					}
+				});
+	
+				//clean deleted urls,keep 20 min
+				var compareTime = new Date().getTime() - 1200000;
+				for(var id in window.spiderSlaveDeletedUrls) {
+					if(window.spiderSlaveDeletedUrls[id] < compareTime) {
+						delete window.spiderSlaveDeletedUrls[id];
+					}
 				}
 			});
-
-			//clean deleted urls,keep 20 min
-			var compareTime = new Date().getTime() - 1200000;
-			for(var id in window.spiderSlaveDeletedUrls) {
-				if(window.spiderSlaveDeletedUrls[id] < compareTime) {
-					delete window.spiderSlaveDeletedUrls[id];
-				}
-			}
-		});
+		}
 	}
 }
 
@@ -323,9 +362,9 @@ function getNextTab(urlId) {
 			return [urlId,-2];
 		}
 
-		if(!window.spiderSlaveUrls[urlId] || [1, 201].indexOf(window.spiderSlaveUrls[urlId]['type']) == -1) {
+		if(!window.spiderSlaveUrls[urlId] || [1].indexOf(window.spiderSlaveUrls[urlId]['type']) == -1) {
 			//get one a,or get cookies url
-			urlId = getUrlInfo([1, 201]);
+			urlId = getUrlInfo([1]);
 		}
 
 		if (urlId == -1) {
@@ -444,7 +483,7 @@ function oneActionRun() {
 		if (window.spiderSlaveUrls[urlId]['type'] == 103) {
 			chrome.windows.update(window.spiderSlaveTabInfos['tabs'][tabId]['win']['id'],{'focused':true,'state':'fullscreen'},function() {
 				window.spiderSlaveUrls[urlId]['spiderSlaveHumanBehaviorApi'] = window.spiderSlaveHumanBehaviorApi;
-				window.spiderSlaveUrls[urlId]['win'] = window.spiderSlaveTabInfos['tabs'][tabId]['win'];
+				// window.spiderSlaveUrls[urlId]['win'] = window.spiderSlaveTabInfos['tabs'][tabId]['win'];
 				dealOneAction(window.spiderSlaveTabInfos['tabs'][tabId], window.spiderSlaveUrls[urlId]);
 			})
 		}else{
@@ -508,7 +547,6 @@ function resultIsOk(tab, info, cb) {
 
 		sendMessageToTabs(tab, { 'actiontype': 1, 'info': info }, function (res) {
 			window.tabLocked[tab.id] = false;
-			console.log('res111',res);
 			if (res && res['actionComplete'] == true) {
 				clearInterval(window.setInterval_getHtml[tab.id]);
 
@@ -525,15 +563,42 @@ function resultIsOk(tab, info, cb) {
 }
 
 //try every 50 ms
-function getHml(tab, info) {
-	resultIsOk(tab, info, function(tab, info, res) {
-		if (res && res['html']) {
+function getHml(tab, info, result) {
+	if(result === undefined) {
+		var resultIsOkPromise = new Promise(function(resolve,reject) {
+			resultIsOk(tab, info, function(tab, info, res) {
+				resolve(res);
+			});
+		})
+	}else{
+		var resultIsOkPromise = new Promise(function(resolve,reject) {
+			resolve({"html":result});
+		})
+	}
+
+	resultIsOkPromise.then(function(res) {
+		if (res && res['html'] && (!info.param || (info.param.save === undefined) || info.param.save)) {
 			//sub save data
 			if(!info['results']) {
 				info['results'] = [];
 			}
 
-			info['results'].push(res['html']);
+			if (res['html'] instanceof Array) {
+				var htmls = res['html'];
+				if(info['isEnd'] === true) {
+					htmls = htmls.reverse();
+				}
+			}else{
+				var htmls = [res['html']];
+			}
+
+			htmls.forEach(function(html){
+				if(info['isEnd'] === true) {
+					info['results'].unshift(html);
+				}else{
+					info['results'].push(html);
+				}
+			});
 		}
 
 		if(info['cb']) {
@@ -541,13 +606,14 @@ function getHml(tab, info) {
 		}
 		
 		if(info['isEnd'] === true) {
-			ajaxPost({ 'admintype': 2, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': info['results'][0],'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function() {
+			console.log('results',info['results'],info)
+			ajaxPost({ 'admintype': 2, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': ((info.param && info.param.musave)?JSON.stringify(info['results']):info['results'][info['results'].length-1]),'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function() {
 				isDone(tab, info);
 			},function() {
 				isDone(tab, info, true);
 			});
 		}
-	}.bind(this));
+	});
 }
 
 function runActionComplete(tab,info,cb) {
@@ -597,24 +663,52 @@ function runSub(tab, info, cb, index) {
 			cb(tab, info);
 		}else{
 			var subInfo = info.param.sub[index++];
-			//run action
-			sendMessageToTabs(tab, { 'actiontype': 2, 'info': subInfo},function() {
-				runActionComplete(tab, info, function(tab, info) {
-					if(subInfo.param && subInfo.param.save) {
-						subInfo['isEnd'] = false;
-						if(info['results']) {
-							subInfo['results'] = info['results'];
-						}
-						subInfo['cb'] = function(subInfo) {
-							info['results'] = subInfo['results'];
-							runSub(tab, info, cb, index);
-						}.bind(this);
+			if (subInfo['type'] == 103) {
+				var p = new Promise(function(resolve,reject) {
+					chrome.windows.update(window.spiderSlaveTabInfos['tabs'][tab.id]['win']['id'],{'focused':true,'state':'fullscreen'},function() {
+						subInfo['spiderSlaveHumanBehaviorApi'] = window.spiderSlaveHumanBehaviorApi;
+						resolve(subInfo);
+					})
+				})
+			}else{
+				var p = new Promise(function(resolve,reject) {
+					resolve(subInfo);
+				})
+			}
 
-						getHml(tab, subInfo);
-					}else{
-						runSub(tab, info, cb, index);
-					}
+			p.then(function(subInfo) {
+				if(subInfo.param && subInfo.param.predelay) {
+					var timeout = new Promise(function(resolve,reject) {
+						setTimeout(function() {
+							resolve(1);
+						},subInfo.param.predelay)
+					});
+				}else{
+					var timeout = new Promise(function(resolve,reject) {
+							resolve(1);
+					});
+				}
 
+				timeout.then(function() {
+					//run action
+					sendAction(tab, subInfo, function(result) {
+						runActionComplete(tab, info, function(tab, info) {
+							if(subInfo.param && subInfo.param.save) {
+								subInfo['isEnd'] = false;
+								if(info['results']) {
+									subInfo['results'] = info['results'];
+								}
+								subInfo['cb'] = function(subInfo) {
+									info['results'] = subInfo['results'];
+									runSub(tab, info, cb, index);
+								}.bind(this);
+		
+								getHml(tab, subInfo, result);
+							}else{
+								runSub(tab, info, cb, index);
+							}
+						});
+					});
 				});
 			});
 		}
@@ -624,12 +718,23 @@ function runSub(tab, info, cb, index) {
 	}
 };
 
+function sendAction(tab, info, cb) {
+	//200 background action do not need send to tab run
+	if(info.type === 200) {
+		eval(info.action+'(tab, info, function(result){cb(result)});');
+	}else{
+		sendMessageToTabs(tab, { 'actiontype': 2, 'info': info },function() {
+			cb();
+		});
+	}
+}
+
 function dealOneAction(tab, info, needJump) {
 	// 1:a(jump and get data)
 	//2:js,4:css,8:image,16:others(ajax get data by get method)
 	//100:block run js,101:ajax,
 	//102:scroll
-	//201:open the url,then read this url's cookies form the browser
+	//200:some browser extension func
 	var typesToName = { 
 		1: "a", 
 		2: "js", 
@@ -640,7 +745,7 @@ function dealOneAction(tab, info, needJump) {
 		101: "ajax", 
 		102: "scroll",
 		103: "a by click",
-		201: "get cookies"
+		200: "browser action"
 	};
 
 	function actionDoneCb() {
@@ -653,10 +758,10 @@ function dealOneAction(tab, info, needJump) {
 					},0)
 				});
 				break;
-			case 201:
+			case 200:
 				runActionComplete(tab, info,function(tab, info) {
 					runSub(tab, info, function(tab, info) {
-						eval('backgroundAction'+info.type+'(tab, info);');
+						eval(info.action+'(tab, info, function(result){getHml(tab, info, result);});');
 					})
 				});
 				break;
@@ -674,9 +779,7 @@ function dealOneAction(tab, info, needJump) {
 
 	window.tabUrlIds[tab.id] = info['id'];
 	if (!needJump) {//jump
-		sendMessageToTabs(tab, { 'actiontype': 2, 'info': info },function() {
-			actionDoneCb();
-		});
+		sendAction(tab, info, actionDoneCb);
 	}else{
 		actionDoneCb();
 	}
@@ -717,18 +820,6 @@ function debugRunReset(debugActions) {
 //background console.log to api tab
 function backgroundConsole(pre, obj) {
 	console.log(pre, obj);
-}
-
-function backgroundAction201(tab, info) {
-	chrome.cookies.getAll({'url':info.url},function(cookies) {
-		textToBase64(JSON.stringify(cookies),function(base64){
-			ajaxPost({ 'admintype': 2, 'tab': tab, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': base64 } },function() {
-				isDone(tab, info);
-			},function() {
-				isDone(tab, info,true);
-			});
-		});
-	});
 }
 
 function ajaxPost(request,cb,errorcb) {

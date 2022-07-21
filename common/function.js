@@ -1,10 +1,10 @@
 //block to base64
 function blobToBase64(blob, callback) {
-   var reader = new FileReader();
-   reader.readAsDataURL(blob);
-   reader.onload = function (e) {
-       callback(e.target.result.replace(/data\:[\s\S]+?;base64,/,''));
-   }
+    var reader = new FileReader();
+    reader.readAsDataURL(blob);
+    reader.onload = function (e) {
+        callback(e.target.result.replace(/data\:[\s\S]+?;base64,/,''));
+    }
 }
 
 //text to base64
@@ -15,6 +15,45 @@ function textToBase64(text, callback) {
 
 function getObjectLen(obj) {
     return Object.keys(obj).length;
+}
+
+function xhrPost(url,post,cb,responseType) {
+    if(responseType === undefined) {
+        responseType = 'blob';
+    }
+    return new Promise(function(resolve,reject) {
+        var xhr = new XMLHttpRequest()
+        xhr.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                if(cb) {
+                    cb(resolve,reject,this.response);
+                }else{
+                    resolve(this.response);
+                }
+            }
+        }
+        xhr.open('POST', url)
+        xhr.responseType = responseType
+        xhr.send(post instanceof Object?JSON.stringify(post):post)
+    });
+}
+
+function domCenter(dom) {
+    var width = window.innerWidth;
+    var height = window.innerHeight;
+    var rect = dom.getBoundingClientRect();
+    var scrollWidth = rect.left-width*4/10;
+    var scrollHeight = rect.top-height*4/10;
+    window.scrollBy(scrollWidth,scrollHeight)
+
+    return dom.getBoundingClientRect();
+}
+
+function getRandomPos(pos) {
+    return [
+            parseInt(pos['left']+pos['width']/4+pos['width']/2*Math.random()),
+            parseInt(pos['top']+pos['height']/4+pos['height']/2*Math.random())
+        ];
 }
 
 var Position = {};
