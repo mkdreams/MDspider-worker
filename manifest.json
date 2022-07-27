@@ -22,6 +22,7 @@
 	    	"common/function.js",
 	    	"background/extension_action.js",
 	    	"background/background.js",
+	    	"flag.js",
 	    	"config.js",
 	    	"background/run_time_api.js"
     	]

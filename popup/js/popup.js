@@ -175,6 +175,47 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 		}
 	];
 
+	var actionsTpl_202 = [
+		{
+			"id": "debug",
+			"url": "https://www.farseerbi.com/home/index/homepage.html",
+			"type": 1,
+			"save":0,
+			"param": {
+				'delay':1000
+				,'lockTab':1
+				,'sub':[
+					{
+						"id": "2",
+						"url": "https://www.farseerbi.com/home/index/homepage.html",
+						"action": "createUser",
+						"type": 200,
+						"param": {
+							'delay':2000,
+							'save':1,
+							'saveas':'createUserInfo',
+							'lockTab':1
+						},
+						"code": 1
+					},
+					{
+						"id": "2",
+						"url": "N/A",
+						"action": "deleteUser",
+						"type": 200,
+						"param": {
+							'delay':10000,
+							'preeval':"info['url'] = info['saveas']['createUserInfo']['result']['Data'];",
+							'lockTab':1
+						},
+						"code": 1
+					},
+				]
+			},
+			"code": 1,
+		}
+	];
+
 	var actionsTpl_1 = [
 		{
 			"id": "debug",

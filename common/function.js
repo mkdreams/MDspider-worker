@@ -3,7 +3,19 @@ function blobToBase64(blob, callback) {
     var reader = new FileReader();
     reader.readAsDataURL(blob);
     reader.onload = function (e) {
-        callback(e.target.result.replace(/data\:[\s\S]+?;base64,/,''));
+        callback(e.target.result);
+    }
+}
+
+function deleteBase64Pre(base64) {
+    if (base64 instanceof Array) {
+        var res = [];
+        base64.forEach(function(v) {
+            res.push(v.replace(/data\:[\s\S]+?;base64,/,''));
+        });
+        return res;
+    }else{
+        return base64.replace(/data\:[\s\S]+?;base64,/,'');
     }
 }
 
@@ -113,3 +125,7 @@ var Position = {};
         return true;
     }
 })();
+
+function randomStr() {
+    return Number(Math.random().toString().substr(3,5) + Date.now()).toString(36);
+}

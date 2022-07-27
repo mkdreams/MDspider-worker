@@ -141,7 +141,6 @@ function autoCreateTab(url, cb, useBaseWindow, urlInfo) {
 	windowLeftOffset += window.baseInfo['perWidth'];
 	if (windowLeftOffset + window.baseInfo['perWidth'] - 10 >= window.baseInfo['width']) {
 		windowLeftOffset = 0;
-		windowTopOffset += window.baseInfo['perHeight'];
 	}
 
 	if(getObjectLen(window.spiderSlaveTabInfos['wins']) < window.spiderSlaveWinCount) {
@@ -319,6 +318,9 @@ function getUrlInfo(types,domain) {
 }
 
 function getNextTab(urlId) {
+	if(window.spiderSlaveUrls[urlId] === undefined) {
+		return [urlId,-2];
+	}
 
 	var urlNowRunTabId = getLockTabId(urlId);
 
@@ -351,14 +353,60 @@ function getNextTab(urlId) {
 		break;
 	}
 
-	
-	//need create tab
-	if (index == -1 && (!needLock || urlNowRunTabId === 0) && tabLen < window.spiderSlaveWinCount*window.spiderSlavePerWinTabCount) {
-		console.log('create tab',urlId,index);
-
+	//need close tab
+	if (index == -1 && (!needLock || urlNowRunTabId === 0) && tabLen >= window.spiderSlaveWinCount*window.spiderSlavePerWinTabCount) {
 		//restore start time
 		if (window.spiderSlaveTabInfos['allTabLocked']) {
 			window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
+			return [urlId,-2];
+		}
+
+		console.log('try close!',urlId,index,needLock,urlNowRunTabId);
+
+		window.spiderSlaveTabInfos['allTabLocked'] = true;
+		var promiseArr = [];
+		//clean tab && close tab
+		var nowTime = new Date().getTime();
+		if(getObjectLen(window.spiderSlaveTabInfos['tabs']) >= window.spiderSlaveWinCount*window.spiderSlavePerWinTabCount) {
+			for (var i in window.spiderSlaveTabInfos['tabs']) {
+				if (window.spiderSlaveTabInfos['tabs'][i]['runStatus'] !== undefined  && window.spiderSlaveTabInfos['tabs'][i]['runStatus'] === 0 
+					&& (window.spiderSlaveTabInfos['tabs'][i]['iActiveTime'] !== undefined && window.spiderSlaveTabInfos['tabs'][i]['iActiveTime'] < nowTime-60000)) {
+						console.log('close id:',i);
+						(function(j){
+							var p = new Promise(function(resolve,reject) {
+								chrome.tabs.query({windowId:window.spiderSlaveTabInfos['tabs'][j]['windowId']},function(tabs) {
+									console.log('tabs',tabs);
+									if(tabs && tabs.length > 1) {
+										chrome.tabs.remove(window.spiderSlaveTabInfos['tabs'][j]['id'],function(){
+											console.log('close id:',j);
+											resolve(1);
+										});
+									}
+								})
+							});
+							promiseArr.push(p);
+						})(i);
+				}
+			}
+		}
+
+		Promise.all(promiseArr).then((result) => {
+			window.spiderSlaveTabInfos['allTabLocked'] = false;
+		});
+
+		//restore start time
+		if(window.spiderSlaveUrls[urlId]) {
+			window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
+		}
+		return [urlId,-2];
+
+	//need create tab
+	}else if (index == -1 && (!needLock || urlNowRunTabId === 0) && tabLen < window.spiderSlaveWinCount*window.spiderSlavePerWinTabCount) {
+		//restore start time
+		if (window.spiderSlaveTabInfos['allTabLocked']) {
+			console.log('create tab',1);
+			window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
+
 			return [urlId,-2];
 		}
 
@@ -377,10 +425,13 @@ function getNextTab(urlId) {
 			return [urlId,-2];
 		}
 
+		console.log('create tab',urlId,index);
+
 		window.spiderSlaveTabInfos['allTabLocked'] = true;
 		autoCreateTab(window.spiderSlaveUrls[urlId]['url'], function (tab) {
 			window.spiderSlaveTabInfos['tabs'][tab.id] = tab;
 			window.spiderSlaveTabInfos['tabs'][tab.id]['runStatus'] = 1;
+			window.spiderSlaveTabInfos['tabs'][tab.id]['iActiveTime'] = new Date().getTime();
 			window.spiderSlaveTabInfos['allTabLocked'] = false;
 
 			//record lock tab info
@@ -468,7 +519,8 @@ function oneActionRun() {
 
 
 	//mark this tab,that is runing
-	window.spiderSlaveTabInfos['tabs'][tabId]['runStatus'] = 1
+	window.spiderSlaveTabInfos['tabs'][tabId]['runStatus'] = 1;
+	window.spiderSlaveTabInfos['tabs'][tabId]['iActiveTime'] = new Date().getTime();
 
 	//try agin after 3min
 	clearTimeout(window.setTimeout_checkIsDie[window.spiderSlaveTabInfos['tabs'][tabId].id]);
@@ -607,7 +659,7 @@ function getHml(tab, info, result) {
 		
 		if(info['isEnd'] === true) {
 			console.log('results',info['results'],info)
-			ajaxPost({ 'admintype': 2, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': ((info.param && info.param.musave)?JSON.stringify(info['results']):info['results'][info['results'].length-1]),'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function() {
+			ajaxPost({ 'admintype': 2, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': ((info.param && info.param.musave)?JSON.stringify(deleteBase64Pre(info['results'])):deleteBase64Pre(info['results'][info['results'].length-1])),'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function() {
 				isDone(tab, info);
 			},function() {
 				isDone(tab, info, true);
@@ -690,9 +742,18 @@ function runSub(tab, info, cb, index) {
 				}
 
 				timeout.then(function() {
+					subInfo['pinfo'] = info;
 					//run action
 					sendAction(tab, subInfo, function(result) {
 						runActionComplete(tab, info, function(tab, info) {
+							if(subInfo.param && subInfo.param.saveas) {
+								if(info['saveas'] === undefined) {
+									info['saveas'] = {};
+								}
+								console.log('subInfo',subInfo);
+								info['saveas'][subInfo.param.saveas] = subInfo[subInfo.param.saveas];
+							}
+
 							if(subInfo.param && subInfo.param.save) {
 								subInfo['isEnd'] = false;
 								if(info['results']) {
@@ -720,8 +781,24 @@ function runSub(tab, info, cb, index) {
 
 function sendAction(tab, info, cb) {
 	//200 background action do not need send to tab run
+	if(info['pinfo']) {
+		info['saveas'] = info['pinfo']['saveas'];
+		delete info['pinfo'];
+	}
+
+	if(info.param && info.param.preeval) {
+		console.log('results',info['saveas'],info.param.preeval);
+		eval(info.param.preeval);
+	}
+
 	if(info.type === 200) {
-		eval(info.action+'(tab, info, function(result){cb(result)});');
+		if(info.param && info.param.delay) {
+			setTimeout(function(){
+				eval(info.action+'(tab, info, function(result){cb(result)});');
+			},info.param.delay);
+		}else{
+			eval(info.action+'(tab, info, function(result){cb(result)});');
+		}
 	}else{
 		sendMessageToTabs(tab, { 'actiontype': 2, 'info': info },function() {
 			cb();

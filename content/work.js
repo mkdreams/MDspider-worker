@@ -216,12 +216,12 @@ chrome.runtime.onMessage.addListener(
 											case 'click':
 												xhrPost(request.info.spiderSlaveHumanBehaviorApi,{
 													id:4,
-													method:"Arith.MoveSmooth",
+													method:"Robot.MoveSmooth",
 													params:[[pos[0],pos[1]]]
 												}).then(function(response){
 													return xhrPost(request.info.spiderSlaveHumanBehaviorApi,{
 														id:4,
-														method:"Arith.Click",
+														method:"Robot.Click",
 														params:[['left',false]]
 													})
 												}).then(function(response){
@@ -234,12 +234,12 @@ chrome.runtime.onMessage.addListener(
 											case 'input':
 												xhrPost(request.info.spiderSlaveHumanBehaviorApi,{
 													id:4,
-													method:"Arith.MoveSmooth",
+													method:"Robot.MoveSmooth",
 													params:[[pos[0],pos[1]]]
 												}).then(function(response){
 													return xhrPost(request.info.spiderSlaveHumanBehaviorApi,{
 														id:4,
-														method:"Arith.Click",
+														method:"Robot.Click",
 														params:[['left',false]]
 													})
 												}).then(function(response){
@@ -248,7 +248,7 @@ chrome.runtime.onMessage.addListener(
 														return xhrPost(request.info.param.text,{},function(resolve,reject,nowresponse){
 															xhrPost(request.info.spiderSlaveHumanBehaviorApi,{
 																id:4,
-																method:"Arith.TypeStr",
+																method:"Robot.TypeStr",
 																params:[[nowresponse]]
 															}).then(function(response){
 																resolve(response);
@@ -257,7 +257,7 @@ chrome.runtime.onMessage.addListener(
 													}else{
 														return xhrPost(request.info.spiderSlaveHumanBehaviorApi,{
 															id:4,
-															method:"Arith.TypeStr",
+															method:"Robot.TypeStr",
 															params:[[request.info.param.text?request.info.param.text:'']]
 														})
 													}
@@ -271,18 +271,18 @@ chrome.runtime.onMessage.addListener(
 											case 'select':
 												xhrPost(request.info.spiderSlaveHumanBehaviorApi,{
 													id:4,
-													method:"Arith.MoveSmooth",
+													method:"Robot.MoveSmooth",
 													params:[[pos[0],pos[1]]]
 												}).then(function(response){
 													return xhrPost(request.info.spiderSlaveHumanBehaviorApi,{
 														id:4,
-														method:"Arith.Click",
+														method:"Robot.Click",
 														params:[['left',false]]
 													})
 												}).then(function(response){
 													return xhrPost(request.info.spiderSlaveHumanBehaviorApi,{
 														id:4,
-														method:"Arith.KeyTap",
+														method:"Robot.KeyTap",
 														params:[['down',request.info.param.index?request.info.param.index:1]]
 													})
 												}).then(function(response){
