@@ -367,27 +367,31 @@ function getNextTab(urlId) {
 		var promiseArr = [];
 		//clean tab && close tab
 		var nowTime = new Date().getTime();
-		if(getObjectLen(window.spiderSlaveTabInfos['tabs']) >= window.spiderSlaveWinCount*window.spiderSlavePerWinTabCount) {
+		var totalTabCount = getObjectLen(window.spiderSlaveTabInfos['tabs']);
+		if( totalTabCount >= window.spiderSlaveWinCount*window.spiderSlavePerWinTabCount) {
+			var needCloseTabIds = [];
 			for (var i in window.spiderSlaveTabInfos['tabs']) {
 				if (window.spiderSlaveTabInfos['tabs'][i]['runStatus'] !== undefined  && window.spiderSlaveTabInfos['tabs'][i]['runStatus'] === 0 
-					&& (window.spiderSlaveTabInfos['tabs'][i]['iActiveTime'] !== undefined && window.spiderSlaveTabInfos['tabs'][i]['iActiveTime'] < nowTime-60000)) {
-						console.log('close id:',i);
-						(function(j){
-							var p = new Promise(function(resolve,reject) {
-								chrome.tabs.query({windowId:window.spiderSlaveTabInfos['tabs'][j]['windowId']},function(tabs) {
-									console.log('tabs',tabs);
-									if(tabs && tabs.length > 1) {
-										chrome.tabs.remove(window.spiderSlaveTabInfos['tabs'][j]['id'],function(){
-											console.log('close id:',j);
-											resolve(1);
-										});
-									}
-								})
-							});
-							promiseArr.push(p);
-						})(i);
+					&& (window.spiderSlaveTabInfos['tabs'][i]['iActiveTime'] !== undefined && window.spiderSlaveTabInfos['tabs'][i]['iActiveTime'] < nowTime-180000)) {
+						needCloseTabIds.push(i);
 				}
 			}
+
+			if(totalTabCount === needCloseTabIds.length) {
+				fruits.shift();
+			}
+
+			needCloseTabIds.forEach(function(i) {
+				(function(j){
+					var p = new Promise(function(resolve,reject) {
+						chrome.tabs.remove(window.spiderSlaveTabInfos['tabs'][j]['id'],function(){
+							console.log('close id:',j);
+							resolve(1);
+						});
+					});
+					promiseArr.push(p);
+				})(i);
+			});
 		}
 
 		Promise.all(promiseArr).then((result) => {
@@ -658,7 +662,6 @@ function getHml(tab, info, result) {
 		}
 		
 		if(info['isEnd'] === true) {
-			console.log('results',info['results'],info)
 			ajaxPost({ 'admintype': 2, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': ((info.param && info.param.musave)?JSON.stringify(deleteBase64Pre(info['results'])):deleteBase64Pre(info['results'][info['results'].length-1])),'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function() {
 				isDone(tab, info);
 			},function() {
