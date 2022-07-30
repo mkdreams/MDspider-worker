@@ -1,4 +1,4 @@
-window.spiderSlaveTabInfos = { 'locked': false, 'api': {}, 'tabs': {}, 'wins':{} };
+window.spiderSlaveTabInfos = { 'allTabLocked': false, 'api': {}, 'tabs': {}, 'wins':{} };
 window.spiderSlaveUrls = {};
 window.spiderSlaveDeletedUrls = {};
 window.setInterval_getHtml = {};
@@ -199,9 +199,16 @@ function workPlay() {
 	});
 
 	clearInterval(window.setInterval_getHtmlRun);
+	window.actionRunTime = 0;
 	window.setInterval_getHtmlRun = setInterval(function () {
-		if (Object.keys(window.spiderSlaveUrls).length > 0) {
-			oneActionRun();
+		window.actionRunTime++;
+		if(window.actionRunTime > 600 && window.spiderSlaveTabInfos['allTabLocked'] === false) {
+			tryCloseTab();
+			window.actionRunTime = 0;
+		}else{
+			if (Object.keys(window.spiderSlaveUrls).length > 0) {
+				oneActionRun();
+			}
 		}
 	}, 100);
 
@@ -287,6 +294,40 @@ function pullActions() {
 	}
 }
 
+// 5 min before
+function tryCloseTab() {
+	window.spiderSlaveTabInfos['allTabLocked'] = true;
+	var promiseArr = [];
+	//clean tab && close tab
+	var nowTime = new Date().getTime();
+	var totalTabCount = getObjectLen(window.spiderSlaveTabInfos['tabs']);
+	if( totalTabCount >= window.spiderSlaveWinCount*window.spiderSlavePerWinTabCount) {
+		var needCloseTabIds = [];
+		for (var i in window.spiderSlaveTabInfos['tabs']) {
+			if (window.spiderSlaveTabInfos['tabs'][i]['runStatus'] !== undefined  && window.spiderSlaveTabInfos['tabs'][i]['runStatus'] === 0 
+				&& (window.spiderSlaveTabInfos['tabs'][i]['iActiveTime'] !== undefined && window.spiderSlaveTabInfos['tabs'][i]['iActiveTime'] < nowTime-300000)) {
+					needCloseTabIds.push(i);
+			}
+		}
+
+		needCloseTabIds.forEach(function(i) {
+			(function(j){
+				var p = new Promise(function(resolve,reject) {
+					chrome.tabs.remove(window.spiderSlaveTabInfos['tabs'][j]['id'],function(){
+						console.log('close id:',j);
+						resolve(1);
+					});
+				});
+				promiseArr.push(p);
+			})(i);
+		});
+	}
+
+	Promise.all(promiseArr).then((result) => {
+		window.spiderSlaveTabInfos['allTabLocked'] = false;
+	});
+}
+
 function getUrlInfo(types,domain) {
 	var nowTimeStamp = new Date().getTime();
 	var needAgain = nowTimeStamp - 300000;
@@ -353,59 +394,8 @@ function getNextTab(urlId) {
 		break;
 	}
 
-	//need close tab
-	if (index == -1 && (!needLock || urlNowRunTabId === 0) && tabLen >= window.spiderSlaveWinCount*window.spiderSlavePerWinTabCount) {
-		//restore start time
-		if (window.spiderSlaveTabInfos['allTabLocked']) {
-			window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
-			return [urlId,-2];
-		}
-
-		console.log('try close!',urlId,index,needLock,urlNowRunTabId);
-
-		window.spiderSlaveTabInfos['allTabLocked'] = true;
-		var promiseArr = [];
-		//clean tab && close tab
-		var nowTime = new Date().getTime();
-		var totalTabCount = getObjectLen(window.spiderSlaveTabInfos['tabs']);
-		if( totalTabCount >= window.spiderSlaveWinCount*window.spiderSlavePerWinTabCount) {
-			var needCloseTabIds = [];
-			for (var i in window.spiderSlaveTabInfos['tabs']) {
-				if (window.spiderSlaveTabInfos['tabs'][i]['runStatus'] !== undefined  && window.spiderSlaveTabInfos['tabs'][i]['runStatus'] === 0 
-					&& (window.spiderSlaveTabInfos['tabs'][i]['iActiveTime'] !== undefined && window.spiderSlaveTabInfos['tabs'][i]['iActiveTime'] < nowTime-180000)) {
-						needCloseTabIds.push(i);
-				}
-			}
-
-			if(totalTabCount === needCloseTabIds.length) {
-				fruits.shift();
-			}
-
-			needCloseTabIds.forEach(function(i) {
-				(function(j){
-					var p = new Promise(function(resolve,reject) {
-						chrome.tabs.remove(window.spiderSlaveTabInfos['tabs'][j]['id'],function(){
-							console.log('close id:',j);
-							resolve(1);
-						});
-					});
-					promiseArr.push(p);
-				})(i);
-			});
-		}
-
-		Promise.all(promiseArr).then((result) => {
-			window.spiderSlaveTabInfos['allTabLocked'] = false;
-		});
-
-		//restore start time
-		if(window.spiderSlaveUrls[urlId]) {
-			window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
-		}
-		return [urlId,-2];
-
 	//need create tab
-	}else if (index == -1 && (!needLock || urlNowRunTabId === 0) && tabLen < window.spiderSlaveWinCount*window.spiderSlavePerWinTabCount) {
+	if (index == -1 && (!needLock || urlNowRunTabId === 0) && tabLen < window.spiderSlaveWinCount*window.spiderSlavePerWinTabCount) {
 		//restore start time
 		if (window.spiderSlaveTabInfos['allTabLocked']) {
 			console.log('create tab',1);

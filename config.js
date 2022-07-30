@@ -42,6 +42,9 @@ function initDeviceInfo(cb) {
 		
 		chrome.system.display.getInfo(function(info) {
 			chrome.windows.getCurrent(function(win) {
+				window.spiderSlaveTabInfos['wins'][win.id] = win;
+				window.spiderSlaveTabInfos['wins'][win.id]['useTabs'] = {};
+
 				window.baseInfo['windowId'] = win.id;
 				window.baseInfo['height'] = info[0].bounds.height;
 				window.baseInfo['width'] = info[0].bounds.width;
@@ -57,14 +60,18 @@ function initDeviceInfo(cb) {
 				window.baseInfo['perHeight'] = parseInt(window.baseInfo['height']/window.baseInfo['yCount'])-150;
 				window.baseInfo['perWidth'] = parseInt(window.baseInfo['width']/window.baseInfo['xCount']);
 				
-				if(window.spiderSlaveOn === false) {
-					cb && cb();
-					return ;
-				}
 
-				chrome.windows.update(window.baseInfo['windowId'],{state:'normal',top:0,left:0,height:window.baseInfo['perHeight'],width:window.baseInfo['perWidth']},function(newWin) {
-					cb && cb();
-				});
+				chrome.tabs.query({windowId:win.id},function(tabs) {
+					autoCreateTab('chrome://extensions/',function() {
+						cb & cb();
+						
+						tabs.forEach(tab => {
+							chrome.tabs.remove(tab.id,function() {
+							});
+						});
+					},true);
+					
+				})
 			});
 		});
 	});
