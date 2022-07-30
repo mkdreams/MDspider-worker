@@ -300,28 +300,25 @@ function tryCloseTab() {
 	var promiseArr = [];
 	//clean tab && close tab
 	var nowTime = new Date().getTime();
-	var totalTabCount = getObjectLen(window.spiderSlaveTabInfos['tabs']);
-	if( totalTabCount >= window.spiderSlaveWinCount*window.spiderSlavePerWinTabCount) {
-		var needCloseTabIds = [];
-		for (var i in window.spiderSlaveTabInfos['tabs']) {
-			if (window.spiderSlaveTabInfos['tabs'][i]['runStatus'] !== undefined  && window.spiderSlaveTabInfos['tabs'][i]['runStatus'] === 0 
-				&& (window.spiderSlaveTabInfos['tabs'][i]['iActiveTime'] !== undefined && window.spiderSlaveTabInfos['tabs'][i]['iActiveTime'] < nowTime-300000)) {
-					needCloseTabIds.push(i);
-			}
+	var needCloseTabIds = [];
+	for (var i in window.spiderSlaveTabInfos['tabs']) {
+		if (window.spiderSlaveTabInfos['tabs'][i]['runStatus'] !== undefined  && window.spiderSlaveTabInfos['tabs'][i]['runStatus'] === 0 
+			&& (window.spiderSlaveTabInfos['tabs'][i]['iActiveTime'] !== undefined && window.spiderSlaveTabInfos['tabs'][i]['iActiveTime'] < nowTime-300000)) {
+				needCloseTabIds.push(i);
 		}
-
-		needCloseTabIds.forEach(function(i) {
-			(function(j){
-				var p = new Promise(function(resolve,reject) {
-					chrome.tabs.remove(window.spiderSlaveTabInfos['tabs'][j]['id'],function(){
-						console.log('close id:',j);
-						resolve(1);
-					});
-				});
-				promiseArr.push(p);
-			})(i);
-		});
 	}
+
+	needCloseTabIds.forEach(function(i) {
+		(function(j){
+			var p = new Promise(function(resolve,reject) {
+				chrome.tabs.remove(window.spiderSlaveTabInfos['tabs'][j]['id'],function(){
+					console.log('close id:',j);
+					resolve(1);
+				});
+			});
+			promiseArr.push(p);
+		})(i);
+	});
 
 	Promise.all(promiseArr).then((result) => {
 		window.spiderSlaveTabInfos['allTabLocked'] = false;
