@@ -84,7 +84,11 @@ function loadConfig(cb) {
 		}
 
 		if(!window['workCreateFlag']) {
-			window['workCreateFlag'] = Number(Math.random().toString().substr(3,5) + Date.now()).toString(36);
+			if(window.workCreateFlagDefault && window.workCreateFlagDefault !== '--workCreateFlagDefault--') {
+				window['workCreateFlag'] = window.workCreateFlagDefault;
+			}else{
+				window['workCreateFlag'] = Number(Math.random().toString().substr(3,5) + Date.now()).toString(36);
+			}
 			chrome.storage.local.set({'workCreateFlag':window['workCreateFlag']});
 		}
 		
