@@ -312,7 +312,6 @@ function tryCloseTab() {
 		(function(j){
 			var p = new Promise(function(resolve,reject) {
 				chrome.tabs.remove(window.spiderSlaveTabInfos['tabs'][j]['id'],function(){
-					console.log('close id:',j);
 					resolve(1);
 				});
 			});
@@ -395,7 +394,6 @@ function getNextTab(urlId) {
 	if (index == -1 && (!needLock || urlNowRunTabId === 0) && tabLen < window.spiderSlaveWinCount*window.spiderSlavePerWinTabCount) {
 		//restore start time
 		if (window.spiderSlaveTabInfos['allTabLocked']) {
-			console.log('create tab',1);
 			window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
 
 			return [urlId,-2];
@@ -415,8 +413,6 @@ function getNextTab(urlId) {
 		if (urlId == -2) {
 			return [urlId,-2];
 		}
-
-		console.log('create tab',urlId,index);
 
 		window.spiderSlaveTabInfos['allTabLocked'] = true;
 		autoCreateTab(window.spiderSlaveUrls[urlId]['url'], function (tab) {
@@ -582,7 +578,16 @@ function isDone(tab, info, isError) {
 function resultIsOk(tab, info, cb) {
 	window.tabLocked[tab.id] = false;
 	clearInterval(window.setInterval_getHtml[tab.id]);
+	var resultIsOkCount = 0;
 	window.setInterval_getHtml[tab.id] = setInterval(function () {
+		resultIsOkCount++;
+		if(resultIsOkCount > 6000) {
+			clearInterval(window.setInterval_getHtml[tab.id]);
+			isDone(tab, info, true);
+			window.tabLocked[tab.id] = false;
+			return ;
+		}
+
 		if(window.tabLocked[tab.id] === true) {
 			return ;
 		}
@@ -598,11 +603,10 @@ function resultIsOk(tab, info, cb) {
 
 			if(res === undefined) {
 				clearInterval(window.setInterval_getHtml[tab.id]);
-
 				isDone(tab, info, true);
 			}
-		}.bind(this));
-	}.bind(this), 50);
+		});
+	}, 100);
 }
 
 //try every 50 ms
@@ -665,11 +669,20 @@ function runActionComplete(tab,info,cb) {
 		var delay = 50;
 	}
 
-	var commingTime = new Date().getTime();
 	setTimeout(function () {
 		window.tabLocked[tab.id] = false;
 		clearInterval(window.setInterval_waitToComplete[tab.id]);
+		var runActionCompleteRunCount = 0;
 		window.setInterval_waitToComplete[tab.id] = setInterval(function () {
+			runActionCompleteRunCount++;
+			//try again after 35 seconds 
+			if(runActionCompleteRunCount > 350) {
+				clearInterval(window.setInterval_waitToComplete[tab.id]);
+				isDone(tab, info, true);
+				window.tabLocked[tab.id] = false;
+				return ;
+			}
+
 			if(window.tabLocked[tab.id] === true) {
 				return ;
 			}
@@ -682,7 +695,7 @@ function runActionComplete(tab,info,cb) {
 					clearInterval(window.setInterval_waitToComplete[tab.id]);
 					isDone(tab, info, true);
 				//max run time: 30 s
-				}else if (nowTab.status == 'complete' || (new Date().getTime() - commingTime > 30000)) {
+				}else if (nowTab.status == 'complete' || (runActionCompleteRunCount > 300)) {
 					clearInterval(window.setInterval_waitToComplete[tab.id]);
 					resultIsOk(nowTab, info, function(nowTab, info, res) {
 						cb(nowTab,info);
@@ -740,7 +753,6 @@ function runSub(tab, info, cb, index) {
 								if(info['saveas'] === undefined) {
 									info['saveas'] = {};
 								}
-								console.log('subInfo',subInfo);
 								info['saveas'][subInfo.param.saveas] = subInfo[subInfo.param.saveas];
 							}
 
@@ -777,7 +789,6 @@ function sendAction(tab, info, cb) {
 	}
 
 	if(info.param && info.param.preeval) {
-		console.log('results',info['saveas'],info.param.preeval);
 		eval(info.param.preeval);
 	}
 

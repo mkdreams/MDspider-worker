@@ -732,7 +732,6 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 			layer.msg('正在执行');
 			bg.loadConfig();
 
-			console.log(data.field['debugActions']);
 			bg.debugRun(JSON.parse(data.field['debugActions']));
 		});
 		return false;

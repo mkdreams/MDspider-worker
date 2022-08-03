@@ -21,7 +21,6 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 			});
 		}
 		$('#tab-content-1').html(html);
-		console.log(bg.MDspiderLogs)
 	});
 	element.tabChange('logs', 0);
 });
