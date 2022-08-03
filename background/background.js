@@ -297,6 +297,7 @@ function pullActions() {
 // 5 min before
 function tryCloseTab() {
 	window.spiderSlaveTabInfos['allTabLocked'] = true;
+
 	var promiseArr = [];
 	//clean tab && close tab
 	var nowTime = new Date().getTime();
@@ -515,7 +516,7 @@ function oneActionRun() {
 		window.spiderSlaveTabInfos['tabs'][tabId]['runStatus'] = 0;
 		clearInterval(window.setInterval_getHtml[window.spiderSlaveTabInfos['tabs'][tabId].id]);
 		clearInterval(window.setInterval_waitToComplete[window.spiderSlaveTabInfos['tabs'][tabId].id]);
-	}, 180000);
+	}, 600000);
 
 
 	if(window.spiderSlaveHumanBehavior) {
