@@ -10,16 +10,6 @@ window.baseWindow = undefined;
 window.setInterval_getLinksCache_lastRunTime = new Date().getTime();
 window.lockTabFlagToTab = {};
 
-//health check
-if(window.spiderSlaveHealthCheckApi !== undefined) {
-	setInterval(function () {
-		$.ajax({
-			url: window.spiderSlaveHealthCheckApi,
-			cache: false,
-		});
-	}, 300000);
-}
-
 function enabledProxy() {
 	disabledProxy();
 	$.ajax({
@@ -220,12 +210,27 @@ function workPlay() {
 		}
 	}, window.spiderSlaveGetUrlsDelay);
 
+
+	//health check
+	if(window.spiderSlaveHealthCheck === true) {
+		clearInterval(window.spiderSlaveHealthCheckSetInterval);
+		window.spiderSlaveHealthCheckSetInterval = setInterval(function () {
+			pingUser()
+		}, 60000);
+	}
+
 	backgroundConsole('已开始', 1);
 }
 
 function workPause() {
 	clearInterval(window.setInterval_getHtmlRun);
 	clearInterval(window.setInterval_getLinksCache);
+	clearInterval(window.spiderSlaveHealthCheckSetInterval);
+
+	if(window.spiderSlaveHealthCheck === true) {
+		moveKeepLiveUser()
+	}
+
 	backgroundConsole('已暂停', 1);
 }
 

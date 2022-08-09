@@ -26,6 +26,7 @@ function restoreData(bg, form, $) {
 		, "debugActions": bg.debugActions
 	});
 
+	$('#userDataPath').html(bg.userDataPath);
 	$('#workCreateFlag').html(bg.workCreateFlag);
 }
 

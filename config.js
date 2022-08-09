@@ -1,10 +1,10 @@
 window.notify_tips = false;
 window.spiderSlaveOn = true;
-window.spiderSlaveFlag = 'slave2';
-window.spiderSlaveApiActionList = "http://corp.admin.com/ir/NewsBase/getLinksCache";
-window.spiderSlaveApiCb = "http://corp.admin.com/ir/NewsBase/recordLinkCacheIsDone";
+window.spiderSlaveFlag = 'slave3';
+window.spiderSlaveApiActionList = "ws://127.0.0.1:8080/getLinksCache";
+window.spiderSlaveApiCb = "http://127.0.0.1:8080/recordLinkCacheIsDone";
 
-var spiderSlaveApiInfo = window.spiderSlaveApiActionList.match(/^(http|https)\:\/\/[^\/$]+?(?=[\/|$])/g);
+var spiderSlaveApiInfo = window.spiderSlaveApiActionList.match(/^(http|https|ws)\:\/\/[^\/$]+?(?=[\/|$])/g);
 window.spiderSlaveApi = spiderSlaveApiInfo[0];
 
 window.spiderSlaveGetUrlsDelay = 5000;
@@ -17,10 +17,9 @@ window.spiderProxyChangePerReqCount = 5;
 window.spiderProxyFetchApi = "http.tiqu.alibabaapi.com/getip3?num=2&type=2&pack=62956&port=1&lb=1&pb=4&gm=4&regions=";
 
 window.spiderSlaveHumanBehavior = true;
-window.spiderSlaveHumanBehaviorApi = 'http://127.0.0.1:8686';
+window.spiderSlaveHumanBehaviorApi = 'http://127.0.0.1:1234/rpc';
 
-window.spiderSlaveHealthCheckApi = undefined;
-// window.spiderSlaveHealthCheckApi = 'http://127.0.0.1:8686/check';
+window.spiderSlaveHealthCheck = true;
 
 window.baseInfo = {};
 initDeviceInfo(function(){
@@ -62,8 +61,23 @@ function initDeviceInfo(cb) {
 				
 
 				chrome.tabs.query({windowId:win.id},function(tabs) {
-					autoCreateTab('chrome://extensions/',function() {
-						cb & cb();
+					autoCreateTab(window['userDataPath']?'chrome://extensions/':'chrome://version/',function() {
+						if(!window['userDataPath']) {
+							xhrPost(window.spiderSlaveHumanBehaviorApi,{
+								id:4,
+								method:"Robot.Copy",
+								params:[[window.workCreateFlag]]
+							},undefined,'json').then(function(data) {
+								var match = data.result.Msg.match(new RegExp("User Data\\\\([ \\w]+)"))
+								if(match && match[1]) {
+									window['userDataPath'] = match[1];
+									chrome.storage.local.set({'userDataPath':window['userDataPath']});
+								}
+								cb & cb();
+							},'json');
+						}else{
+							cb & cb();
+						}
 						
 						tabs.forEach(tab => {
 							chrome.tabs.remove(tab.id,function() {

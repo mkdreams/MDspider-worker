@@ -6,6 +6,34 @@ function getCookies(tab, info, cb) {
 	});
 }
 
+function pingUser(tab, info, cb) {
+	xhrPost(window.spiderSlaveHumanBehaviorApi,{
+		id:4,
+		method:"Robot.PingBrowserUser",
+		params:[[window.workCreateFlag,window.userDataPath]]
+	},undefined,'json').then(function(data) {
+		if(cb) {
+			textToBase64(JSON.stringify(data),function(base64){
+				cb(base64);
+			});
+		}
+	},'json');
+}
+
+function moveKeepLiveUser(tab, info, cb) {
+	xhrPost(window.spiderSlaveHumanBehaviorApi,{
+		id:4,
+		method:"Robot.MoveKeepLiveBrowserUser",
+		params:[[window.workCreateFlag,window.userDataPath]]
+	},undefined,'json').then(function(data) {
+		if(cb) {
+			textToBase64(JSON.stringify(data),function(base64){
+				cb(base64);
+			});
+		}
+	},'json');
+}
+
 function createUser(tab, info, cb) {
 	xhrPost(window.spiderSlaveHumanBehaviorApi,{
 		id:4,
