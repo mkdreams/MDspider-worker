@@ -62,7 +62,7 @@ function initDeviceInfo(cb) {
 
 				chrome.tabs.query({windowId:win.id},function(tabs) {
 					autoCreateTab(window['userDataPath']?'chrome://extensions/':'chrome://version/',function() {
-						if(!window['userDataPath']) {
+						if(window['spiderSlaveHealthCheck'] && !window['userDataPath']) {
 							xhrPost(window.spiderSlaveHumanBehaviorApi,{
 								id:4,
 								method:"Robot.Copy",
@@ -72,6 +72,7 @@ function initDeviceInfo(cb) {
 								if(match && match[1]) {
 									window['userDataPath'] = match[1];
 									chrome.storage.local.set({'userDataPath':window['userDataPath']});
+									pingUser()
 								}
 								cb & cb();
 							},'json');
