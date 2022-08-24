@@ -2,5 +2,4 @@
 .buildpath
 .project
 .settings
-bug.n/data/data/*
-bug.n/data/log.txt
+soft/helpmate/data/static/log.txt

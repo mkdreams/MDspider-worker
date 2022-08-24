@@ -10,6 +10,8 @@ function restoreData(bg, form, $) {
 		, "spiderSlaveApiCb": bg.spiderSlaveApiCb
 		, "spiderSlaveWinCount": bg.spiderSlaveWinCount
 		, "spiderSlavePerWinTabCount": bg.spiderSlavePerWinTabCount
+		, "spiderSlaveActionCountChangeUser": bg.spiderSlaveActionCountChangeUser
+		, "spiderSlaveInitStatus": bg.spiderSlaveInitStatus
 		, "spiderSlaveGetUrlsDelay": bg.spiderSlaveGetUrlsDelay
 		, "spiderSlaveDelay": bg.spiderSlaveDelay
 		, "spiderSlaveOn": bg.spiderSlaveOn
@@ -37,16 +39,6 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 	var bg = chrome.extension.getBackgroundPage();
 	restoreData(bg, form, $);
 
-	$('#worker_status').click(function () {
-		if ($(this).hasClass('layui-icon-pause')) {//now play
-			$(this).removeClass('layui-icon-pause').addClass('layui-icon-play');
-			bg.workPause();
-		} else {//now pause
-			$(this).removeClass('layui-icon-play').addClass('layui-icon-pause');
-			bg.workPlay();
-		}
-	});
-
 	form.on('switch(spiderSlaveOn)', function (data) {
 		chrome.storage.local.set({ 'spiderSlaveOn': data.elem.checked }, function () {
 			bg.loadConfig();
@@ -54,6 +46,9 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 				bg.workPlay();
 			} else {
 				bg.workPause();
+				if(bg.spiderSlaveHelpmate === true) {
+					moveKeepLiveUser()
+				}
 			}
 		});
 

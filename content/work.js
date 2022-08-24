@@ -209,17 +209,23 @@ chrome.runtime.onMessage.addListener(
 								//click
 								//input
 								window.actionComplete = false;
+								window.spiderSlaveHelpmateApi = request.info.spiderSlaveHelpmateApi;
 								var func_go = function() {
-									var pos = getRandomPos(domCenter(eval(request.info.url)));
-									if(request.info.param && request.info.param.method) {
+									var pos = getRandomPos(domCenter(eval(request.info.url)),request.info.spiderSlaveBaseInfo);
+									if(pos === false) {
+										textToBase64("false",function(base64){
+											window.spiderData[request.info.id] = base64;
+											window.actionComplete = true;
+										}.bind(this));
+									}else if(request.info.param && request.info.param.method) {
 										switch(request.info.param.method) {
 											case 'click':
-												xhrPost(request.info.spiderSlaveHumanBehaviorApi,{
+												xhrPost(window.spiderSlaveHelpmateApi,{
 													id:4,
 													method:"Robot.MoveSmooth",
 													params:[[pos[0],pos[1]]]
 												}).then(function(response){
-													return xhrPost(request.info.spiderSlaveHumanBehaviorApi,{
+													return xhrPost(window.spiderSlaveHelpmateApi,{
 														id:4,
 														method:"Robot.Click",
 														params:[['left',false]]
@@ -232,12 +238,12 @@ chrome.runtime.onMessage.addListener(
 												});
 												break;
 											case 'input':
-												xhrPost(request.info.spiderSlaveHumanBehaviorApi,{
+												xhrPost(window.spiderSlaveHelpmateApi,{
 													id:4,
 													method:"Robot.MoveSmooth",
 													params:[[pos[0],pos[1]]]
 												}).then(function(response){
-													return xhrPost(request.info.spiderSlaveHumanBehaviorApi,{
+													return xhrPost(window.spiderSlaveHelpmateApi,{
 														id:4,
 														method:"Robot.Click",
 														params:[['left',false]]
@@ -246,16 +252,16 @@ chrome.runtime.onMessage.addListener(
 													//动态输入内容
 													if(request.info.param.text && request.info.param.text.indexOf("http") === 0) {
 														return xhrPost(request.info.param.text,{},function(resolve,reject,nowresponse){
-															xhrPost(request.info.spiderSlaveHumanBehaviorApi,{
+															xhrPost(window.spiderSlaveHelpmateApi,{
 																id:4,
 																method:"Robot.TypeStr",
-																params:[[nowresponse]]
+																params:[[nowresponse.result.Data]]
 															}).then(function(response){
 																resolve(response);
 															});
-														},'text')
+														},'json',true)
 													}else{
-														return xhrPost(request.info.spiderSlaveHumanBehaviorApi,{
+														return xhrPost(window.spiderSlaveHelpmateApi,{
 															id:4,
 															method:"Robot.TypeStr",
 															params:[[request.info.param.text?request.info.param.text:'']]
@@ -269,18 +275,18 @@ chrome.runtime.onMessage.addListener(
 												});
 												break;
 											case 'select':
-												xhrPost(request.info.spiderSlaveHumanBehaviorApi,{
+												xhrPost(window.spiderSlaveHelpmateApi,{
 													id:4,
 													method:"Robot.MoveSmooth",
 													params:[[pos[0],pos[1]]]
 												}).then(function(response){
-													return xhrPost(request.info.spiderSlaveHumanBehaviorApi,{
+													return xhrPost(window.spiderSlaveHelpmateApi,{
 														id:4,
 														method:"Robot.Click",
 														params:[['left',false]]
 													})
 												}).then(function(response){
-													return xhrPost(request.info.spiderSlaveHumanBehaviorApi,{
+													return xhrPost(window.spiderSlaveHelpmateApi,{
 														id:4,
 														method:"Robot.KeyTap",
 														params:[['down',request.info.param.index?request.info.param.index:1]]

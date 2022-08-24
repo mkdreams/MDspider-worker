@@ -7,9 +7,25 @@ function getCookies(tab, info, cb) {
 }
 
 function pingUser(tab, info, cb) {
-	xhrPost(window.spiderSlaveHumanBehaviorApi,{
+	chrome.windows.getCurrent(function(win) {
+		xhrPost(window.spiderSlaveHelpmateApi,{
+			id:4,
+			method:"Robot.PingBrowserUser",
+			params:[[window.workCreateFlag,window.userDataPath,win.width,win.height,win.left,win.top]]
+		},undefined,'json').then(function(data) {
+			if(cb) {
+				textToBase64(JSON.stringify(data),function(base64){
+					cb(base64);
+				});
+			}
+		},'json');
+	})
+}
+
+function moveNowUser(tab, info, cb) {
+	xhrPost(window.spiderSlaveHelpmateApi,{
 		id:4,
-		method:"Robot.PingBrowserUser",
+		method:"Robot.MoveNowUser",
 		params:[[window.workCreateFlag,window.userDataPath]]
 	},undefined,'json').then(function(data) {
 		if(cb) {
@@ -21,7 +37,7 @@ function pingUser(tab, info, cb) {
 }
 
 function moveKeepLiveUser(tab, info, cb) {
-	xhrPost(window.spiderSlaveHumanBehaviorApi,{
+	xhrPost(window.spiderSlaveHelpmateApi,{
 		id:4,
 		method:"Robot.MoveKeepLiveBrowserUser",
 		params:[[window.workCreateFlag,window.userDataPath]]
@@ -35,7 +51,7 @@ function moveKeepLiveUser(tab, info, cb) {
 }
 
 function createUser(tab, info, cb) {
-	xhrPost(window.spiderSlaveHumanBehaviorApi,{
+	xhrPost(window.spiderSlaveHelpmateApi,{
 		id:4,
 		method:"Robot.CreatBrowserUser",
 		params:[[randomStr()]]
@@ -53,7 +69,7 @@ function createUser(tab, info, cb) {
 }
 
 function deleteUser(tab, info, cb) {
-	xhrPost(window.spiderSlaveHumanBehaviorApi,{
+	xhrPost(window.spiderSlaveHelpmateApi,{
 		id:4,
 		method:"Robot.DeleteBrowserUser",
 		params:[[info.url]]
@@ -67,7 +83,7 @@ function deleteUser(tab, info, cb) {
 }
 
 function closeAllWind(tab, info) {
-	xhrPost(window.spiderSlaveHumanBehaviorApi,{
+	xhrPost(window.spiderSlaveHelpmateApi,{
 		id:4,
 		method:"Robot.CloseBrowserUser",
 		params:[[info.url]]

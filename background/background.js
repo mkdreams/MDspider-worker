@@ -169,7 +169,7 @@ function removeTabCb(tabId) {
 	console.log('close tab!', tabId);
 }
 
-function workPlay() {
+function workPlay(allCompeletedCb) {
 	workPause();
 
 	//close tab
@@ -206,15 +206,19 @@ function workPlay() {
 	window.setInterval_getLinksCache = setInterval(function () {
 		var len = Object.keys(window.spiderSlaveUrls).length;
 		if (len === 0) {
-			pullActions();
+			if(allCompeletedCb) {
+				allCompeletedCb();
+			}else{
+				pullActions();
+			}
 		}
 	}, window.spiderSlaveGetUrlsDelay);
 
 
 	//health check
-	if(window.spiderSlaveHealthCheck === true) {
-		clearInterval(window.spiderSlaveHealthCheckSetInterval);
-		window.spiderSlaveHealthCheckSetInterval = setInterval(function () {
+	if(window.spiderSlaveHelpmate === true) {
+		clearInterval(window.spiderSlaveHelpmateSetInterval);
+		window.spiderSlaveHelpmateSetInterval = setInterval(function () {
 			pingUser()
 		}, 60000);
 	}
@@ -225,18 +229,14 @@ function workPlay() {
 function workPause() {
 	clearInterval(window.setInterval_getHtmlRun);
 	clearInterval(window.setInterval_getLinksCache);
-	clearInterval(window.spiderSlaveHealthCheckSetInterval);
-
-	if(window.spiderSlaveHealthCheck === true) {
-		moveKeepLiveUser()
-	}
+	clearInterval(window.spiderSlaveHelpmateSetInterval);
 
 	backgroundConsole('已暂停', 1);
 }
 
 function pullActions() {
 	var timestamp = new Date().getTime();
-	if(timestamp - window.setInterval_getLinksCache_lastRunTime > window.spiderSlaveGetUrlsDelay) {
+	if(timestamp - window.setInterval_getLinksCache_lastRunTime > window.spiderSlaveGetUrlsDelay && window.spiderSlaveInitStatus === 3) {
 		window.setInterval_getLinksCache_lastRunTime = timestamp;
 		//websocket
 		if(window.spiderSlaveApiActionList.indexOf("ws") === 0) {
@@ -523,20 +523,11 @@ function oneActionRun() {
 		clearInterval(window.setInterval_waitToComplete[window.spiderSlaveTabInfos['tabs'][tabId].id]);
 	}, 600000);
 
+	dealOneAction(window.spiderSlaveTabInfos['tabs'][tabId], window.spiderSlaveUrls[urlId]);
 
-	if(window.spiderSlaveHumanBehavior) {
-		if (window.spiderSlaveUrls[urlId]['type'] == 103) {
-			chrome.windows.update(window.spiderSlaveTabInfos['tabs'][tabId]['win']['id'],{'focused':true,'state':'fullscreen'},function() {
-				window.spiderSlaveUrls[urlId]['spiderSlaveHumanBehaviorApi'] = window.spiderSlaveHumanBehaviorApi;
-				// window.spiderSlaveUrls[urlId]['win'] = window.spiderSlaveTabInfos['tabs'][tabId]['win'];
-				dealOneAction(window.spiderSlaveTabInfos['tabs'][tabId], window.spiderSlaveUrls[urlId]);
-			})
-		}else{
-			dealOneAction(window.spiderSlaveTabInfos['tabs'][tabId], window.spiderSlaveUrls[urlId]);
-		}
-	}else{
-		dealOneAction(window.spiderSlaveTabInfos['tabs'][tabId], window.spiderSlaveUrls[urlId]);
-	}
+	return new Promise(function(resolve,reject) {
+		window.spiderSlaveTabInfos['tabs'][tabId]['doneResolve'] = resolve;
+	});
 }
 
 
@@ -545,6 +536,9 @@ function isDone(tab, info, isError) {
 		window.spiderSlaveTabInfos['tabs'][tab.id]['runStatus'] = 0;
 		window.spiderSlaveDeletedUrls[info['id']] = new Date().getTime();
 		delete window.spiderSlaveUrls[info['id']];
+		if (window.spiderSlaveTabInfos['tabs'][tab.id]['doneResolve']) {
+			window.spiderSlaveTabInfos['tabs'][tab.id]['doneResolve'](true);
+		}
 		clearTimeout(window.setTimeout_checkIsDie[tab.id]);
 	}else{
 		if(window.spiderSlaveUrls[info['id']]['runCount'] === undefined) {
@@ -559,6 +553,9 @@ function isDone(tab, info, isError) {
 					removeTabCb(tab.id);
 					window.spiderSlaveDeletedUrls[info['id']] = new Date().getTime();
 					delete window.spiderSlaveUrls[info['id']];
+					if (window.spiderSlaveTabInfos['tabs'][tab.id]['doneResolve']) {
+						window.spiderSlaveTabInfos['tabs'][tab.id]['doneResolve'](true);
+					}
 					clearTimeout(window.setTimeout_checkIsDie[tab.id]);
 				}
 
@@ -726,8 +723,9 @@ function runSub(tab, info, cb, index) {
 			var subInfo = info.param.sub[index++];
 			if (subInfo['type'] == 103) {
 				var p = new Promise(function(resolve,reject) {
-					chrome.windows.update(window.spiderSlaveTabInfos['tabs'][tab.id]['win']['id'],{'focused':true,'state':'fullscreen'},function() {
-						subInfo['spiderSlaveHumanBehaviorApi'] = window.spiderSlaveHumanBehaviorApi;
+					chrome.windows.getCurrent(function(win) {
+						subInfo['spiderSlaveHelpmateApi'] = window.spiderSlaveHelpmateApi;
+						subInfo['spiderSlaveBaseInfo'] = {"left":win['left'],"offsetLeft":win['left']+window.baseInfo['leftWidth'],"top":win['top'],"offsetTop":win['top']+window.baseInfo['topHeight']};
 						resolve(subInfo);
 					})
 				})
@@ -814,6 +812,13 @@ function sendAction(tab, info, cb) {
 }
 
 function dealOneAction(tab, info, needJump) {
+	if(window.spiderSlaveActionCountChangeUser > 0) {
+		window.spiderSlaveRunActionCount++;
+		if(window.spiderSlaveRunActionCount > window.spiderSlaveActionCountChangeUser) {
+			moveNowUser();
+		}
+	}
+
 	// 1:a(jump and get data)
 	//2:js,4:css,8:image,16:others(ajax get data by get method)
 	//100:block run js,101:ajax,

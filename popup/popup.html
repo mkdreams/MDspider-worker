@@ -16,8 +16,6 @@
 			<div class="layui-colla-item">
 				<h2 class="layui-colla-title">状态及控制 - <span id="userDataPath"></span> - <span id="workCreateFlag"></span> <a class="show-log" href="logs.html" target="_blank">查看日志</a></h2>
 				<div class="layui-colla-content layui-show">
-					<!-- <i id="worker_status" class="layui-icon layui-icon-pause pointer"
-						style="font-size: 30px; color: #009688;"></i> -->
 					<form class="layui-form" action="" lay-filter="workerStatus">
 						<div class="layui-form-item">
 							<div class="layui-input-block">
@@ -81,7 +79,21 @@
 							<label class="layui-form-label">拉取任务周期</label>
 							<div class="layui-input-block">
 								<input type="text" name="spiderSlaveGetUrlsDelay" lay-verify="required"
-									autocomplete="off" class="layui-input">
+								autocomplete="off" class="layui-input">
+							</div>
+						</div>
+						<div class="layui-form-item">
+							<label class="layui-form-label">每执行x个动作切换用户</label>
+							<div class="layui-input-block">
+								<input type="text" name="spiderSlaveActionCountChangeUser" lay-verify="required" autocomplete="off"
+									class="layui-input">
+							</div>
+						</div>
+						<div class="layui-form-item">
+							<label class="layui-form-label">初始化状态</label>
+							<div class="layui-input-block">
+								<input type="text" name="spiderSlaveInitStatus" lay-verify="required" autocomplete="off"
+									class="layui-input">
 							</div>
 						</div>
 						<div class="layui-form-item">

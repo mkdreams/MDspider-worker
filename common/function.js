@@ -29,11 +29,12 @@ function getObjectLen(obj) {
     return Object.keys(obj).length;
 }
 
-function xhrPost(url,post,cb,responseType) {
+function xhrPost(url,post,cb,responseType,helpmateProxy) {
     if(responseType === undefined) {
         responseType = 'blob';
     }
     return new Promise(function(resolve,reject) {
+        //window.workCreateFlag
         var xhr = new XMLHttpRequest()
         xhr.onreadystatechange = function () {
             if (this.readyState == 4 && this.status == 200) {
@@ -44,13 +45,38 @@ function xhrPost(url,post,cb,responseType) {
                 }
             }
         }
-        xhr.open('POST', url)
-        xhr.responseType = responseType
-        xhr.send(post instanceof Object?JSON.stringify(post):post)
+        if(helpmateProxy === undefined) {
+            xhr.open('POST', url)
+            if(window.workCreateFlag !== undefined) {
+                xhr.setRequestHeader('WORKCREATEFLAG',window.workCreateFlag);
+            }
+            xhr.responseType = responseType
+            xhr.send(post instanceof Object?JSON.stringify(post):post)
+        }else{
+            xhr.open('POST', window.spiderSlaveHelpmateApi)
+            proxPost = {
+                id:4,
+                method:"Robot.Proxy",
+                params:[[url,post instanceof Object?JSON.stringify(post):post]]
+            };
+            if(window.workCreateFlag !== undefined) {
+                xhr.setRequestHeader('WORKCREATEFLAG',window.workCreateFlag);
+            }
+            xhr.responseType = responseType
+            xhr.send(JSON.stringify(proxPost))
+        }
+
+
     });
 }
 
 function domCenter(dom) {
+    if(dom === 'topLeftPoint') {
+        return 'topLeftPoint';
+    }
+    if(dom === undefined) {
+        return false;
+    }
     var width = window.innerWidth;
     var height = window.innerHeight;
     var rect = dom.getBoundingClientRect();
@@ -61,10 +87,18 @@ function domCenter(dom) {
     return dom.getBoundingClientRect();
 }
 
-function getRandomPos(pos) {
+function getRandomPos(pos,baseInfo) {
+    if(pos === false) {
+        return false;
+    }
+
+    if(pos === 'topLeftPoint') {
+        return [baseInfo['left']+10,baseInfo['top']+6];
+    }
+
     return [
-            parseInt(pos['left']+pos['width']/4+pos['width']/2*Math.random()),
-            parseInt(pos['top']+pos['height']/4+pos['height']/2*Math.random())
+            parseInt(baseInfo['offsetLeft']+pos['left']+pos['width']/4+pos['width']/2*Math.random()),
+            parseInt(baseInfo['offsetTop']+pos['top']+pos['height']/4+pos['height']/2*Math.random())
         ];
 }
 

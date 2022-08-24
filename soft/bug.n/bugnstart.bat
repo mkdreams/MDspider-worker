@@ -1,1 +1,0 @@
-start /b .\bugn.exe .\data
