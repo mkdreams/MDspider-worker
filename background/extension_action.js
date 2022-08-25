@@ -7,9 +7,7 @@ function getCookies(tab, info, cb) {
 }
 
 function updateConfig(tab, info, cb) {
-	console.log(info);
 	configs = eval("("+info.url+")");
-	console.log(configs);
 	for(var configName in configs) {
 		window[configName] = configs[configName];
 	}
