@@ -9,7 +9,7 @@
             "sub": [
                 {
                     "id": "2",
-                    "url": "{'spiderSlaveActionCountChangeUser':1}",
+                    "url": "{'spiderSlaveActionCountChangeUser':10}",
                     "action": "updateConfig",
                     "type": 200,
                     "code": 1
