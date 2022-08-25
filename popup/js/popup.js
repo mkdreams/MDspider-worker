@@ -47,7 +47,7 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 			} else {
 				bg.workPause();
 				if(bg.spiderSlaveHelpmate === true) {
-					moveKeepLiveUser()
+					bg.moveKeepLiveUser()
 				}
 			}
 		});
