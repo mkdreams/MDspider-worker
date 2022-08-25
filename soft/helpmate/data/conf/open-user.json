@@ -1,2 +1,21 @@
 [
+    {
+        "id": "RANDOM{{.Timestamp}}",
+        "url": "https://www.google.com",
+        "type": 1,
+        "param": {
+            "delay": 3000,
+            "lockTab": 1,
+            "sub": [
+                {
+                    "id": "2",
+                    "url": "{'spiderSlaveActionCountChangeUser':1}",
+                    "action": "updateConfig",
+                    "type": 200,
+                    "code": 1
+                }
+            ]
+        },
+        "code": 1
+    }
 ]

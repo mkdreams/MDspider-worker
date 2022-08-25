@@ -812,10 +812,12 @@ function sendAction(tab, info, cb) {
 }
 
 function dealOneAction(tab, info, needJump) {
-	if(window.spiderSlaveActionCountChangeUser > 0) {
+	if(window.spiderSlaveActionCountChangeUser > 0 && window.spiderSlaveHelpmate) {
 		window.spiderSlaveRunActionCount++;
 		if(window.spiderSlaveRunActionCount > window.spiderSlaveActionCountChangeUser) {
-			moveNowUser();
+			ajaxPost({ 'admintype': 2, 'tab': 0, 'url': window.spiderSlaveApiCb, 'data': { 'id': 0, 'sResponse': 'cmVwbGFjZQ==','sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag,'replaceWorkCreateFlag':"halemate"} },function() {
+				ReplaceNowUser();
+			});
 		}
 	}
 

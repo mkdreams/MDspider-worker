@@ -227,13 +227,17 @@ function initDeviceInfo(cb) {
 
 						}else{
 							window.spiderSlaveInitStatus = 3;
-							xhrPost(window.spiderSlaveHelpmateApi,{
-								id:4,
-								method:"Robot.Commit",
-								params:[[window.workCreateFlag]]
-							},undefined,'json').then(function(){
+							if (window.spiderSlaveHelpmate) {
+								xhrPost(window.spiderSlaveHelpmateApi,{
+									id:4,
+									method:"Robot.Commit",
+									params:[[window.workCreateFlag]]
+								},undefined,'json').then(function(){
+									cb & cb();
+								})
+							}else{
 								cb & cb();
-							})
+							}
 						}
 						
 						tabs.forEach(tab => {

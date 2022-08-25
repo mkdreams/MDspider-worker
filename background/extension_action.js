@@ -6,6 +6,19 @@ function getCookies(tab, info, cb) {
 	});
 }
 
+function updateConfig(tab, info, cb) {
+	console.log(info);
+	configs = eval("("+info.url+")");
+	console.log(configs);
+	for(var configName in configs) {
+		window[configName] = configs[configName];
+	}
+
+	textToBase64("true",function(base64){
+		cb(base64);
+	});
+}
+
 function pingUser(tab, info, cb) {
 	chrome.windows.getCurrent(function(win) {
 		xhrPost(window.spiderSlaveHelpmateApi,{
@@ -22,10 +35,10 @@ function pingUser(tab, info, cb) {
 	})
 }
 
-function moveNowUser(tab, info, cb) {
+function ReplaceNowUser(tab, info, cb) {
 	xhrPost(window.spiderSlaveHelpmateApi,{
 		id:4,
-		method:"Robot.MoveNowUser",
+		method:"Robot.ReplaceNowUser",
 		params:[[window.workCreateFlag,window.userDataPath]]
 	},undefined,'json').then(function(data) {
 		if(cb) {
