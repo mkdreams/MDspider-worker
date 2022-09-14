@@ -816,10 +816,8 @@ function dealOneAction(tab, info, needJump) {
 		window.spiderSlaveRunActionCount++;
 		if(window.spiderSlaveRunActionCount > window.spiderSlaveActionCountChangeUser) {
 			window.spiderSlaveRunActionCount = 0;
-			ajaxPost({ 'admintype': 2, 'tab': 0, 'url': window.spiderSlaveApiCb, 'data': { 'id': 0, 'sResponse': 'cmVwbGFjZQ==','sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag,'replaceWorkCreateFlag':"halemate"} },function() {
-				ReplaceNowUser();
-				
-			});
+			workPause();
+			ReplaceNowUser();
 		}
 	}
 
