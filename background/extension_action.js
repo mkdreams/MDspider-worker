@@ -37,7 +37,7 @@ function ReplaceNowUser(tab, info, cb) {
 	xhrPost(window.spiderSlaveHelpmateApi,{
 		id:4,
 		method:"Robot.ReplaceNowUser",
-		params:[[window.workCreateFlag,window.userDataPath,window.spiderSlaveApiCb+'?&isDelete=1&sFlag='+window.spiderSlaveFlag+'&workCreateFlag='+window.workCreateFlag]]
+		params:[[window.workCreateFlag,window.userDataPath,window.spiderSlaveApiCb+'?isDelete=1&sFlag='+window.spiderSlaveFlag+'&workCreateFlag='+window.workCreateFlag]]
 	},undefined,'json').then(function(data) {
 		if(cb) {
 			textToBase64(JSON.stringify(data),function(base64){
@@ -51,7 +51,7 @@ function moveKeepLiveUser(tab, info, cb) {
 	xhrPost(window.spiderSlaveHelpmateApi,{
 		id:4,
 		method:"Robot.MoveKeepLiveBrowserUser",
-		params:[[window.workCreateFlag,window.userDataPath]]
+		params:[[window.workCreateFlag,window.userDataPath,window.spiderSlaveApiCb+'?isDelete=1&sFlag='+window.spiderSlaveFlag+'&workCreateFlag='+window.workCreateFlag]]
 	},undefined,'json').then(function(data) {
 		if(cb) {
 			textToBase64(JSON.stringify(data),function(base64){

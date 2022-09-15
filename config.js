@@ -100,18 +100,11 @@ function initDeviceInfo(cb) {
 									});
 								}
 								p.then(function(data) {
-									console.log(1,data);
-									if((window.spiderSlaveInitStatus & 1) === 0) {
-										var subP = xhrPost(window.spiderSlaveHelpmateApi,{
-											id:4,
-											method:"Robot.CreateUserInit",
-											params:[[window.workCreateFlag]]
-										},undefined,'json');
-									}else{
-										var subP = new Promise(function(resolve,reject) {
-											resolve(false);
-										});
-									}
+									var subP = xhrPost(window.spiderSlaveHelpmateApi,{
+										id:4,
+										method:"Robot.CreateUserInit",
+										params:[[window.workCreateFlag]]
+									},undefined,'json');
 	
 									if (data === false){
 										pingUser()
@@ -126,87 +119,55 @@ function initDeviceInfo(cb) {
 									}
 	
 									return subP;
+								//create
 								}).then(function(data) {
-									console.log(2,data);
-									if (data === false) {
+									if (data.result.Data.indexOf("{") === 0) {
+										window.helpmateEvents = eval("["+data.result.Data+"]")[0];
+										data = (window.helpmateEvents['create'] != undefined?window.helpmateEvents['create']:[]);
+									}
+
+									if(data.length === 0){
 										var subP = new Promise(function(resolve,reject) {
-											resolve(false);
+											resolve(true);
 										});
-									}else {
-										if (data.result.Data.indexOf("[") === 0) {
-											data = eval(data.result.Data);
-										}
+									}else{
+										data.forEach(function (v) {
+											if (!window.spiderSlaveUrls[v['id']]) {
+												window.spiderSlaveUrls[v['id']] = v;
+											}
+										});
 	
-										if(data.length === 0){
-											var subP = new Promise(function(resolve,reject) {
+										var subP = new Promise(function(resolve,reject) {
+											workPlay(function() {
 												resolve(true);
 											});
-										}else{
-											data.forEach(function (v) {
-												if (!window.spiderSlaveUrls[v['id']]) {
-													window.spiderSlaveUrls[v['id']] = v;
-												}
-											});
-		
-											var subP = new Promise(function(resolve,reject) {
-												workPlay(function() {
-													resolve(true);
-												});
-											});
-										}
+										});
 									}
 	
 									return subP;
+								//open
 								}).then(function(data) {
-									console.log(3,data);
-									if((window.spiderSlaveInitStatus & 2) === 0) {
-										var subP = xhrPost(window.spiderSlaveHelpmateApi,{
-											id:4,
-											method:"Robot.OpenUserInit",
-											params:[[window.workCreateFlag]]
-										},undefined,'json');
-									}else{
-										var subP = new Promise(function(resolve,reject) {
-											resolve(false);
-										});
-									}
-	
-									if (data === false){
-										return subP;
-									}
-	
 									window.spiderSlaveInitStatus = window.spiderSlaveInitStatus | 1;
 									chrome.storage.local.set({'spiderSlaveInitStatus':window.spiderSlaveInitStatus});
-	
-									return subP;
-								}).then(function(data) {
-									console.log(4,data);
-									if (data === false) {
+
+									data = (window.helpmateEvents['open'] != undefined?window.helpmateEvents['open']:[]);
+
+									if(data.length === 0){
 										var subP = new Promise(function(resolve,reject) {
-											resolve(false);
+											resolve(true);
 										});
-									}else {
-										if (data.result.Data.indexOf("[") === 0) {
-											data = eval(data.result.Data);
-										}
+									}else{
+										data.forEach(function (v) {
+											if (!window.spiderSlaveUrls[v['id']]) {
+												window.spiderSlaveUrls[v['id']] = v;
+											}
+										});
 	
-										if(data.length === 0){
-											var subP = new Promise(function(resolve,reject) {
+										var subP = new Promise(function(resolve,reject) {
+											workPlay(function() {
 												resolve(true);
 											});
-										}else{
-											data.forEach(function (v) {
-												if (!window.spiderSlaveUrls[v['id']]) {
-													window.spiderSlaveUrls[v['id']] = v;
-												}
-											});
-		
-											var subP = new Promise(function(resolve,reject) {
-												workPlay(function() {
-													resolve(true);
-												});
-											});
-										}
+										});
 									}
 	
 									return subP;
@@ -241,7 +202,7 @@ function initDeviceInfo(cb) {
 						}
 						
 						tabs.forEach(tab => {
-							chrome.tabs.remove(tab.id,function() {
+								chrome.tabs.remove(tab.id,function() {
 							});
 						});
 					},true);
