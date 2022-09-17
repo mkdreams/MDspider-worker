@@ -467,6 +467,7 @@ function getLockTabId(urlId,tabId) {
 			}else{
 				var lockTabFlag = 'tempLockTabFlag';
 			}
+			window.spiderSlaveUrls[urlId]['param']['lockTabFlag'] = lockTabFlag;
 		}
 
 		if(window.lockTabFlagToTab[lockTabFlag]) {
@@ -656,11 +657,64 @@ function getHml(tab, info, result) {
 		}
 		
 		if(info['isEnd'] === true) {
-			ajaxPost({ 'admintype': 2, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': ((info.param && info.param.musave)?JSON.stringify(deleteBase64Pre(info['results'])):deleteBase64Pre(info['results'][info['results'].length-1])),'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function() {
-				isDone(tab, info);
-			},function() {
-				isDone(tab, info, true);
-			});
+			
+			if(info['doneCheckActionPromiseResolve']) {
+				var sResponse = ((info.param && info.param.musave)?JSON.stringify(deleteBase64Pre(info['results'])):deleteBase64Pre(info['results'][info['results'].length-1]));
+				info['doneCheckActionPromiseResolve']([info,sResponse]);
+			}
+
+			function maincb() {
+				var sResponse = ((info.param && info.param.musave)?JSON.stringify(deleteBase64Pre(info['results'])):deleteBase64Pre(info['results'][info['results'].length-1]));
+				ajaxPost({ 'admintype': 2, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': sResponse,'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function() {
+					isDone(tab, info);
+				},function() {
+					isDone(tab, info, true);
+				});
+			}
+
+			if(info.param && info.param.lockTabFlag && window.helpmateEvents && window.helpmateEvents['done'] && window.helpmateEvents['done'][info.param.lockTabFlag]) {
+				doneCheckActions = window.helpmateEvents['done'][info.param.lockTabFlag];
+				var doneCheckActionIndex = info['doneCheckActionIndex']!==undefined?(info['doneCheckActionIndex']+1):0;
+				if(doneCheckActions.length > doneCheckActionIndex) {
+					if(doneCheckActionIndex === 0) {
+						doneCheckActions[doneCheckActionIndex]['maincb'] = maincb
+					}else{
+						doneCheckActions[doneCheckActionIndex]['maincb'] = doneCheckActions[doneCheckActionIndex-1]['maincb'];
+					}
+
+					doneCheckActions[doneCheckActionIndex]['id'] = 'temp';
+					doneCheckActions[doneCheckActionIndex]['doneCheckActionIndex'] = doneCheckActionIndex;
+					doneCheckActions[doneCheckActionIndex]['isDoneCheckAction'] = true;
+					if(doneCheckActions[doneCheckActionIndex]['param'] === undefined) {
+						doneCheckActions[doneCheckActionIndex]['param'] = {};
+					}
+					if(doneCheckActions[doneCheckActionIndex]['param']['lockTabFlag'] === undefined) {
+						doneCheckActions[doneCheckActionIndex]['param']['lockTabFlag'] = info.param.lockTabFlag;
+					}
+
+					var p = new Promise(function(resolve,reject) {
+						doneCheckActions[doneCheckActionIndex]['doneCheckActionPromiseResolve'] = resolve;
+						sendAction(tab, doneCheckActions[doneCheckActionIndex], function(){
+							runActionComplete(tab, doneCheckActions[doneCheckActionIndex], function(tab, infoTemp) {
+								runSub(tab, infoTemp, function(tab, infoTemp) {
+									getHml(tab, infoTemp);
+								},0)
+							});
+						});
+					});
+					
+					p.then(function(data) {
+						var info = data[0];
+						var sResponse = data[1];
+						console.log("done check todo",info,sResponse);
+					});
+				}else{
+					info['maincb']();
+				}
+			}else{
+				maincb();
+			}
+
 		}
 	});
 }
@@ -693,7 +747,7 @@ function runActionComplete(tab,info,cb) {
 
 			chrome.tabs.get(tab.id, function (nowTab) {
 				window.tabLocked[tab.id] = false;
-				
+
 				if(nowTab === undefined) {
 					clearInterval(window.setInterval_waitToComplete[tab.id]);
 					isDone(tab, info, true);
