@@ -7,7 +7,7 @@ function pageRunJs(jsStr,cb) {
 		var reader = new FileReader();\
 		reader.readAsDataURL(blob);\
 		reader.onload = function (e) {\
-			callback(e.target.result.replace(/data\\\\:[\\\\s\\\\S]+?;base64,/,""));\
+			callback(e.target.result);\
 		}\
 	 };\
 	 var textToBase64 = function(text, callback) {\

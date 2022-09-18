@@ -19,6 +19,18 @@ function deleteBase64Pre(base64) {
     }
 }
 
+function base64ToString(base64) {
+    if (base64 instanceof Array) {
+        var res = [];
+        base64.forEach(function(v) {
+            res.push(Base64.decode(deleteBase64Pre(v)));
+        });
+        return res;
+    }else{
+        return Base64.decode(deleteBase64Pre(base64));
+    }
+}
+
 //text to base64
 function textToBase64(text, callback) {
     var blob = new Blob([text]);

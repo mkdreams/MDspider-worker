@@ -28,13 +28,20 @@ window.helpmateEvents = {
     "create": [],
     "open": [],
     "done": {
-		'test':[
-			{
-				"url":"return 1;",
-				"type":100,
-				"then":"console.log('done then')"
-			}
-		]
+		// 'test':[
+		// 	{
+		// 		"url":"return document.getElementsByTagName('html')[0].innerHTML;",
+		// 		"type":100,
+		// 		"then":
+		// 			`
+		// 			if(response.indexOf('some text') > 0) {
+		// 				console.log(info,response,'done then');
+		// 			}else{
+		// 				console.log(info,response,'is false');
+		// 			}
+		// 			`
+		// 	}
+		// ]
 	}
 };
 

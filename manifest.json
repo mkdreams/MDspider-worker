@@ -19,6 +19,7 @@
 	"background":{
 		"scripts":[
 			"common/jquery-2.0.3.js",
+			"common/base64.min.js",
 	    	"common/function.js",
 	    	"background/extension_action.js",
 	    	"background/background.js",
@@ -32,6 +33,7 @@
 			"matches": ["*://*/*"],
 			"js": [
 				"common/jquery-2.0.3.js",
+			    "common/base64.min.js",
 			    "common/function.js",
 				"content/js.cookie.min.js",
 				"content/html2canvas.min.js",

@@ -659,8 +659,7 @@ function getHml(tab, info, result) {
 		if(info['isEnd'] === true) {
 			
 			if(info['doneCheckActionPromiseResolve']) {
-				var sResponse = ((info.param && info.param.musave)?JSON.stringify(deleteBase64Pre(info['results'])):deleteBase64Pre(info['results'][info['results'].length-1]));
-				info['doneCheckActionPromiseResolve']([info,sResponse]);
+				info['doneCheckActionPromiseResolve']([info,((info.param && info.param.musave)?JSON.stringify(base64ToString(info['results'])):base64ToString(info['results'][info['results'].length-1]))]);
 			}
 
 			function maincb() {
@@ -705,8 +704,8 @@ function getHml(tab, info, result) {
 					
 					p.then(function(data) {
 						var info = data[0];
-						var sResponse = data[1];
-						console.log("done check todo",info,sResponse);
+						var response = data[1];
+						eval(info['then']);
 					});
 				}else{
 					info['maincb']();
