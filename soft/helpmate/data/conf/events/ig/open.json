@@ -1,0 +1,142 @@
+[
+    {
+        "id": "RANDOM-{{.Timestamp}}-{{funcRandom}}",
+        "url": "https://www.instagram.com/accounts/login/",
+        "type": 1,
+        "param": {
+            "delay": 3000,
+            "lockTab": 1,
+            "sub": [
+                {
+                    "id": "2",
+                    "url": "$('.coreSpriteFacebookIcon').next()[0]",
+                    "type": 103,
+                    "param": {
+                        "delay": 3000,
+                        "method": "click",
+                        "lockTab": 1
+                    },
+                    "code": 1
+                },
+                {
+                    "id": "3",
+                    "url": "$('button[name=__CONFIRM__]')[0]",
+                    "type": 103,
+                    "param": {
+                        "predelay": 5000,
+                        "delay": 2000,
+                        "method": "click",
+                        "lockTab": 1
+                    },
+                    "code": 1
+                },
+                {
+                    "id": "3",
+                    "url": "$('button[name=__CONFIRM__]')[0]",
+                    "type": 103,
+                    "param": {
+                        "delay": 1000,
+                        "method": "click",
+                        "lockTab": 1
+                    },
+                    "code": 1
+                },
+                {
+                    "id": "3",
+                    "url": "$('button:contains(\"完成设置\")')[0]",
+                    "type": 103,
+                    "param": {
+                        "predelay": 10000,
+                        "delay": 3000,
+                        "method": "click",
+                        "lockTab": 1
+                    },
+                    "code": 1
+                },
+                {
+                    "id": "3",
+                    "url": "$('input[name=username]')[0]",
+                    "type": 103,
+                    "param": {
+                        "predelay": 3000,
+                        "delay": 2000,
+                        "method": "input",
+                        "text": "cc{{.Timestamp}}",
+                        "lockTab": 1
+                    },
+                    "code": 1
+                },
+                {
+                    "id": "3",
+                    "url": "$('input[name=password]')[0]",
+                    "type": 103,
+                    "param": {
+                        "delay": 3000,
+                        "method": "input",
+                        "text": "Ccl1234",
+                        "lockTab": 1
+                    },
+                    "code": 1
+                },
+                {
+                    "id": "3",
+                    "url": "$('button[type=submit]:contains(\"注册\")')[0]",
+                    "type": 103,
+                    "param": {
+                        "delay": 3000,
+                        "method": "click",
+                        "lockTab": 1
+                    },
+                    "code": 1
+                },
+                {
+                    "id": "3",
+                    "url": "$('button[type=button]:contains(\"返回 Instagram\")')[0]",
+                    "type": 103,
+                    "param": {
+                        "predelay": 20000,
+                        "delay": 3000,
+                        "method": "click",
+                        "lockTab": 1
+                    },
+                    "code": 1
+                },
+                {
+                    "id": "3",
+                    "url": "$('button:contains(\"以后再说\")')[0]",
+                    "type": 103,
+                    "param": {
+                        "predelay": 5000,
+                        "delay": 2000,
+                        "method": "click",
+                        "lockTab": 1
+                    },
+                    "code": 1 
+                },
+                {
+                    "id": "3",
+                    "url": "$('button[type=button] div:contains(\"关注\")')[Math.floor(Math.random()*$('button[type=button] div:contains(\"关注\"))').length)]",
+                    "type": 103,
+                    "param": {
+                        "delay": 3000,
+                        "method": "click",
+                        "lockTab": 1
+                    },
+                    "code": 1
+                },
+                {
+                    "id": "3",
+                    "url": "$('button[type=button] div:contains(\"关注\")')[Math.floor(Math.random()*$('button[type=button] div:contains(\"关注\"))').length)]",
+                    "type": 103,
+                    "param": {
+                        "delay": 3000,
+                        "method": "click",
+                        "lockTab": 1
+                    },
+                    "code": 1
+                }
+            ]
+        },
+        "code": 1
+    }
+]

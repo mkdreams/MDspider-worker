@@ -1,0 +1,16 @@
+{
+    "siteId-facebook":[
+        {
+            "url":"return document.getElementsByTagName('html')[0].innerHTML;",
+            "type":100,
+            "then":
+                `
+                if(response.indexOf('我们暂时停用了你的账号') > 0 || response.indexOf('我们会给你发送短信验证码') > 0) {
+                    workPause();
+                    moveKeepLiveUser();
+                    ReplaceNowUser();
+                }
+                `
+        }
+    ]
+}
