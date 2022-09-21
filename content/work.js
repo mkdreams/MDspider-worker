@@ -180,7 +180,7 @@ chrome.runtime.onMessage.addListener(
 										window.scroll(0,offset);
 										offset += clientHeight;
 										pageRunJs(request.info.url,function(base64) {
-											if(base64 === 'dHJ1ZQ==') {
+											if(deleteBase64Pre(base64) === 'dHJ1ZQ==') {
 												window.actionComplete = true;
 												clearInterval(window.setInterval_scroll);
 											}
