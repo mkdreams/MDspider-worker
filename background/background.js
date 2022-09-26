@@ -672,29 +672,31 @@ function getHml(tab, info, result) {
 			}
 
 			if(info.param && info.param.lockTabFlag && window.helpmateEvents && window.helpmateEvents['done'] && window.helpmateEvents['done'][info.param.lockTabFlag]) {
-				doneCheckActions = window.helpmateEvents['done'][info.param.lockTabFlag];
+				var doneCheckActions = window.helpmateEvents['done'][info.param.lockTabFlag];
 				var doneCheckActionIndex = info['doneCheckActionIndex']!==undefined?(info['doneCheckActionIndex']+1):0;
 				if(doneCheckActions.length > doneCheckActionIndex) {
+					var doneCheckAction = $.extend(true, {}, doneCheckActions[doneCheckActionIndex]);
+
 					if(doneCheckActionIndex === 0) {
-						doneCheckActions[doneCheckActionIndex]['maincb'] = maincb
+						doneCheckAction['maincb'] = maincb
 					}else{
-						doneCheckActions[doneCheckActionIndex]['maincb'] = doneCheckActions[doneCheckActionIndex-1]['maincb'];
+						doneCheckAction['maincb'] = doneCheckActions[doneCheckActionIndex-1]['maincb'];
 					}
 
-					doneCheckActions[doneCheckActionIndex]['id'] = 'temp';
-					doneCheckActions[doneCheckActionIndex]['doneCheckActionIndex'] = doneCheckActionIndex;
-					doneCheckActions[doneCheckActionIndex]['isDoneCheckAction'] = true;
-					if(doneCheckActions[doneCheckActionIndex]['param'] === undefined) {
-						doneCheckActions[doneCheckActionIndex]['param'] = {};
+					doneCheckAction['id'] = 'temp';
+					doneCheckAction['doneCheckActionIndex'] = doneCheckActionIndex;
+					doneCheckAction['isDoneCheckAction'] = true;
+					if(doneCheckAction['param'] === undefined) {
+						doneCheckAction['param'] = {};
 					}
-					if(doneCheckActions[doneCheckActionIndex]['param']['lockTabFlag'] === undefined) {
-						doneCheckActions[doneCheckActionIndex]['param']['lockTabFlag'] = info.param.lockTabFlag;
+					if(doneCheckAction['param']['lockTabFlag'] === undefined) {
+						doneCheckAction['param']['lockTabFlag'] = info.param.lockTabFlag;
 					}
 
 					var p = new Promise(function(resolve,reject) {
-						doneCheckActions[doneCheckActionIndex]['doneCheckActionPromiseResolve'] = resolve;
-						sendAction(tab, doneCheckActions[doneCheckActionIndex], function(){
-							runActionComplete(tab, doneCheckActions[doneCheckActionIndex], function(tab, infoTemp) {
+						doneCheckAction['doneCheckActionPromiseResolve'] = resolve;
+						sendAction(tab, doneCheckAction, function(){
+							runActionComplete(tab, doneCheckAction, function(tab, infoTemp) {
 								runSub(tab, infoTemp, function(tab, infoTemp) {
 									getHml(tab, infoTemp);
 								},0)
