@@ -9,6 +9,9 @@
                     workPause();
                     moveKeepLiveUser();
                     ReplaceNowUser();
+                }else if(response.indexOf('你暂时被禁止使用此功能') > 0) {
+                    workPause();
+                    PauseNowUser(undefined,{'pauseMs':86400});
                 }
                 `
         }
