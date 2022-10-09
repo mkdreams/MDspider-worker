@@ -4,7 +4,7 @@
 	"name": "MDspider",
 	"short_name": "MDS",
 	"description": "Tool for data extraction from websites",
-	"permissions": ["<all_urls>", "tabs", "notifications", "system.display","system.memory", "storage", "unlimitedStorage", "downloads", "webNavigation", "cookies", "proxy"],
+	"permissions": ["<all_urls>", "declarativeNetRequest", "tabs", "notifications", "system.display","system.memory", "storage", "unlimitedStorage", "downloads", "webNavigation", "cookies", "proxy"],
 	"icons": {
 		"16": "popup/images/colin.png"
 	},

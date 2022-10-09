@@ -169,6 +169,23 @@ function removeTabCb(tabId) {
 	console.log('close tab!', tabId);
 }
 
+//stop content-security-policy
+chrome.tabs.onCreated.addListener(function(tab) {
+	var tabId = tab.id;
+	var addRules = [],
+		removeRuleIds = [];
+	addRules.push({
+		id:tabId,
+		action: {
+		  type: 'modifyHeaders',
+		  responseHeaders: [{ header: 'content-security-policy', operation: 'set', value: '' }]
+		},
+		condition: {urlFilter: '*', resourceTypes: ['main_frame', 'sub_frame']}
+	});
+
+	chrome.declarativeNetRequest.updateSessionRules({addRules, removeRuleIds})
+});
+
 function workPlay(allCompeletedCb) {
 	workPause();
 
