@@ -28,3 +28,9 @@ function sendMessageToTabs(tab,sendInfoObj,callBack) {
 		sendMessageAction(tab.id,sendInfoObj,callBack,frames);
 	});
 }
+
+chrome.webRequest.onHeadersReceived.addListener(details => {
+    let header = details.responseHeaders.find(e => e.name.toLowerCase() === 'content-security-policy') ;
+    header.value = '';
+    return {responseHeaders: details.responseHeaders};
+}, {urls: ['*://*/*']}, ['blocking', 'responseHeaders']);
