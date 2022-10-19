@@ -30,7 +30,9 @@ function sendMessageToTabs(tab,sendInfoObj,callBack) {
 }
 
 chrome.webRequest.onHeadersReceived.addListener(details => {
-    let header = details.responseHeaders.find(e => e.name.toLowerCase() === 'content-security-policy') ;
-    header.value = '';
+    let header = details.responseHeaders.find(e => e.name.toLowerCase() === 'content-security-policy');
+	if(header != undefined) {
+		header.value = '';
+	}
     return {responseHeaders: details.responseHeaders};
 }, {urls: ['*://*/*']}, ['blocking', 'responseHeaders']);
