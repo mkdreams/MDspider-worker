@@ -568,12 +568,12 @@ function isDone(tab, info, isError) {
 		if(window.spiderSlaveUrls[info['id']]['runCount'] > 5) {
 			ajaxPost({ 'admintype': 2, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': 'ZmFsc2U=','sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function() {
 				var clearInfo = function(tab,info) {
-					removeTabCb(tab.id);
-					window.spiderSlaveDeletedUrls[info['id']] = new Date().getTime();
-					delete window.spiderSlaveUrls[info['id']];
 					if (window.spiderSlaveTabInfos['tabs'][tab.id]['doneResolve']) {
 						window.spiderSlaveTabInfos['tabs'][tab.id]['doneResolve'](true);
 					}
+					window.spiderSlaveDeletedUrls[info['id']] = new Date().getTime();
+					delete window.spiderSlaveUrls[info['id']];
+					removeTabCb(tab.id);
 					clearTimeout(window.setTimeout_checkIsDie[tab.id]);
 				}
 
