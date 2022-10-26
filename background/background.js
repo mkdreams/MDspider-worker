@@ -550,6 +550,8 @@ function oneActionRun() {
 
 
 function isDone(tab, info, isError) {
+	window.spiderSlaveTabInfos['tabs'][tab.id]['iActiveTime'] = new Date().getTime();
+
 	if(isError === undefined) {
 		window.spiderSlaveTabInfos['tabs'][tab.id]['runStatus'] = 0;
 		window.spiderSlaveDeletedUrls[info['id']] = new Date().getTime();
@@ -607,6 +609,10 @@ function resultIsOk(tab, info, cb) {
 			isDone(tab, info, true);
 			window.tabLocked[tab.id] = false;
 			return ;
+		}
+
+		if(resultIsOkCount%600 === 0) {
+			window.spiderSlaveTabInfos['tabs'][tab.id]['iActiveTime'] = new Date().getTime();
 		}
 
 		if(window.tabLocked[tab.id] === true) {
