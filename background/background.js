@@ -401,7 +401,7 @@ function getNextTab(urlId) {
 			canRunTabs.push(i);
 		}
 
-		if(needLock && i !== urlNowRunTabId) {
+		if(needLock && i != urlNowRunTabId) {
 			continue;
 		}
 
@@ -460,14 +460,23 @@ function getNextTab(urlId) {
 			window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
 		}
 
-		urlId = getUrlInfo(undefined,window.lockTabFlagToTab[canRunTabs[0]]);
+		for(var tabFlagIdx in canRunTabs) {
+			urlId = getUrlInfo(undefined,window.lockTabFlagToTab[canRunTabs[tabFlagIdx]]);
 
-		if (urlId == -1) {
-			pullActions();
-			return [urlId,-2];
+			if (urlId == -1) {
+				pullActions();
+				continue;
+			}
+
+			tabFlag = canRunTabs[tabFlagIdx];
+			break;
 		}
 
-		return [urlId,canRunTabs[0]];
+		if (urlId == -1) {
+			return [urlId, -2];
+		}
+
+		return [urlId,tabFlag];
 	}
 
 	return [urlId,index];
