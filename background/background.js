@@ -366,7 +366,7 @@ function getUrlInfo(types,domain) {
 		if (window.spiderSlaveUrls[id]
 			&& (!types || types.indexOf(window.spiderSlaveUrls[id]['type']) > -1)
 			&& (!window.spiderSlaveUrls[id]['runStartTime'] || window.spiderSlaveUrls[id]['runStartTime'] < needAgain)
-			&& (!domain || (window.spiderSlaveUrls[id]['param'] && window.spiderSlaveUrls[id]['param']['lockTab'] && window.spiderSlaveUrls[id]['param']['lockTabFlag'] && window.spiderSlaveUrls[id]['param']['lockTabFlag'].indexOf(domain) > -1) 
+			&& (!domain || (window.spiderSlaveUrls[id]['param'] && window.spiderSlaveUrls[id]['param']['lockTab'] && window.spiderSlaveUrls[id]['param']['lockTabFlag'] && window.spiderSlaveUrls[id]['param']['lockTabFlag'] === domain) 
 				|| (window.spiderSlaveUrls[id]['param'] && window.spiderSlaveUrls[id]['param']['lockTab'] && window.spiderSlaveUrls[id]['url'].indexOf(domain) > -1))
 		) {
 			window.spiderSlaveUrls[id]['runStartTime'] = nowTimeStamp;
@@ -401,7 +401,7 @@ function getNextTab(urlId) {
 			canRunTabs.push(i);
 		}
 
-		if(needLock && i != urlNowRunTabId) {
+		if(needLock && i !== urlNowRunTabId) {
 			continue;
 		}
 
