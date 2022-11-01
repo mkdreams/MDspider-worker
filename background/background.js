@@ -449,6 +449,8 @@ function getNextTab(urlId) {
 
 			dealOneAction(window.spiderSlaveTabInfos['tabs'][tab.id], window.spiderSlaveUrls[urlId], true);
 		},false,window.spiderSlaveUrls[urlId]);
+
+		return [urlId,-2];
 	}else if(index == -1 && canRunTabs.length > 0) {
 		//restore start time
 		if (window.spiderSlaveTabInfos['allTabLocked']) {
@@ -590,8 +592,8 @@ function isDone(tab, info, isError) {
 
 				chrome.tabs.query({windowId:tab.windowId},function(tabs) {
 					if(tabs && tabs.length > 1) {
+						clearInfo(tab,info);
 						chrome.tabs.remove(tab.id,function() {
-							clearInfo(tab,info);
 						});
 					}else{
 						clearInfo(tab,info);
