@@ -590,15 +590,22 @@ function isDone(tab, info, isError) {
 					clearTimeout(window.setTimeout_checkIsDie[tab.id]);
 				}
 
-				chrome.tabs.query({windowId:tab.windowId},function(tabs) {
-					if(tabs && tabs.length > 1) {
-						clearInfo(tab,info);
-						chrome.tabs.remove(tab.id,function() {
-						});
-					}else{
-						clearInfo(tab,info);
-					}
-				})
+				if(getObjectLen(window.spiderSlaveTabInfos['wins']) > 1) {
+					clearInfo(tab,info);
+					chrome.tabs.remove(tab.id,function() {
+					});
+				}else{
+					chrome.tabs.query({windowId:tab.windowId},function(tabs) {
+						if(tabs && tabs.length > 1) {
+							clearInfo(tab,info);
+							chrome.tabs.remove(tab.id,function() {
+							});
+						}else{
+							clearInfo(tab,info);
+						}
+					})
+				}
+
 			});
 		}else{
 			window.spiderSlaveTabInfos['tabs'][tab.id]['runStatus'] = 0;
