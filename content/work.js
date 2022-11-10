@@ -92,9 +92,35 @@ chrome.runtime.onMessage.addListener(
 								break;
 							case 102:
 							default:
-								textToBase64(document.getElementsByTagName('html')[0].innerHTML,function(base64){
-									window.spiderData[request.info.id] = base64;
-								}.bind(this));
+								var promiseArr = [];
+								var p = new Promise(function(resolve,reject) {
+									textToBase64(document.getElementsByTagName('html')[0].innerHTML,function(base64){
+										resolve(base64)
+									}.bind(this));
+								});
+								promiseArr.push(p);
+
+								if(request.info.includeIframe) {
+									var iframes = document.getElementsByTagName('iframe');
+									console.log(iframes)
+									for(var iframeIdx=0; iframeIdx<iframes.length; iframeIdx++) {
+										var p = new Promise(function(resolve,reject) {
+											pageRunJs("return document.getElementsByTagName('iframe')["+iframeIdx+"].contentDocument.getElementsByTagName('html')[0].innerHTML;",function(base64) {
+												resolve(base64)
+											});
+										});
+										promiseArr.push(p);
+									}
+								}
+
+								Promise.all(promiseArr).then((result) => {
+									console.log("result",result);
+									if(result.length === 1) {
+										window.spiderData[request.info.id] = result[0];
+									}else{
+										window.spiderData[request.info.id] = result;
+									}
+								})
 								break;
 						}
 					}

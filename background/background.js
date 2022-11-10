@@ -705,7 +705,11 @@ function getHml(tab, info, result) {
 
 			function maincb() {
 				var sResponse = ((info.param && info.param.musave)?JSON.stringify(deleteBase64Pre(info['results'])):deleteBase64Pre(info['results'][info['results'].length-1]));
-				ajaxPost({ 'admintype': 2, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': sResponse,'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function() {
+				var url = window.spiderSlaveApiCb;
+				if(info.param && info.param.reportUrl) {
+					url = info.param.reportUrl;
+				}
+				ajaxPost({ 'admintype': 2, 'tab': {id:tab.id}, 'url': url, 'data': { 'id': info['id'], 'sResponse': sResponse,'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag,'userDataPath':window.userDataPath } },function() {
 					isDone(tab, info);
 				},function() {
 					isDone(tab, info, true);
