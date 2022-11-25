@@ -15,7 +15,7 @@ function pageRunJs(jsStr,cb) {
 		blobToBase64(blob,callback);\
 	};\
 	var r = (function () {'
-	+jsStr.replace(/'/g,"\\'") + '})();\
+	+jsStr.replace(/'/g,"\\'").replace(/[\r\n]/g,"") + '})();\
 	textToBase64(r==undefined?0:r,function(base64){\
 		this.innerHTML = base64;\
 	}.bind(this))')
