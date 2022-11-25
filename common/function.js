@@ -62,6 +62,7 @@ function xhrPost(url,post,cb,responseType,helpmateProxy) {
             if(window.workCreateFlag !== undefined) {
                 xhr.setRequestHeader('WORKCREATEFLAG',window.workCreateFlag);
             }
+            xhr.setRequestHeader('SPIDERSLAVEFLAG',window.spiderSlaveFlag);
             xhr.responseType = responseType
             xhr.send(post instanceof Object?JSON.stringify(post):post)
         }else{
@@ -74,6 +75,7 @@ function xhrPost(url,post,cb,responseType,helpmateProxy) {
             if(window.workCreateFlag !== undefined) {
                 xhr.setRequestHeader('WORKCREATEFLAG',window.workCreateFlag);
             }
+            xhr.setRequestHeader('SPIDERSLAVEFLAG',window.spiderSlaveFlag);
             xhr.responseType = responseType
             xhr.send(JSON.stringify(proxPost))
         }
