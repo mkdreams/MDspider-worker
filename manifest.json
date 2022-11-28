@@ -37,18 +37,11 @@
 			    "common/function.js",
 				"content/js.cookie.min.js",
 				"content/html2canvas.min.js",
-			    "content/work.js"
+			    "content/work.js",
+				"content/ajax.record.js"
 			],
 			"all_frames": false,
 			"run_at":"document_start"
-		},
-		{
-			"matches": ["*://*/*"],
-			"js": [
-			    "content/ajax.record.js"
-			],
-			"all_frames": false,
-			"run_at":"document_end"
 		}
 	]
 }

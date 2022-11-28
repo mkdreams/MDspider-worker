@@ -20,7 +20,7 @@ function pageRunJs(jsStr,cb) {
 		this.innerHTML = base64;\
 	}.bind(this))')
 	.replace(/"/g,'&quot;')+"')\"></div>");
-	$("body").append(tempDom);
+	$("html").append(tempDom);
 	tempDom.click();
 
 	if(cb) {
