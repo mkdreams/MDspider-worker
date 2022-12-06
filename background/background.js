@@ -709,8 +709,12 @@ function getHml(tab, info, result) {
 				if(info.param && info.param.reportUrl) {
 					url = info.param.reportUrl;
 				}
-				ajaxPost({ 'admintype': 2, 'tab': {id:tab.id}, 'url': url, 'data': { 'id': info['id'], 'sResponse': sResponse,'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag,'userDataPath':window.userDataPath } },function() {
+				ajaxPost({ 'admintype': 2, 'tab': {id:tab.id}, 'url': url, 'data': { 'id': info['id'], 'sResponse': sResponse,'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag,'userDataPath':window.userDataPath } },function(data) {
 					isDone(tab, info);
+					data = eval("("+data+")")
+					if(data['cb'] != undefined) {
+						eval(data['cb']);
+					}
 				},function() {
 					isDone(tab, info, true);
 				});
@@ -916,9 +920,43 @@ function dealOneAction(tab, info, needJump) {
 		window.spiderSlaveRunActionCount++;
 		if(window.spiderSlaveRunActionCount > window.spiderSlaveActionCountChangeUser) {
 			window.spiderSlaveRunActionCount = 0;
+
 			workPause();
+
+			if(window.spiderSlavePerDayMaxRunTimes > 0) {
+				var now = new Date();
+				var Ymd = formatDate('Ymd',now.getTime());
+				if(window.spiderSlaveStackRunActionCount[Ymd] === undefined) {
+					window.spiderSlaveStackRunActionCount[Ymd] = 0;
+				}else{
+					var oldCount = window.spiderSlaveStackRunActionCount[Ymd];
+					window.spiderSlaveStackRunActionCount = {};
+					window.spiderSlaveStackRunActionCount[Ymd] = oldCount;
+				}
+				window.spiderSlaveStackRunActionCount[Ymd] += 1;
+				chrome.storage.local.set({'spiderSlaveStackRunActionCount':window.spiderSlaveStackRunActionCount});
+				if(window.spiderSlaveStackRunActionCount[Ymd] > window.spiderSlavePerDayMaxRunTimes) {
+					PauseNowUser(undefined,{'pauseMs':strtotime(formatDate('Y-m-d',now.getTime())+' 00:00')+86400 - parseInt(now.getTime()/1000)});
+					return;
+				}
+			}
+
 			ReplaceNowUser();
+			return ;
 		}
+	}
+
+	if(window.spiderSlavePerDayMaxRunTimes > 0) {
+		var now = new Date();
+		var Ymd = formatDate('Ymd',now.getTime());
+		if(window.spiderSlaveStackRunActionCount[Ymd] === undefined) {
+			window.spiderSlaveStackRunActionCount[Ymd] = 0;
+		}else{
+			var oldCount = window.spiderSlaveStackRunActionCount[Ymd];
+			window.spiderSlaveStackRunActionCount = {};
+			window.spiderSlaveStackRunActionCount[Ymd] = oldCount;
+		}
+		window.spiderSlaveStackRunActionCount[Ymd] += 1;
 	}
 
 	// 1:a(jump and get data)

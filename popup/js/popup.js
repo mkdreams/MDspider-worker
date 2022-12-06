@@ -30,6 +30,11 @@ function restoreData(bg, form, $) {
 
 	$('#userDataPath').html(bg.userDataPath);
 	$('#workCreateFlag').html(bg.workCreateFlag);
+
+	var now = new Date();
+	var Ymd = formatDate('Ymd',now.getTime());
+	$('#spiderSlaveStackRunActionCount').html(bg.spiderSlaveStackRunActionCount[Ymd]===undefined?0:bg.spiderSlaveStackRunActionCount[Ymd]);
+	$('#spiderSlavePerDayMaxRunTimes').html(bg.spiderSlavePerDayMaxRunTimes);
 }
 
 layui.use(['element', 'layer', 'form', 'jquery'], function () {

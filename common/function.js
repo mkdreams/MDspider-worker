@@ -177,3 +177,42 @@ var Position = {};
 function randomStr() {
     return Number(Math.random().toString().substr(3,5) + Date.now()).toString(36);
 }
+
+
+function strtotime(sString) {
+	var Time = parseInt((new Date(sString.replace(new RegExp("-", "g"), "/")).getTime())/1000);
+	return Time;
+}
+
+function changeTwo(str) {  
+	var temp_str = str.toString();
+	if(temp_str.length == 1) {
+		return '0'+temp_str;
+	}else{
+		return temp_str;
+	}
+}
+
+function formatDate(style,now) {   
+    var d = new Date(parseFloat(now));
+    var   year=d.getFullYear();  
+    var   month=d.getMonth()+1;     
+    var   date=d.getDate();     
+    var   hour=d.getHours();     
+    var   minute=d.getMinutes();     
+    var   second=d.getSeconds();
+
+    style = style.replace(/Y/,year);
+    style = style.replace(/m/,changeTwo(month));
+    style = style.replace(/d/,changeTwo(date));
+
+    if(hour == 0 && minute == 0 && second == 0) {
+        style = style.replace(/H.*?$/,'');
+    }else{
+        style = style.replace(/H/,changeTwo(hour));
+        style = style.replace(/i/,changeTwo(minute));
+        style = style.replace(/s/,changeTwo(second));
+    }
+
+    return style;     
+} 

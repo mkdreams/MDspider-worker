@@ -7,6 +7,7 @@
 	<link type="text/css" href="/popup/layui/css/layui.css" rel="stylesheet" />
 	<link type="text/css" href="/popup/css/popup.css" rel="stylesheet" />
 	<script type="text/javascript" src="/popup/layui/layui.js"></script>
+	<script type="text/javascript" src="/common/function.js"></script>
 	<script type="text/javascript" src="/popup/js/popup.js"></script>
 </head>
 
@@ -22,6 +23,9 @@
 								<input type="checkbox" name="spiderSlaveOn" lay-skin="switch" lay-filter="spiderSlaveOn"
 									lay-text="ON|OFF">
 							</div>
+						</div>
+						<div class="layui-form-item">
+								24小时内已执行<span id="spiderSlaveStackRunActionCount">NaN</span>/<span id="spiderSlavePerDayMaxRunTimes">NaN</span>个
 						</div>
 					</form>
 				</div>
@@ -83,7 +87,7 @@
 							</div>
 						</div>
 						<div class="layui-form-item">
-							<label class="layui-form-label">每执行x个动作切换用户</label>
+							<label class="layui-form-label">执行x个切换</label>
 							<div class="layui-input-block">
 								<input type="text" name="spiderSlaveActionCountChangeUser" lay-verify="required" autocomplete="off"
 									class="layui-input">

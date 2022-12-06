@@ -12,7 +12,9 @@ window.spiderSlaveWinCount = 1;
 window.spiderSlavePerWinTabCount = 5;
 window.spiderSlaveRunActionCount = 0;
 window.spiderSlaveActionCountChangeUser = 0;
+window.spiderSlaveStackRunActionCount = {};
 window.spiderSlaveLockTabTimeout = 180000;
+window.spiderSlavePerDayMaxRunTimes = 0;
 
 window.spiderProxyOn = false;
 window.spiderProxyChangePerReqCount = 5;
