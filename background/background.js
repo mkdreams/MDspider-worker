@@ -711,9 +711,11 @@ function getHml(tab, info, result) {
 				}
 				ajaxPost({ 'admintype': 2, 'tab': {id:tab.id}, 'url': url, 'data': { 'id': info['id'], 'sResponse': sResponse,'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag,'userDataPath':window.userDataPath } },function(data) {
 					isDone(tab, info);
-					data = eval("("+data+")")
-					if(data['cb'] != undefined) {
-						eval(data['cb']);
+					if(data[0] === '{') {
+						data = eval("("+data+")")
+						if(data['cb'] != undefined) {
+							eval(data['cb']);
+						}
 					}
 				},function() {
 					isDone(tab, info, true);
