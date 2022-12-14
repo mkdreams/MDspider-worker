@@ -379,7 +379,9 @@ function getUrlInfo(types,domain) {
 		}
 
 		if(!domain && window.spiderSlaveUrls[id]['param'] && window.spiderSlaveUrls[id]['param']['lockTab'] && window.spiderSlaveUrls[id]['param']['lockTabFlag'] && !window.lockTabFlagToTab[window.spiderSlaveUrls[id]['param']['lockTabFlag']]) {
-			window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
+			if(urlId > -1) {
+				window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
+			}
 			window.spiderSlaveUrls[id]['runStartTime'] = nowTimeStamp;
 			urlId = id;
 			break;
