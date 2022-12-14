@@ -350,31 +350,41 @@ function tryCloseTab() {
 function getUrlInfo(types,domain) {
 	var nowTimeStamp = new Date().getTime();
 	var needAgain = nowTimeStamp - 300000;
+	var urlId = -1;
+	var matched = false;
 	for (var id in window.spiderSlaveUrls) {
 		//js 阻塞式运行
-		if (window.spiderSlaveUrls[id]['type'] == 100 && !window.spiderSlaveUrls[id]['param']['lockTab']) {
+		if (matched === false && window.spiderSlaveUrls[id]['type'] == 100 && !window.spiderSlaveUrls[id]['param']['lockTab']) {
 			if ((!types || types.indexOf(window.spiderSlaveUrls[id]['type']) > -1)
 				&& (!window.spiderSlaveUrls[id]['runStartTime'] || window.spiderSlaveUrls[id]['runStartTime'] < needAgain)
 				) {
 				window.spiderSlaveUrls[id]['runStartTime'] = nowTimeStamp;
-				return id;
+				urlId = id;
+				matched = true;
 			} else {
-				return -2;
+				urlId = -2;
+				matched = true;
 			}
 		}
 
-		if (window.spiderSlaveUrls[id]
+		if (matched === false && window.spiderSlaveUrls[id]
 			&& (!types || types.indexOf(window.spiderSlaveUrls[id]['type']) > -1)
 			&& (!window.spiderSlaveUrls[id]['runStartTime'] || window.spiderSlaveUrls[id]['runStartTime'] < needAgain)
 			&& (!domain || (window.spiderSlaveUrls[id]['param'] && window.spiderSlaveUrls[id]['param']['lockTab'] && window.spiderSlaveUrls[id]['param']['lockTabFlag'] && window.spiderSlaveUrls[id]['param']['lockTabFlag'] === domain) 
 				|| (window.spiderSlaveUrls[id]['param'] && window.spiderSlaveUrls[id]['param']['lockTab'] && window.spiderSlaveUrls[id]['url'].indexOf(domain) > -1))
 		) {
 			window.spiderSlaveUrls[id]['runStartTime'] = nowTimeStamp;
-			return id;
+			urlId = id;
+			matched = true;
+		}
+
+		if(!domain && window.spiderSlaveUrls[id]['param'] && window.spiderSlaveUrls[id]['param']['lockTab'] && window.spiderSlaveUrls[id]['param']['lockTabFlag'] && !window.lockTabFlagToTab[window.spiderSlaveUrls[id]['param']['lockTabFlag']]) {
+			urlId = id;
+			break;
 		}
 	}
 
-	return -1;
+	return urlId;
 }
 
 function getNextTab(urlId) {
