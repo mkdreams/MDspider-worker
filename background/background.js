@@ -790,6 +790,11 @@ function runActionComplete(tab,info,cb) {
 		var delay = 50;
 	}
 
+	var maxRunTime = 0;
+	if(info.param && info.param.maxRunTime) {
+		maxRunTime = info.param.maxRunTime/100;
+	}
+
 	setTimeout(function () {
 		window.tabLocked[tab.id] = false;
 		clearInterval(window.setInterval_waitToComplete[tab.id]);
@@ -807,8 +812,16 @@ function runActionComplete(tab,info,cb) {
 			if(window.tabLocked[tab.id] === true) {
 				return ;
 			}
-			window.tabLocked[tab.id] = true;
 
+			//max run time
+			if(maxRunTime > 0 && runActionCompleteRunCount > maxRunTime) {
+				clearInterval(window.setInterval_waitToComplete[tab.id]);
+				resultIsOk(nowTab, info, function(nowTab, info, res) {
+					cb(nowTab,info);
+				});
+			}
+
+			window.tabLocked[tab.id] = true;
 			chrome.tabs.get(tab.id, function (nowTab) {
 				window.tabLocked[tab.id] = false;
 
