@@ -818,8 +818,8 @@ function runActionComplete(tab,info,cb) {
 			//max run time
 			if(maxRunTime > 0 && runActionCompleteRunCount > maxRunTime) {
 				clearInterval(window.setInterval_waitToComplete[tab.id]);
-				resultIsOk(nowTab, info, function(nowTab, info, res) {
-					cb(nowTab,info);
+				resultIsOk(tab, info, function(tab, info, res) {
+					cb(tab,info);
 				});
 			}
 
