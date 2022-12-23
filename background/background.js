@@ -723,7 +723,7 @@ function getHml(tab, info, result) {
 				if(info.param && info.param.reportUrl) {
 					url = info.param.reportUrl;
 				}
-				ajaxPost({ 'admintype': 2, 'tab': {id:tab.id}, 'url': url, 'data': { 'id': info['id'], 'sResponse': sResponse,'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag,'userDataPath':window.userDataPath } },function(data) {
+				ajaxPost({ 'admintype': 2, 'tab': {id:tab.id}, 'url': url, 'data': { 'id': info['id'], 'sResponse': sResponse,'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag,'userDataPath':window.userDataPath,'userName':(window.userName?window.userName:'')} },function(data) {
 					isDone(tab, info);
 					if(data[0] === '{') {
 						data = eval("("+data+")")
@@ -1123,3 +1123,12 @@ function actionRecords(message, title, type) {
 
 	window.MDspiderLogs[type].push({title:title,message:message,time:new Date()})
 }
+
+chrome.contextMenus.create({
+	title: '记录用户为：“%s”',
+	contexts: ['selection'],
+	onclick: function(params){
+		window.userName = params['selectionText'];
+		chrome.storage.local.set({'userName': window.userName});
+	}
+});
