@@ -1124,8 +1124,13 @@ function actionRecords(message, title, type) {
 	window.MDspiderLogs[type].push({title:title,message:message,time:new Date()})
 }
 
+if(window.userName) {
+	var contextMenusTitle = '更新用户为：“%s”';
+}else{
+	var contextMenusTitle = '记录用户为：“%s”';
+}
 chrome.contextMenus.create({
-	title: '记录用户为：“%s”',
+	title: contextMenusTitle,
 	contexts: ['selection'],
 	onclick: function(params){
 		window.userName = params['selectionText'];
