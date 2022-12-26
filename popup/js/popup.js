@@ -35,6 +35,7 @@ function restoreData(bg, form, $) {
 	var Ymd = formatDate('Ymd',now.getTime());
 	$('#spiderSlaveStackRunActionCount').html(bg.spiderSlaveStackRunActionCount[Ymd]===undefined?0:bg.spiderSlaveStackRunActionCount[Ymd]);
 	$('#spiderSlavePerDayMaxRunTimes').html(bg.spiderSlavePerDayMaxRunTimes);
+	$('#spiderSlaveUserName').html(bg.userName);
 }
 
 layui.use(['element', 'layer', 'form', 'jquery'], function () {
