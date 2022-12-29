@@ -203,7 +203,11 @@ chrome.runtime.onMessage.addListener(
 									}
 
 									window.setInterval_scroll = setInterval(function() {
-										window.scroll(0,offset);
+										if(document.getElementsByTagName("html").length > 0) {
+											document.getElementsByTagName("html")[0].scroll(0,offset)
+										}else{
+											window.scroll(0,offset)
+										}
 										offset += clientHeight;
 										pageRunJs(request.info.url,function(base64) {
 											if(deleteBase64Pre(base64) === 'dHJ1ZQ==') {
