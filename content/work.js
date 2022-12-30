@@ -193,18 +193,26 @@ chrome.runtime.onMessage.addListener(
 								var count = 0;
 
 								var func_go = function() {
-									var maxHeight = document.body.scrollHeight;
-									var clientHeight = document.body.clientHeight*0.8;
-									var offset = document.body.clientHeight*-1;
+									var htmls = document.getElementsByTagName("html");
+									if(htmls.length > 0) {
+										var body = htmls[0];
+									}else{
+										var body = document.body;
+									}
+
+									var maxHeight = body.scrollHeight;
+									var clientHeight = body.clientHeight*0.8;
+									var offset = body.clientHeight*-1;
 
 									if(request.info.param && request.info.param.clientHeight) {
 										clientHeight = request.info.param.clientHeight;
 										offset = 0;
 									}
 
+									console.log("scroll",offset);
 									window.setInterval_scroll = setInterval(function() {
-										if(document.getElementsByTagName("html").length > 0) {
-											document.getElementsByTagName("html")[0].scroll(0,offset)
+										if(htmls.length > 0) {
+											body.scrollTo(0,offset)
 										}else{
 											window.scroll(0,offset)
 										}
@@ -221,8 +229,8 @@ chrome.runtime.onMessage.addListener(
 											clearInterval(window.setInterval_scroll);
 										}
 										
-										if(document.body.scrollHeight > maxHeight){
-											maxHeight = document.body.scrollHeight;
+										if(body.scrollHeight > maxHeight){
+											maxHeight = body.scrollHeight;
 										}
 									},request.info.param.delay);
 								}.bind(this);

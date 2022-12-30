@@ -456,6 +456,35 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 		},
 	];
 
+	var actionsTpl_102 = [
+		{
+			"id": "1",
+			"url": "https://www.farseerbi.com/home/index/product.html",
+			"type": 1,
+			"param": {
+				'scrollMaxCount':1
+				,'clientHeight':400
+				,'delay':3000
+				,'lockTab':1
+				,'fixed':1
+				,sub:[
+					{
+						"id": "3",
+						"url": "return false;",
+						"type": 102,
+						"param": {
+							'scrollMaxCount':20
+							,'clientHeight':400
+							,'delay':1000
+						},
+						"code": 1
+					}
+				]
+			},
+			"code": 1
+		}
+	];
+
 	var actionsTpl_501 = [
 		{
 			"id": "1",
