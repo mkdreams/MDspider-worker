@@ -223,6 +223,10 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 			"id": "debug",
 			"url": "https://gitee.com/colin_86/MDword",
 			"type": 1,
+			"param": {
+				'lockTab':1,
+				'lockTabFlag':'debug',
+			},
 			"code": 1
 		}
 	];
@@ -230,8 +234,24 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 	var actionsTpl_100 = [
 		{
 			"id": "debug",
-			"url": 'var more = document.evaluate(\'//div[text()="查看更多"]\', document, null, XPathResult.ANY_TYPE, null);var node = more.iterateNext();while(node) {node.click();node = more .iterateNext();}',
+			"url": 'console.log("actionsTpl_100");',
 			"type": 100,
+			"param": {
+				'lockTab':1,
+				'lockTabFlag':'debug',
+			},
+			"code": 1
+		}
+	];
+	var actionsTpl_101 = [
+		{
+			"id": "debug",
+			"url": `return new Promise(function(resolve,reject) {setTimeout(function() {resolve(1);},5000);})`,
+			"type": 100,
+			"param": {
+				'lockTab':1,
+				'lockTabFlag':'debug',
+			},
 			"code": 1
 		}
 	];
