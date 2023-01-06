@@ -10,26 +10,45 @@ function pageRunJs(jsStr,cb) {
 			callback(e.target.result);\
 		}\
 	 };\
+	 function isPromise(obj) {\
+		return !!obj && (typeof obj === "object" || typeof obj === "function") && typeof obj.then === "function";\
+	 };\
 	 var textToBase64 = function(text, callback) {\
 		var blob = new Blob([text]);\
 		blobToBase64(blob,callback);\
 	};\
 	var r = (function () {'
 	+jsStr.replace(/'/g,"\\'").replace(/[\r\n]/g,"") + '})();\
-	textToBase64(r==undefined?0:r,function(base64){\
-		this.innerHTML = base64;\
-	}.bind(this))')
+	if(isPromise(r)) {\
+		r.then(function(promiseR){\
+			textToBase64(promiseR==undefined?0:promiseR,function(base64){\
+				this.innerHTML = base64;\
+				this.setAttribute("isDone",1);\
+			}.bind(this));\
+		}.bind(this));\
+	}else{\
+		textToBase64(r==undefined?0:r,function(base64){\
+			this.innerHTML = base64;\
+			this.setAttribute("isDone",1);\
+		}.bind(this));\
+	}\
+	')
 	.replace(/"/g,'&quot;')+"')\"></div>");
 	$("html").append(tempDom);
 	tempDom.click();
 
 	if(cb) {
-		setTimeout(function() {
+		window.setInterval_pageRunJs = setInterval(function() {
 			var tempDom = $('#MDspider-help-dom-result');
 			if(tempDom.length > 0) {
-				cb(tempDom.html());
-				tempDom[0].remove();
+				if(tempDom[0].getAttribute('isDone') == '1') {
+					var html = tempDom.html();
+					clearInterval(window.setInterval_pageRunJs);
+					cb(html);
+					tempDom[0].remove();
+				}
 			}else{
+				clearInterval(window.setInterval_pageRunJs);
 				cb();
 			}
 		},200);
@@ -78,13 +97,7 @@ chrome.runtime.onMessage.addListener(
 							case 4:
 							case 8:
 							case 16:
-								break;
 							case 100:
-								var tempDom = $('#MDspider-help-dom-result');
-								if(tempDom.length > 0) {
-									window.spiderData[request.info.id] = tempDom.html();
-									tempDom[0].remove();
-								}
 								break;
 							case 101:
 								break;
@@ -170,16 +183,16 @@ chrome.runtime.onMessage.addListener(
 								window.actionComplete = false;
 								if(request.info.param && request.info.param.delay) {
 									setTimeout(() => {
-										pageRunJs(request.info.url);
-										setTimeout(() => {
+										pageRunJs(request.info.url,function(base64) {
 											window.actionComplete = true;
-										},200);
+											window.spiderData[request.info.id] = base64;
+										});
 									}, request.info.param.delay);
 								}else{
-									pageRunJs(request.info.url);
-									setTimeout(() => {
+									pageRunJs(request.info.url, function(base64) {
 										window.actionComplete = true;
-									},200);
+										window.spiderData[request.info.id] = base64;
+									});
 								}
 								break;
 							case 102:
