@@ -177,6 +177,34 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 		}
 	];
 
+	var actionsTpl_106 = [
+		{
+			"id": "debug",
+			"url": "https://www.facebook.com/cnanewstaiwan/posts/526184426206794",
+			"type": 1,
+			"param": {
+				'delay':1000
+				,'lockTab':1
+				,'save':0
+				,sub:[
+					{
+						"id": "2",
+						"url": "return new Promise(function(resolve,reject) {$('span[dir=auto]:contains(\"最相关\")').click();setTimeout(function(){$('span[dir=auto]:contains(\"包括疑似垃圾信息的内容\")').click();resolve(666)},5000);});",
+						"type": 100,
+						"param": {
+							'background':1,
+							'delay':2000,
+							'save':1,
+							'lockTab':1
+						},
+						"code": 1
+					}
+				]
+			},
+			"code": 1,
+		}
+	];
+
 	var actionsTpl_202 = [
 		{
 			"id": "debug",

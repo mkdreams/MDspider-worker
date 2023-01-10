@@ -10,6 +10,9 @@ window.baseWindow = undefined;
 window.setInterval_getLinksCache_lastRunTime = new Date().getTime();
 window.lockTabFlagToTab = {};
 
+//active time
+window.spiderSlaveActiveLastTime = parseInt(new Date().getTime()/1000);
+
 function enabledProxy() {
 	disabledProxy();
 	$.ajax({
@@ -228,6 +231,8 @@ function workPlay(allCompeletedCb) {
 			}else{
 				pullActions();
 			}
+		}else{
+			window.spiderSlaveActiveLastTime = parseInt(new Date().getTime()/1000);
 		}
 	}, window.spiderSlaveGetUrlsDelay);
 
@@ -1006,27 +1011,21 @@ function dealOneAction(tab, info, needJump) {
 		200: "browser action"
 	};
 
-	function actionDoneCb() {
+	function actionDoneCb(result) {
 		switch(info.type) {
 			case 1:
 			case 101:
+			case 200:
 				runActionComplete(tab, info, function(tab, info) {
 					runSub(tab, info, function(tab, info) {
-						getHml(tab, info);
+						getHml(tab, info, result);
 					},0)
-				});
-				break;
-			case 200:
-				runActionComplete(tab, info,function(tab, info) {
-					runSub(tab, info, function(tab, info) {
-						eval(info.action+'(tab, info, function(result){getHml(tab, info, result);});');
-					})
 				});
 				break;
 			default:
 				setTimeout(function () {
 					runSub(tab, info, function(tab, info) {
-						getHml(tab, info);
+						getHml(tab, info, result);
 					})
 				}, 100);
 				break;

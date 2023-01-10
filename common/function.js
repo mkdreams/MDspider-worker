@@ -62,6 +62,9 @@ function xhrPost(url,post,cb,responseType,helpmateProxy) {
             if(window.workCreateFlag !== undefined) {
                 xhr.setRequestHeader('WORKCREATEFLAG',window.workCreateFlag);
             }
+            if(window.spiderSlaveActiveLastTime !== undefined) {
+                xhr.setRequestHeader('SPIDERSLAVEACTIVELASTTIME',window.spiderSlaveActiveLastTime);
+            }
             xhr.setRequestHeader('SPIDERSLAVEFLAG',window.spiderSlaveFlag);
             xhr.responseType = responseType
             xhr.send(post instanceof Object?JSON.stringify(post):post)
@@ -74,6 +77,9 @@ function xhrPost(url,post,cb,responseType,helpmateProxy) {
             };
             if(window.workCreateFlag !== undefined) {
                 xhr.setRequestHeader('WORKCREATEFLAG',window.workCreateFlag);
+            }
+            if(window.spiderSlaveActiveLastTime !== undefined) {
+                xhr.setRequestHeader('SPIDERSLAVEACTIVELASTTIME',window.spiderSlaveActiveLastTime);
             }
             xhr.setRequestHeader('SPIDERSLAVEFLAG',window.spiderSlaveFlag);
             xhr.responseType = responseType
@@ -216,3 +222,8 @@ function formatDate(style,now) {
 
     return style;     
 } 
+
+
+function isPromise(obj) {
+    return !!obj && (typeof obj === "object" || typeof obj === "function") && typeof obj.then === "function";
+}

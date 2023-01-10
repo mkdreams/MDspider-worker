@@ -1,41 +1,65 @@
 window.actionComplete = true;
 
-function pageRunJs(jsStr,cb) {
-	var tempDom = $("<div id=\"MDspider-help-dom-result\" style=\"display:none;\" onclick=\"eval('\
-	"+
-	('function blobToBase64(blob, callback) {\
-		var reader = new FileReader();\
-		reader.readAsDataURL(blob);\
-		reader.onload = function (e) {\
-			callback(e.target.result);\
-		}\
-	 };\
-	 function isPromise(obj) {\
-		return !!obj && (typeof obj === "object" || typeof obj === "function") && typeof obj.then === "function";\
-	 };\
-	 var textToBase64 = function(text, callback) {\
-		var blob = new Blob([text]);\
-		blobToBase64(blob,callback);\
-	};\
-	var r = (function () {'
-	+jsStr.replace(/'/g,"\\'").replace(/[\r\n]/g,"") + '})();\
-	if(isPromise(r)) {\
-		r.then(function(promiseR){\
-			textToBase64(promiseR==undefined?0:promiseR,function(base64){\
+function pageRunJs(jsStr,cb,background) {
+	if(background !== undefined) {
+		var tempDom = $("<div id=\"MDspider-help-dom-result\" style=\"display:none;\"></div>");
+		$("html").append(tempDom);
+		
+		var r = eval('(function () {'
+		+jsStr.replace(/[\r\n]/g,"") + '})()');
+		
+		console.log('background',background,r);
+		if(isPromise(r)) {
+			r.then(function(promiseR){
+				textToBase64(promiseR==undefined?0:promiseR,function(base64){
+					tempDom[0].innerHTML = base64;
+					tempDom[0].setAttribute("isDone",1);
+				}.bind(this));
+			}.bind(this));
+		}else{
+			textToBase64(r==undefined?0:r,function(base64){
+				tempDom[0].innerHTML = base64;
+				tempDom[0].setAttribute("isDone",1);
+			}.bind(this));
+		}
+	}else{
+		var tempDom = $("<div id=\"MDspider-help-dom-result\" style=\"display:none;\" onclick=\"eval('\
+		"+
+		('function blobToBase64(blob, callback) {\
+			var reader = new FileReader();\
+			reader.readAsDataURL(blob);\
+			reader.onload = function (e) {\
+				callback(e.target.result);\
+			}\
+		 };\
+		 function isPromise(obj) {\
+			return !!obj && (typeof obj === "object" || typeof obj === "function") && typeof obj.then === "function";\
+		 };\
+		 var textToBase64 = function(text, callback) {\
+			var blob = new Blob([text]);\
+			blobToBase64(blob,callback);\
+		};\
+		var r = (function () {'
+		+jsStr.replace(/'/g,"\\'").replace(/[\r\n]/g,"") + '})();\
+		if(isPromise(r)) {\
+			r.then(function(promiseR){\
+				textToBase64(promiseR==undefined?0:promiseR,function(base64){\
+					this.innerHTML = base64;\
+					this.setAttribute("isDone",1);\
+				}.bind(this));\
+			}.bind(this));\
+		}else{\
+			textToBase64(r==undefined?0:r,function(base64){\
 				this.innerHTML = base64;\
 				this.setAttribute("isDone",1);\
 			}.bind(this));\
-		}.bind(this));\
-	}else{\
-		textToBase64(r==undefined?0:r,function(base64){\
-			this.innerHTML = base64;\
-			this.setAttribute("isDone",1);\
-		}.bind(this));\
-	}\
-	')
-	.replace(/"/g,'&quot;')+"')\"></div>");
-	$("html").append(tempDom);
-	tempDom.click();
+		}\
+		')
+		.replace(/"/g,'&quot;')+"')\"></div>");
+		$("html").append(tempDom);
+		tempDom.click();
+	}
+
 
 	if(cb) {
 		window.setInterval_pageRunJs = setInterval(function() {
@@ -181,18 +205,23 @@ chrome.runtime.onMessage.addListener(
 								break;
 							case 100:
 								window.actionComplete = false;
+								if(request.info.param && request.info.param.background !== undefined) {
+									var background = request.info.param.background;
+								}else{
+									var background = undefined;
+								}
 								if(request.info.param && request.info.param.delay) {
 									setTimeout(() => {
 										pageRunJs(request.info.url,function(base64) {
 											window.actionComplete = true;
 											window.spiderData[request.info.id] = base64;
-										});
+										},background);
 									}, request.info.param.delay);
 								}else{
 									pageRunJs(request.info.url, function(base64) {
 										window.actionComplete = true;
 										window.spiderData[request.info.id] = base64;
-									});
+									},background);
 								}
 								break;
 							case 102:
