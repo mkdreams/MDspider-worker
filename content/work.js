@@ -261,7 +261,7 @@ chrome.runtime.onMessage.addListener(
 										}
 										offset += clientHeight;
 										pageRunJs(request.info.url,function(base64) {
-											console.log("scroll",base64);
+											console.log("scroll "+count+">"+scrollMaxCount,base64);
 											if(deleteBase64Pre(base64) === 'dHJ1ZQ==') {
 												window.actionComplete = true;
 												clearInterval(window.setInterval_scroll);
