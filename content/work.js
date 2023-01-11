@@ -1,8 +1,9 @@
 window.actionComplete = true;
 
 function pageRunJs(jsStr,cb,background) {
+	var domRandomId = "MDspider-help-dom-result-"+randomStr();
 	if(background !== undefined) {
-		var tempDom = $("<div id=\"MDspider-help-dom-result\" style=\"display:none;\"></div>");
+		var tempDom = $("<div id=\""+domRandomId+"\" style=\"display:none;\"></div>");
 		$("html").append(tempDom);
 		
 		var r = eval('(function () {'
@@ -65,17 +66,16 @@ function pageRunJs(jsStr,cb,background) {
 		var setInterval_pageRunJsCount = 0;
 		window.setInterval_pageRunJs = setInterval(function() {
 			setInterval_pageRunJsCount++;
-			var tempDom = $('#MDspider-help-dom-result');
-			if(tempDom.length > 0) {
-				if(tempDom[0].getAttribute('isDone') == '1') {
-					var html = tempDom.html();
-					clearInterval(window.setInterval_pageRunJs);
-					cb(html);
-					tempDom[0].remove();
-				}
-			}else if(setInterval_pageRunJsCount > 10){
+			if(tempDom[0].getAttribute('isDone') == '1') {
+				var html = tempDom.html();
 				clearInterval(window.setInterval_pageRunJs);
-				cb('');
+				cb(html);
+				tempDom[0].remove();
+			}else if(setInterval_pageRunJsCount > 10){
+				if($('#'+domRandomId).length == 0) {
+					clearInterval(window.setInterval_pageRunJs);
+					cb('');
+				}
 			}
 		},200);
 	}
