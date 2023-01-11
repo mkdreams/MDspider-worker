@@ -141,10 +141,9 @@ chrome.runtime.onMessage.addListener(
 
 								if(request.info.includeIframe) {
 									var iframes = document.getElementsByTagName('iframe');
-									console.log(iframes)
 									for(var iframeIdx=0; iframeIdx<iframes.length; iframeIdx++) {
 										var p = new Promise(function(resolve,reject) {
-											pageRunJs("return document.getElementsByTagName('iframe')["+iframeIdx+"].contentDocument.getElementsByTagName('html')[0].innerHTML;",function(base64) {
+											pageRunJs("if (document.getElementsByTagName('iframe')["+iframeIdx+"] && document.getElementsByTagName('iframe')["+iframeIdx+"].contentDocument) {return document.getElementsByTagName('iframe')["+iframeIdx+"].contentDocument.getElementsByTagName('html')[0].innerHTML;}else{return false} ",function(base64) {
 												resolve(base64)
 											});
 										});
@@ -262,6 +261,7 @@ chrome.runtime.onMessage.addListener(
 										}
 										offset += clientHeight;
 										pageRunJs(request.info.url,function(base64) {
+											console.log("scroll",base64);
 											if(deleteBase64Pre(base64) === 'dHJ1ZQ==') {
 												window.actionComplete = true;
 												clearInterval(window.setInterval_scroll);
