@@ -67,11 +67,13 @@ function pageRunJs(jsStr,cb,background) {
 		window.setInterval_pageRunJs = setInterval(function() {
 			setInterval_pageRunJsCount++;
 			if(tempDom[0].getAttribute('isDone') == '1') {
+				console.log("setInterval_pageRunJsCount",setInterval_pageRunJsCount);
 				var html = tempDom.html();
 				clearInterval(window.setInterval_pageRunJs);
 				cb(html);
 				tempDom[0].remove();
 			}else if(setInterval_pageRunJsCount > 10){
+				console.log("setInterval_pageRunJsCount",setInterval_pageRunJsCount);
 				if($('#'+domRandomId).length == 0) {
 					clearInterval(window.setInterval_pageRunJs);
 					cb('');
