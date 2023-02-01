@@ -281,8 +281,8 @@ function pullActions() {
 						}
 					});
 		
-					//clean deleted urls,keep 20 min
-					var compareTime = new Date().getTime() - 1200000;
+					//clean deleted urls,keep 30 s
+					var compareTime = new Date().getTime() - 30000;
 					for(var id in window.spiderSlaveDeletedUrls) {
 						if(window.spiderSlaveDeletedUrls[id] < compareTime) {
 							delete window.spiderSlaveDeletedUrls[id];
@@ -309,8 +309,8 @@ function pullActions() {
 					}
 				});
 	
-				//clean deleted urls,keep 20 min
-				var compareTime = new Date().getTime() - 1200000;
+				//clean deleted urls,keep 30 s
+				var compareTime = new Date().getTime() - 30000;
 				for(var id in window.spiderSlaveDeletedUrls) {
 					if(window.spiderSlaveDeletedUrls[id] < compareTime) {
 						delete window.spiderSlaveDeletedUrls[id];
