@@ -6,6 +6,21 @@ function getCookies(tab, info, cb) {
 	});
 }
 
+function screenshot(tab, info, cb) {
+	chrome.windows.update(tab.windowId, { focused: true }, function () {
+		chrome.tabs.update(tab.id, { active: true }, function () {
+			if (chrome.runtime.lastError) {
+				console.error(chrome.runtime.lastError);
+			}
+			chrome.tabs.captureVisibleTab(null, {
+				format: 'png'
+			}, function (data) {
+				cb(data);
+			});
+		})
+	})
+}
+
 function updateConfig(tab, info, cb) {
 	configs = eval("("+info.url+")");
 	for(var configName in configs) {
