@@ -663,6 +663,7 @@ function resultIsOk(tab, info, cb) {
 				clearInterval(window.setInterval_getHtml[tab.id]);
 				if(res['html'].indexOf("blob:") === 0){
 					xhrPost(res['html'],undefined,function(resolve,reject,response){
+						window.URL.revokeObjectURL(res['html']);
 						res['html'] = response;
 						cb(tab, info, res);
 					},'json');
