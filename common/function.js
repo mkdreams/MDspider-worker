@@ -58,7 +58,11 @@ function xhrPost(url,post,cb,responseType,helpmateProxy) {
             }
         }
         if(helpmateProxy === undefined) {
-            xhr.open('POST', url)
+            if(post === undefined) {
+                xhr.open('GET', url)
+            }else{
+                xhr.open('POST', url)
+            }
             if(window.workCreateFlag !== undefined) {
                 xhr.setRequestHeader('WORKCREATEFLAG',window.workCreateFlag);
             }
@@ -67,7 +71,11 @@ function xhrPost(url,post,cb,responseType,helpmateProxy) {
             }
             xhr.setRequestHeader('SPIDERSLAVEFLAG',window.spiderSlaveFlag);
             xhr.responseType = responseType
-            xhr.send(post instanceof Object?JSON.stringify(post):post)
+            if(post=== undefined) {
+                xhr.send()
+            }else{
+                xhr.send(post instanceof Object?JSON.stringify(post):post)
+            }
         }else{
             xhr.open('POST', window.spiderSlaveHelpmateApi)
             proxPost = {

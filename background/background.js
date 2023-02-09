@@ -661,8 +661,14 @@ function resultIsOk(tab, info, cb) {
 			window.tabLocked[tab.id] = false;
 			if (res && res['actionComplete'] == true) {
 				clearInterval(window.setInterval_getHtml[tab.id]);
-
-				cb(tab, info, res);
+				if(res['html'].indexOf("blob:") === 0){
+					xhrPost(res['html'],undefined,function(resolve,reject,response){
+						res['html'] = response;
+						cb(tab, info, res);
+					},'json');
+				}else{
+					cb(tab, info, res);
+				}
 			}
 
 			if(res === undefined) {

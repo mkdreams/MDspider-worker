@@ -111,7 +111,9 @@ chrome.runtime.onMessage.addListener(
 				//get html 
 				case 1:
 					if(window.spiderData[request.info.id] != undefined && window.actionComplete === true) {
-						var data = {'html':window.spiderData[request.info.id],'actionComplete':window.actionComplete};
+						var blob = new Blob([JSON.stringify(window.spiderData[request.info.id])], { type: 'text/plain' });
+						var file = URL.createObjectURL(blob);
+						var data = {'html':file,'actionComplete':window.actionComplete};
 						sendResponse(data);
 						return ;
 					}
