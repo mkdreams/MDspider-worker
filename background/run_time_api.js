@@ -15,11 +15,29 @@ function sendMessageAction(tabId,sendInfoObj,callBack,frames) {
 		this.response = undefined;
 	}
 	
-	chrome.tabs.sendMessage(tabId, sendInfoObj,{frameId: 0}, function(msg) {
+	chrome.tabs.sendMessage(tabId, sendBeforeClean(sendInfoObj),{frameId: 0}, function(msg) {
 		if(callBack) {
 	        callBack(msg);
 		}
 	});
+}
+
+function sendBeforeClean(sendInfoObj) {
+	sendInfoObjNew = JSON.parse(JSON.stringify(sendInfoObj));
+	if(sendInfoObjNew['info'] && sendInfoObjNew['info']['results']) {
+		delete sendInfoObjNew['info']['results'];
+	}
+
+	if(sendInfoObjNew['info'] && sendInfoObjNew['info']['param'] && sendInfoObjNew['info']['param']['sub']) {
+		sendInfoObjNew['info']['param']['sub'].forEach(function(sub) {
+			if(sub['results']) {
+				delete sub['results'];
+			}
+		});
+		delete sendInfoObjNew['info']['results'];
+	}
+
+	return sendInfoObjNew;
 }
 
 //向指定tab发送请求
