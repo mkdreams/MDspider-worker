@@ -143,7 +143,7 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 	var actionsTpl_default = [
 		{
 			"id": "debug",
-			"url": "https://www.farseerbi.com/home/index/homepage.html",
+			"url": "https://www.baidu.com",
 			"type": 1,
 			"code": 1
 		}
@@ -152,7 +152,7 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 	var actionsTpl_201 = [
 		{
 			"id": "debug",
-			"url": "https://www.farseerbi.com/home/index/homepage.html",
+			"url": "https://www.baidu.com",
 			"type": 1,
 			"param": {
 				'delay':1000
@@ -161,7 +161,7 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 				,sub:[
 					{
 						"id": "2",
-						"url": "https://www.farseerbi.com/home/index/homepage.html",
+						"url": "https://www.baidu.com",
 						"action": "getCookies",
 						"type": 200,
 						"param": {
@@ -208,7 +208,7 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 	var actionsTpl_202 = [
 		{
 			"id": "debug",
-			"url": "https://www.farseerbi.com/home/index/homepage.html",
+			"url": "https://www.baidu.com",
 			"type": 1,
 			"save":0,
 			"param": {
@@ -217,7 +217,7 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 				,'sub':[
 					{
 						"id": "2",
-						"url": "https://www.farseerbi.com/home/index/homepage.html",
+						"url": "https://www.baidu.com",
 						"action": "createUser",
 						"type": 200,
 						"param": {
@@ -507,7 +507,7 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 	var actionsTpl_102 = [
 		{
 			"id": "1",
-			"url": "https://www.farseerbi.com/home/index/product.html",
+			"url": "https://news.baidu.com/",
 			"type": 1,
 			"param": {
 				'scrollMaxCount':1
@@ -634,7 +634,7 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 	var actionsTpl_502 = [
 		{
 			"id": "1",
-			"url": "https://www.farseerbi.com/home/index/product.html",
+			"url": "https://news.baidu.com/",
 			"type": 1,
 			"param": {'scrollMaxCount':200},
 			"code": 1
@@ -644,21 +644,21 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 	var actionsTpl_503 = [
 		{
 			"id": "random",
-			"url": "https://www.farseerbi.com/home/index/homepage.html",
+			"url": "https://www.baidu.com",
 			"type": 1,
 			"param": {'lockTab':1,'fixed':1},
 			"code": 1
 		},
 		{
 			"id": "random",
-			"url": "https://www.farseerbi.com/home/index/product.html",
+			"url": "https://news.baidu.com/",
 			"type": 1,
 			"param": {'lockTab':1},
 			"code": 1
 		},
 		{
 			"id": "random",
-			"url": "https://www.farseerbi.com/home/index/casestudy.html",
+			"url": "https://news.baidu.com/",
 			"type": 1,
 			"param": {'lockTab':1},
 			"code": 1
@@ -686,21 +686,21 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 		},
 		{
 			"id": "random",
-			"url": "https://www.farseerbi.com/home/index/contact.html",
+			"url": "https://baijiahao.baidu.com/s?id=1757872780458350980",
 			"type": 1,
 			"param": {'lockTab':1},
 			"code": 1
 		},
 		{
 			"id": "random",
-			"url": "https://www.farseerbi.com/home/index/downloads.html",
+			"url": "https://baijiahao.baidu.com/s?id=1757872780458350980",
 			"type": 1,
 			"param": {'lockTab':1},
 			"code": 1
 		},
 		{
 			"id": "random",
-			"url": "https://www.farseerbi.com/home/member/login.html",
+			"url": "https://baijiahao.baidu.com/s?id=1757874352432974125",
 			"type": 1,
 			"param": {'lockTab':1},
 			"code": 1
