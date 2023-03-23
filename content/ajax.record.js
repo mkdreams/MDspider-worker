@@ -13,12 +13,14 @@ var ajaxRecordString = `
                     url: url,
                     responseText: self.responseText
                 };
-                if(window.ajaxRecordListRestult.length > 50) return;
-                if(window.ajaxRecordListRestult[url] && window.ajaxRecordListRestult[url].length > 50) return;
+                if(window.ajaxRecordListRestult.length > 50 && window.ajaxRecordListRestult[url] === undefined) return;
                 if(!window.ajaxRecordListRestult[url]) {
                     window.ajaxRecordListRestult[url] = [];
                 }
                 window.ajaxRecordListRestult[url].push(self.responseText);
+                if(window.ajaxRecordListRestult[url].length > 100) {
+                    window.ajaxRecordListRestult[url].slice(-100)
+                }
                 console.log(response);
             }
         }, false);
