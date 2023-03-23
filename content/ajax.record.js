@@ -13,7 +13,10 @@ var ajaxRecordString = `
                     url: url,
                     responseText: self.responseText
                 };
-                if(window.ajaxRecordListRestult.length > 50 && window.ajaxRecordListRestult[url] === undefined) return;
+                if(window.ajaxRecordListRestult.length > 50 && window.ajaxRecordListRestult[url] === undefined) {
+                    console.error("lost ajax record!",self.responseText);
+                    return;
+                }
                 if(!window.ajaxRecordListRestult[url]) {
                     window.ajaxRecordListRestult[url] = [];
                 }
