@@ -20,7 +20,7 @@ window.spiderProxyOn = false;
 window.spiderProxyChangePerReqCount = 5;
 window.spiderProxyFetchApi = "http.tiqu.alibabaapi.com/getip3?num=2&type=2&pack=62956&port=1&lb=1&pb=4&gm=4&regions=";
 
-window.spiderSlaveHelpmate = false;
+window.spiderSlaveHelpmate = true;
 window.spiderSlaveHelpmateApi = 'http://127.0.0.1:1234/rpc';
 
 // 1-create inti 2-reopen init
