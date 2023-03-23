@@ -19,6 +19,7 @@ var ajaxRecordString = `
                 }
                 window.ajaxRecordListRestult[url].push(self.responseText);
                 if(window.ajaxRecordListRestult[url].length > 100) {
+                    console.error("lost ajax record!",window.ajaxRecordListRestult[url][0]);
                     window.ajaxRecordListRestult[url].slice(-100)
                 }
                 console.log(response);
