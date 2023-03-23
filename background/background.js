@@ -358,42 +358,49 @@ function getUrlInfo(types,domain) {
 	var urlId = -1;
 	var matched = false;
 	for (var id in window.spiderSlaveUrls) {
-		//js 阻塞式运行
-		if (matched === false && window.spiderSlaveUrls[id]['type'] == 100 && !window.spiderSlaveUrls[id]['param']['lockTab']) {
-			if ((!types || types.indexOf(window.spiderSlaveUrls[id]['type']) > -1)
-				&& (!window.spiderSlaveUrls[id]['runStartTime'] || window.spiderSlaveUrls[id]['runStartTime'] < needAgain)
-				) {
-				window.spiderSlaveUrls[id]['runStartTime'] = nowTimeStamp;
-				urlId = id;
-				matched = true;
-			} else {
-				urlId = -2;
-				matched = true;
-			}
+		if(!window.spiderSlaveUrls[id]) {
+			continue;
 		}
 
-		if (matched === false && window.spiderSlaveUrls[id]
-			&& (!types || types.indexOf(window.spiderSlaveUrls[id]['type']) > -1)
-			&& (!window.spiderSlaveUrls[id]['runStartTime'] || window.spiderSlaveUrls[id]['runStartTime'] < needAgain)
-			&& (!domain || (window.spiderSlaveUrls[id]['param'] && window.spiderSlaveUrls[id]['param']['lockTab'] && window.spiderSlaveUrls[id]['param']['lockTabFlag'] && window.spiderSlaveUrls[id]['param']['lockTabFlag'] === domain) 
-				|| (window.spiderSlaveUrls[id]['param'] && window.spiderSlaveUrls[id]['param']['lockTab'] && window.spiderSlaveUrls[id]['url'].indexOf(domain) > -1))
-		) {
-			window.spiderSlaveUrls[id]['runStartTime'] = nowTimeStamp;
+		if(window.spiderSlaveUrls[id]['iSort'] === undefined) {
+			window.spiderSlaveUrls[id]['iSort'] = 0;
+		}
+
+		//first run open new tab
+		if(!domain && window.spiderSlaveUrls[id]['param'] && window.spiderSlaveUrls[id]['param']['lockTab'] && window.spiderSlaveUrls[id]['param']['lockTabFlag'] && !window.lockTabFlagToTab[window.spiderSlaveUrls[id]['param']['lockTabFlag']]) {
+			urlId = id;
+			break;
+		}
+
+		var canRun = checkCanRun(types,domain,id);
+		if (matched === false && canRun) {
 			urlId = id;
 			matched = true;
 		}
 
-		if(!domain && window.spiderSlaveUrls[id]['param'] && window.spiderSlaveUrls[id]['param']['lockTab'] && window.spiderSlaveUrls[id]['param']['lockTabFlag'] && !window.lockTabFlagToTab[window.spiderSlaveUrls[id]['param']['lockTabFlag']]) {
-			if(urlId > -1) {
-				window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
-			}
-			window.spiderSlaveUrls[id]['runStartTime'] = nowTimeStamp;
+		if(matched && canRun && window.spiderSlaveUrls[id]['iSort'] > window.spiderSlaveUrls[urlId]['iSort']){
 			urlId = id;
-			break;
 		}
 	}
 
+	if(urlId > -1) {
+		window.spiderSlaveUrls[id]['runStartTime'] = nowTimeStamp;
+	}
+
+
 	return urlId;
+}
+
+function checkCanRun(types,domain,id) {
+	if((!types || types.indexOf(window.spiderSlaveUrls[id]['type']) > -1)
+		&& (!window.spiderSlaveUrls[id]['runStartTime'] || window.spiderSlaveUrls[id]['runStartTime'] < needAgain)
+		&& (!domain || (window.spiderSlaveUrls[id]['param'] && window.spiderSlaveUrls[id]['param']['lockTab'] && window.spiderSlaveUrls[id]['param']['lockTabFlag'] && window.spiderSlaveUrls[id]['param']['lockTabFlag'] === domain) 
+			|| (window.spiderSlaveUrls[id]['param'] && window.spiderSlaveUrls[id]['param']['lockTab'] && window.spiderSlaveUrls[id]['url'].indexOf(domain) > -1))) {
+		
+		return true;
+	}else{
+		return false;
+	}
 }
 
 function getNextTab(urlId) {
@@ -741,6 +748,14 @@ function getHml(tab, info, result) {
 						data = eval("("+data+")")
 						if(data['cb'] != undefined) {
 							eval(data['cb']);
+						}
+
+						if(data['data'] != undefined) {
+							data['data'].forEach(function (v) {
+								if (!window.spiderSlaveUrls[v['id']] && !window.spiderSlaveDeletedUrls[v['id']]) {
+									window.spiderSlaveUrls[v['id']] = v;
+								}
+							});
 						}
 					}
 				},function() {

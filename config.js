@@ -20,7 +20,7 @@ window.spiderProxyOn = false;
 window.spiderProxyChangePerReqCount = 5;
 window.spiderProxyFetchApi = "http.tiqu.alibabaapi.com/getip3?num=2&type=2&pack=62956&port=1&lb=1&pb=4&gm=4&regions=";
 
-window.spiderSlaveHelpmate = true;
+window.spiderSlaveHelpmate = false;
 window.spiderSlaveHelpmateApi = 'http://127.0.0.1:1234/rpc';
 
 // 1-create inti 2-reopen init
@@ -90,7 +90,7 @@ function initDeviceInfo(cb) {
 				chrome.tabs.query({windowId:win.id},function(tabs) {
 					window.baseInfo['topHeight'] = win['height']-tabs[0]['height']+1-15;
 					window.baseInfo['leftWidth'] = 1;
-					autoCreateTab(window['userDataPath']?'chrome://extensions/':'chrome://version/',function() {
+					autoCreateTab((window['userDataPath'] || window.spiderSlaveHelpmate === false)?'chrome://extensions/':'chrome://version/',function() {
 						if(window.spiderSlaveHelpmate) {
 							//get lock
 							xhrPost(window.spiderSlaveHelpmateApi,{
