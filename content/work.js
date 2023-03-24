@@ -1,4 +1,5 @@
 window.actionComplete = true;
+window.ajaxRecordDebug = false;
 
 function pageRunJs(jsStr,cb,background) {
 	var domRandomId = "MDspider-help-dom-result-"+randomStr();
@@ -6,7 +7,7 @@ function pageRunJs(jsStr,cb,background) {
 		var tempDom = $("<div id=\""+domRandomId+"\" style=\"display:none;\"></div>");
 		$("html").append(tempDom);
 		
-		var r = eval('(function () {'
+		var r = eval('(function () {window.ajaxRecordDebug = '+window.ajaxRecordDebug+';'
 		+jsStr.replace(/[\r\n]/g,"") + '})()');
 		
 		console.log('background',background,r);
@@ -25,7 +26,7 @@ function pageRunJs(jsStr,cb,background) {
 		}
 	}else{
 		var tempDom = $("<div id=\"MDspider-help-dom-result\" style=\"display:none;\" onclick=\"eval('\
-		"+
+		"+"window.ajaxRecordDebug = "+window.ajaxRecordDebug+";"+
 		('function blobToBase64(blob, callback) {\
 			var reader = new FileReader();\
 			reader.readAsDataURL(blob);\
