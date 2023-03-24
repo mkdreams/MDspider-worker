@@ -164,6 +164,12 @@ var ajaxRecordString = `
                         }
                     }else{
                         window.ajaxRecordListRestult[responseClone.url] = content;
+                        if(window.ajaxRecordListRestult[responseClone.url].length > 100) {
+                            if(window.ajaxRecordDebug) {
+                                console.error("lost ajax record!",url,window.ajaxRecordListRestult[responseClone.url][0]);
+                            }
+                            window.ajaxRecordListRestult[responseClone.url].slice(-100)
+                        }
                     }
 
                     resolve(response);
