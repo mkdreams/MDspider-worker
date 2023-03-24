@@ -275,7 +275,6 @@ function pullActions() {
 						if(v['id'] == undefined) {
 							v['id'] = Number(Math.random().toString().substr(3,5) + Date.now()).toString(36);
 						}
-						console.log(v);
 						if (!window.spiderSlaveUrls[v['id']] && !window.spiderSlaveDeletedUrls[v['id']]) {
 							window.spiderSlaveUrls[v['id']] = v;
 						}
@@ -288,7 +287,6 @@ function pullActions() {
 							delete window.spiderSlaveDeletedUrls[id];
 						}
 					}
-					console.log(datas)
 				};
 				window.pullactionsws.onclose = function(evt) {
 					console.log('ws',"Connection closed.");

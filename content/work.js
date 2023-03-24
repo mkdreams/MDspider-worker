@@ -10,7 +10,6 @@ function pageRunJs(jsStr,cb,background) {
 		var r = eval('(function () {window.ajaxRecordDebug = '+window.ajaxRecordDebug+';'
 		+jsStr.replace(/[\r\n]/g,"") + '})()');
 		
-		console.log('background',background,r);
 		if(isPromise(r)) {
 			r.then(function(promiseR){
 				textToBase64(promiseR==undefined?0:promiseR,function(base64){
@@ -155,7 +154,6 @@ chrome.runtime.onMessage.addListener(
 								}
 
 								Promise.all(promiseArr).then((result) => {
-									console.log("result",result);
 									if(result.length === 1) {
 										window.spiderData[request.info.id] = result[0];
 									}else{
@@ -255,7 +253,6 @@ chrome.runtime.onMessage.addListener(
 										offset = 0;
 									}
 
-									console.log("scroll",offset);
 									window.setInterval_scroll = setInterval(function() {
 										if(htmls.length > 0) {
 											body.scrollTo(0,offset)
@@ -264,7 +261,6 @@ chrome.runtime.onMessage.addListener(
 										}
 										offset += clientHeight;
 										pageRunJs(request.info.url,function(base64) {
-											console.log("scroll "+count+">"+scrollMaxCount,base64);
 											if(deleteBase64Pre(base64) === 'dHJ1ZQ==') {
 												window.actionComplete = true;
 												clearInterval(window.setInterval_scroll);
