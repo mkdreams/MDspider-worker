@@ -372,7 +372,7 @@ function getUrlInfo(types,domain) {
 			break;
 		}
 
-		var canRun = checkCanRun(types,domain,id);
+		var canRun = checkCanRun(types,domain,id,needAgain);
 		if (matched === false && canRun) {
 			urlId = id;
 			matched = true;
@@ -391,7 +391,7 @@ function getUrlInfo(types,domain) {
 	return urlId;
 }
 
-function checkCanRun(types,domain,id) {
+function checkCanRun(types,domain,id,needAgain) {
 	if((!types || types.indexOf(window.spiderSlaveUrls[id]['type']) > -1)
 		&& (!window.spiderSlaveUrls[id]['runStartTime'] || window.spiderSlaveUrls[id]['runStartTime'] < needAgain)
 		&& (!domain || (window.spiderSlaveUrls[id]['param'] && window.spiderSlaveUrls[id]['param']['lockTab'] && window.spiderSlaveUrls[id]['param']['lockTabFlag'] && window.spiderSlaveUrls[id]['param']['lockTabFlag'] === domain) 
