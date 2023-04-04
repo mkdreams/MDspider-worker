@@ -1,4 +1,44 @@
 var ajaxRecordString = `
+    function waitDomAddChildByText(dom,pattern,maxWaitTime) {
+        var p = new Promise(function(resolve,reject) {
+            var setTimeoutObj = undefined;
+
+            var callback = function(mutationsList, observer) {
+                for(let mutation of mutationsList) {
+                    if(mutation['addedNodes'].length > 0) {
+                        for(var addNodeIdx in mutation['addedNodes']) {
+                            if(pattern.test(mutation['addedNodes'][addNodeIdx].textContent)) {
+                                if(setTimeoutObj !== undefined) {
+                                    clearTimeout(setTimeoutObj);
+                                    setTimeoutObj = undefined;
+                                }
+                                console.log('MutationObserver matched',pattern);
+                                observer.disconnect();
+                                resolve(1);
+                                return;
+                            }
+                        }
+                    }
+                }
+            };
+
+            console.log('MutationObserver start');
+
+            var observer = new MutationObserver(callback);
+            observer.observe(dom, { childList: true, subtree: true });
+
+            if(maxWaitTime && maxWaitTime > 0) {
+                setTimeoutObj = setTimeout(function() {
+                    console.log('MutationObserver timeout',maxWaitTime);
+                    observer.disconnect();
+                    resolve(0);
+                },maxWaitTime);
+            }
+        });
+
+        return p;
+    }
+    
     window.ajaxRecordFilter = [[],[]];
     window.setAjaxRecordFilterRule = function(urlRules,contentRules) {
         window.ajaxRecordFilter = [urlRules,contentRules];

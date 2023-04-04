@@ -98,7 +98,7 @@ function xhrPost(url,post,cb,responseType,helpmateProxy) {
     });
 }
 
-function domCenter(dom) {
+function domCenter(dom,behavior,container) {
     if(dom === 'topLeftPoint') {
         return 'topLeftPoint';
     }
@@ -110,7 +110,14 @@ function domCenter(dom) {
     var rect = dom.getBoundingClientRect();
     var scrollWidth = rect.left-width*4/10;
     var scrollHeight = rect.top-height*4/10;
-    window.scrollBy(scrollWidth,scrollHeight)
+    if(container === undefined) {
+        container = window;
+    }
+    if(behavior) {
+        container.scrollBy({top: scrollHeight, left: scrollWidth, behavior: 'smooth'})
+    }else{
+        container.scrollBy(scrollWidth,scrollHeight)
+    }
 
     return dom.getBoundingClientRect();
 }

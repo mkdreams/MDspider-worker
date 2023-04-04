@@ -262,7 +262,17 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 	var actionsTpl_100 = [
 		{
 			"id": "debug",
-			"url": 'console.log("actionsTpl_100");',
+			"url": "https://gitee.com/colin_86/MDword",
+			"type": 1,
+			"param": {
+				'lockTab':1,
+				'lockTabFlag':'debug',
+			},
+			"code": 1
+		},
+		{
+			"id": "debug2",
+			"url": 'console.log("actionsTpl_100");return 999;',
 			"type": 100,
 			"param": {
 				'lockTab':1,
