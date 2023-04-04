@@ -96,7 +96,7 @@ var ajaxRecordString = `
                 var response = {
                     method: method,
                     url: url,
-                    responseText: self.responseText
+                    responseText: self.responseType == 'arraybuffer'?'':self.responseText
                 };
 
                 var urlRules = window.ajaxRecordFilter[0];
@@ -118,7 +118,7 @@ var ajaxRecordString = `
                     passContent = true;
                 }else{
                     for(var contentRulsIdx in contentRules) {
-                        if(self.responseText.indexOf(contentRules[contentRulsIdx]) > -1) {
+                        if(response.responseText.indexOf(contentRules[contentRulsIdx]) > -1) {
                             passContent = true;
                         }
                     }
@@ -126,21 +126,21 @@ var ajaxRecordString = `
 
                 if(pass === false || passContent === false) {
                     if(window.ajaxRecordDebug) {
-                        console.error("not match ajax record!",url,self.responseText);
+                        console.error("not match ajax record!",url,response.responseText);
                     }
                     return;
                 }
 
                 if(window.ajaxRecordListRestult.length > 50 && window.ajaxRecordListRestult[url] === undefined) {
                     if(window.ajaxRecordDebug) {
-                        console.error("lost ajax record!!",url,self.responseText);
+                        console.error("lost ajax record!!",url,response.responseText);
                     }
                     return;
                 }
                 if(!window.ajaxRecordListRestult[url]) {
                     window.ajaxRecordListRestult[url] = [];
                 }
-                window.ajaxRecordListRestult[url].push(self.responseText);
+                window.ajaxRecordListRestult[url].push(response.responseText);
                 if(window.ajaxRecordListRestult[url].length > 100) {
                     if(window.ajaxRecordDebug) {
                         console.error("lost ajax record!",url,window.ajaxRecordListRestult[url][0]);
