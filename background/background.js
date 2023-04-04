@@ -366,25 +366,33 @@ function getUrlInfo(types,domain) {
 
 		//first run open new tab
 		if(!domain && window.spiderSlaveUrls[id]['param'] && window.spiderSlaveUrls[id]['param']['lockTab'] && window.spiderSlaveUrls[id]['param']['lockTabFlag'] && !window.lockTabFlagToTab[window.spiderSlaveUrls[id]['param']['lockTabFlag']]) {
+			if(urlId > -1) {
+				window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
+			}
+			window.spiderSlaveUrls[id]['runStartTime'] = nowTimeStamp;
 			urlId = id;
 			break;
 		}
 
 		var canRun = checkCanRun(types,domain,id,needAgain);
 		if (matched === false && canRun) {
+			if(urlId > -1) {
+				window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
+			}
+
+			window.spiderSlaveUrls[id]['runStartTime'] = nowTimeStamp;
 			urlId = id;
 			matched = true;
 		}
 
 		if(matched && canRun && window.spiderSlaveUrls[id]['iSort'] > window.spiderSlaveUrls[urlId]['iSort']){
+			if(urlId > -1) {
+				window.spiderSlaveUrls[urlId]['runStartTime'] = 0;
+			}
+			window.spiderSlaveUrls[id]['runStartTime'] = nowTimeStamp;
 			urlId = id;
 		}
 	}
-
-	if(urlId > -1) {
-		window.spiderSlaveUrls[id]['runStartTime'] = nowTimeStamp;
-	}
-
 
 	return urlId;
 }
@@ -394,7 +402,6 @@ function checkCanRun(types,domain,id,needAgain) {
 		&& (!window.spiderSlaveUrls[id]['runStartTime'] || window.spiderSlaveUrls[id]['runStartTime'] < needAgain)
 		&& (!domain || (window.spiderSlaveUrls[id]['param'] && window.spiderSlaveUrls[id]['param']['lockTab'] && window.spiderSlaveUrls[id]['param']['lockTabFlag'] && window.spiderSlaveUrls[id]['param']['lockTabFlag'] === domain) 
 			|| (window.spiderSlaveUrls[id]['param'] && window.spiderSlaveUrls[id]['param']['lockTab'] && window.spiderSlaveUrls[id]['url'].indexOf(domain) > -1))) {
-		
 		return true;
 	}else{
 		return false;
