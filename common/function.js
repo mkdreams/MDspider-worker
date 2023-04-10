@@ -67,7 +67,7 @@ function xhrPost(url,post,cb,responseType,helpmateProxy) {
                 xhr.setRequestHeader('WORKCREATEFLAG',window.workCreateFlag);
             }
             if(window.spiderSlaveActiveLastTime !== undefined) {
-                xhr.setRequestHeader('SPIDERSLAVEACTIVELASTTIME',window.spiderSlaveActiveLastTime);
+                xhr.setRequestHeader('SPIDERSLAVEACTIVELASTTIME',window.spiderSlaveActiveLastTime[1]);
             }
             xhr.setRequestHeader('SPIDERSLAVEFLAG',window.spiderSlaveFlag);
             xhr.responseType = responseType
@@ -87,7 +87,7 @@ function xhrPost(url,post,cb,responseType,helpmateProxy) {
                 xhr.setRequestHeader('WORKCREATEFLAG',window.workCreateFlag);
             }
             if(window.spiderSlaveActiveLastTime !== undefined) {
-                xhr.setRequestHeader('SPIDERSLAVEACTIVELASTTIME',window.spiderSlaveActiveLastTime);
+                xhr.setRequestHeader('SPIDERSLAVEACTIVELASTTIME',window.spiderSlaveActiveLastTime[1]);
             }
             xhr.setRequestHeader('SPIDERSLAVEFLAG',window.spiderSlaveFlag);
             xhr.responseType = responseType

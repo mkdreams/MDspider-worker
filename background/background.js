@@ -11,7 +11,8 @@ window.setInterval_getLinksCache_lastRunTime = new Date().getTime();
 window.lockTabFlagToTab = {};
 
 //active time
-window.spiderSlaveActiveLastTime = parseInt(new Date().getTime()/1000);
+window.spiderSlaveActiveLastTime = [0,0];
+window.spiderSlaveActiveLastTime[0] = window.spiderSlaveActiveLastTime[1] = parseInt(new Date().getTime()/1000);
 
 function enabledProxy() {
 	disabledProxy();
@@ -190,6 +191,9 @@ chrome.tabs.onCreated.addListener(function(tab) {
 });
 
 function workPlay(allCompeletedCb) {
+	//up active time
+	window.spiderSlaveActiveLastTime[0] = window.spiderSlaveActiveLastTime[1] = parseInt(new Date().getTime()/1000);
+
 	workPause();
 
 	//close tab
@@ -215,6 +219,7 @@ function workPlay(allCompeletedCb) {
 		if(window.actionRunTime > 600 && window.spiderSlaveTabInfos['allTabLocked'] === false) {
 			tryCloseTab();
 			window.actionRunTime = 0;
+			window.spiderSlaveActiveLastTime[0] = parseInt(new Date().getTime()/1000);
 		}else{
 			if (Object.keys(window.spiderSlaveUrls).length > 0) {
 				oneActionRun();
@@ -225,14 +230,15 @@ function workPlay(allCompeletedCb) {
 	clearInterval(window.setInterval_getLinksCache);
 	window.setInterval_getLinksCache = setInterval(function () {
 		var len = Object.keys(window.spiderSlaveUrls).length;
+
+		window.spiderSlaveActiveLastTime[1] = parseInt(new Date().getTime()/1000);
+
 		if (len === 0) {
 			if(allCompeletedCb) {
 				allCompeletedCb();
 			}else{
 				pullActions();
 			}
-		}else{
-			window.spiderSlaveActiveLastTime = parseInt(new Date().getTime()/1000);
 		}
 	}, window.spiderSlaveGetUrlsDelay);
 
@@ -241,7 +247,12 @@ function workPlay(allCompeletedCb) {
 	if(window.spiderSlaveHelpmate === true) {
 		clearInterval(window.spiderSlaveHelpmateSetInterval);
 		window.spiderSlaveHelpmateSetInterval = setInterval(function () {
-			pingUser()
+			var nowTime = parseInt(new Date().getTime()/1000);
+			if(window.spiderSlaveActiveLastTime[0] < nowTime - 300 || window.spiderSlaveActiveLastTime[1] < nowTime - 300) {
+				workPlay();
+			}else{
+				pingUser()
+			}
 		}, 60000);
 	}
 
