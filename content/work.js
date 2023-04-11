@@ -1,7 +1,7 @@
 window.actionComplete = true;
 window.ajaxRecordDebug = false;
 
-function waitDomAddChildByText(dom,pattern,maxRunTime,minRunTime) {
+function waitDomAddChildByText(dom,pattern,maxRunTime,minRunTime,watchAttrChange) {
 	var p = new Promise(function(resolve,reject) {
 		var observer = undefined;
 		var setTimeoutObj = undefined;
@@ -22,6 +22,27 @@ function waitDomAddChildByText(dom,pattern,maxRunTime,minRunTime) {
 		if(dom !== undefined && pattern !== undefined) {
 			var callback = function(mutationsList, observerTemp) {
 				for(let mutation of mutationsList) {
+					if (watchAttrChange && mutation.type === 'attributes') {
+						if($(mutation.target).is(":visible") && pattern.test(mutation.target.textContent)) {
+							obMatched = true;
+							if(setTimeoutObj !== undefined) {
+								clearTimeout(setTimeoutObj);
+								setTimeoutObj = undefined;
+							}
+
+							console.log('MutationObserver matched',pattern);
+
+							if(setTimeoutMinObj === undefined) {
+								observerTemp.disconnect();
+								resolve(1);
+							}
+
+							return;
+						}
+
+						continue;
+					}
+
 					if(mutation['addedNodes'].length > 0) {
 						for(var addNodeIdx in mutation['addedNodes']) {
 							if(pattern.test(mutation['addedNodes'][addNodeIdx].textContent)) {
@@ -47,7 +68,11 @@ function waitDomAddChildByText(dom,pattern,maxRunTime,minRunTime) {
 			console.log('MutationObserver start');
 	
 			observer = new MutationObserver(callback);
-			observer.observe(dom, {childList: true, subtree: true});
+			if(watchAttrChange) {
+				observer.observe(dom, {childList: true, subtree: true, attributes: true});
+			}else{
+				observer.observe(dom, {childList: true, subtree: true});
+			}
 		}
 
 		//max run time
@@ -72,14 +97,18 @@ function waitDomAddChildByText(dom,pattern,maxRunTime,minRunTime) {
 // 			'somediv:contains("最相关"),'
 // 			+'somediv:contains("从旧到新"),'
 // 			,
+//		click: function(node) {node.click();},//点击动作自定义
+//		autoDomCenter: false,//dom自当移动至中间
+//		scrollSelector: window,//滚动条
 // 		canBetch: false,//批量执行
 // 		minRunTime: 0,//最小执行时间
 // 		maxRunTime: 5000,//最大执行时间
 // 		renderTime: 0,//渲染时间，也就是数据加载出来后再等会儿
 // 		maxTimes: 1,//连续执行次数
 // 		checkSelector: 'body',//监听字节点的父节点
+// 		watchAttrChange: true,//监听attr改变，并判断dom是否可见，再进行checkContentRegExp判断
 // 		remark: "点击最相关",//备注文字
-// 		checkContentRegExp: /显示所有评论/,//新增字节点文字是否能通过这个正则，用于判断内容是否加载完成
+// 		checkContentRegExp: /显示所有评论/,//新增子节点文字是否能通过这个正则，用于判断内容是否加载完成
 // 	}
 // ]
 function autoClicks(clicks) {
@@ -96,6 +125,10 @@ function autoClicks(clicks) {
 	
 			if(click['minRunTime'] === undefined) {
 				click['minRunTime'] = 0;
+			}
+
+			if(click['watchAttrChange'] === undefined) {
+				click['watchAttrChange'] = false;
 			}
 	
 			if(click['maxTimes'] === undefined) {
@@ -118,13 +151,22 @@ function autoClicks(clicks) {
 				click['canBetch'] = false;
 			}
 	
+			if(click['autoDomCenter'] === undefined) {
+				click['autoDomCenter'] = true;
+			}
+	
 			for(var times = 0;times < click['maxTimes'];times++) {
 				if(click['beforeClickTime'] > 0 && r === 1) {
 					await new Promise(function(resolve,reject) {setTimeout(function() {resolve(1)},click['renderTime'])});
 				}
 
-				var nodes = $(click.selector);
-
+				//字符串：临时获取；函数：执行回调
+				if(click.selector && typeof(click.selector) == 'function') {
+					var nodes = click.selector(click,times);
+				}else{
+					var nodes = $(click.selector);
+				}
+				
 				if(nodes.length <= 0){
 					continue outer;
 				}
@@ -134,23 +176,35 @@ function autoClicks(clicks) {
 				if(click.scrollSelector && typeof(click.scrollSelector) == 'string') {
 					scrollSelector = $(click.scrollSelector)[0];
 				}else if(click.scrollSelector && typeof(click.scrollSelector) == 'function'){
-					scrollSelector = click.scrollSelector(click);
+					scrollSelector = click.scrollSelector(click,times);
+				}else{
+					scrollSelector = click.scrollSelector;
 				}
 	
-				domCenter(nodes[0],'smooth',scrollSelector);
+				if(click['autoDomCenter'] === true) {
+					domCenter(nodes[0],'smooth',scrollSelector);
+				}
 	
 				var r = undefined;
 				if(click['canBetch']) {
 					console.log('times',times,nodes.length);
-					var p = waitDomAddChildByText($(click['checkSelector'])[0], click['checkContentRegExp'],click['maxRunTime'],click['minRunTime']);
+					var p = waitDomAddChildByText($(click['checkSelector'])[0], click['checkContentRegExp'],click['maxRunTime'],click['minRunTime'],click['watchAttrChange']);
 					for(var nodeIdx = 0;nodeIdx < nodes.length;nodeIdx++){
-						$(nodes[nodeIdx]).click();
+						if(click['click'] === undefined) {
+							nodes[nodeIdx].click();
+						}else{
+							click['click'](nodes[nodeIdx],times);
+						}
 					}
 					r = await p;
 				}else{
 					console.log('times',times,nodes.length);
-					var p = waitDomAddChildByText($(click['checkSelector'])[0], click['checkContentRegExp'],click['maxRunTime'],click['minRunTime']);
-					$(nodes[0]).click();
+					var p = waitDomAddChildByText($(click['checkSelector'])[0], click['checkContentRegExp'],click['maxRunTime'],click['minRunTime'],click['watchAttrChange']);
+					if(click['click'] === undefined) {
+						nodes[0].click();
+					}else{
+						click['click'](nodes[0],times);
+					}
 					r = await p;
 				}
 	
