@@ -22,8 +22,8 @@ function waitDomAddChildByText(dom,pattern,maxRunTime,minRunTime,watchAttrChange
 		if(dom !== undefined && pattern !== undefined) {
 			var callback = function(mutationsList, observerTemp) {
 				for(let mutation of mutationsList) {
-					if (watchAttrChange && mutation.type === 'attributes') {
-						if($(mutation.target).is(":visible") && pattern.test(mutation.target.textContent)) {
+					if (watchAttrChange && (mutation.type === 'attributes' || mutation.type === 'characterData')) {
+						if(((mutation.type === 'attributes' && $(mutation.target).is(":visible")) || mutation.type === 'characterData') && pattern.test(mutation.target.textContent)) {
 							obMatched = true;
 							if(setTimeoutObj !== undefined) {
 								clearTimeout(setTimeoutObj);
@@ -69,7 +69,7 @@ function waitDomAddChildByText(dom,pattern,maxRunTime,minRunTime,watchAttrChange
 	
 			observer = new MutationObserver(callback);
 			if(watchAttrChange) {
-				observer.observe(dom, {childList: true, subtree: true, attributes: true});
+				observer.observe(dom, {childList: true, characterData:true, subtree: true, attributes: true});
 			}else{
 				observer.observe(dom, {childList: true, subtree: true});
 			}
@@ -189,6 +189,7 @@ function autoClicks(clicks) {
 				if(click['canBetch']) {
 					console.log('times',times,nodes.length);
 					var p = waitDomAddChildByText($(click['checkSelector'])[0], click['checkContentRegExp'],click['maxRunTime'],click['minRunTime'],click['watchAttrChange']);
+					await new Promise(function(resolve,reject) {setTimeout(function() {resolve(1)},100)});
 					for(var nodeIdx = 0;nodeIdx < nodes.length;nodeIdx++){
 						if(click['click'] === undefined) {
 							nodes[nodeIdx].click();
@@ -200,6 +201,7 @@ function autoClicks(clicks) {
 				}else{
 					console.log('times',times,nodes.length);
 					var p = waitDomAddChildByText($(click['checkSelector'])[0], click['checkContentRegExp'],click['maxRunTime'],click['minRunTime'],click['watchAttrChange']);
+					await new Promise(function(resolve,reject) {setTimeout(function() {resolve(1)},100)});
 					if(click['click'] === undefined) {
 						nodes[0].click();
 					}else{
