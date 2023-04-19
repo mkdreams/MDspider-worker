@@ -339,6 +339,12 @@ function tryCloseTab() {
 	var nowTime = new Date().getTime();
 	var needCloseTabIds = [];
 	for (var i in window.spiderSlaveTabInfos['tabs']) {
+		// more than 30 min, init tab status.
+		if(window.spiderSlaveTabInfos['tabs'][i]['iActiveTime'] !== undefined && window.spiderSlaveTabInfos['tabs'][i]['iActiveTime'] < nowTime-1800000) {
+			window.spiderSlaveTabInfos['tabs'][i]['runStatus'] = 0;
+		}
+
+
 		if (window.spiderSlaveTabInfos['tabs'][i]['runStatus'] !== undefined  && window.spiderSlaveTabInfos['tabs'][i]['runStatus'] === 0 
 			&& (window.spiderSlaveTabInfos['tabs'][i]['iActiveTime'] !== undefined && window.spiderSlaveTabInfos['tabs'][i]['iActiveTime'] < nowTime-300000)) {
 				needCloseTabIds.push(i);
