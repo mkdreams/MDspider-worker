@@ -269,7 +269,7 @@ function workPause() {
 
 function pullActions() {
 	var timestamp = new Date().getTime();
-	if(timestamp - window.setInterval_getLinksCache_lastRunTime > window.spiderSlaveGetUrlsDelay && window.spiderSlaveInitStatus === 3) {
+	if(timestamp - window.setInterval_getLinksCache_lastRunTime > window.spiderSlaveGetUrlsDelay && window.spiderSlaveInitStatus == 3) {
 		window.setInterval_getLinksCache_lastRunTime = timestamp;
 		//websocket
 		if(window.spiderSlaveApiActionList.indexOf("ws") === 0) {
