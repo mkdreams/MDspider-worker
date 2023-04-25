@@ -52,7 +52,7 @@ function ReplaceNowUser(tab, info, cb) {
 	xhrPost(window.spiderSlaveHelpmateApi,{
 		id:4,
 		method:"Robot.ReplaceNowUser",
-		params:[[window.workCreateFlag,window.userDataPath,window.spiderSlaveApiCb+'?isDelete=1&sFlag='+window.spiderSlaveFlag+'&workCreateFlag='+window.workCreateFlag+'&info='.encodeURIComponent(JSON.stringify(info))]]
+		params:[[window.workCreateFlag,window.userDataPath,window.spiderSlaveApiCb+'?isDelete=1&sFlag='+window.spiderSlaveFlag+'&workCreateFlag='+window.workCreateFlag+'&info='+encodeURIComponent(JSON.stringify(info))]]
 	},undefined,'json').then(function(data) {
 		if(cb) {
 			textToBase64(JSON.stringify(data),function(base64){
@@ -66,7 +66,7 @@ function PauseNowUser(tab, info, cb) {
 	xhrPost(window.spiderSlaveHelpmateApi,{
 		id:4,
 		method:"Robot.PauseNowUser",
-		params:[[window.workCreateFlag,window.userDataPath,window.spiderSlaveApiCb+'?isDelete=1&sFlag='+window.spiderSlaveFlag+'&workCreateFlag='+window.workCreateFlag+'&info='.encodeURIComponent(JSON.stringify(info)),info['pauseMs']]]
+		params:[[window.workCreateFlag,window.userDataPath,window.spiderSlaveApiCb+'?isDelete=1&sFlag='+window.spiderSlaveFlag+'&workCreateFlag='+window.workCreateFlag+'&info='+encodeURIComponent(JSON.stringify(info)),info['pauseMs']]]
 	},undefined,'json').then(function(data) {
 		if(cb) {
 			textToBase64(JSON.stringify(data),function(base64){
@@ -80,7 +80,7 @@ function moveKeepLiveUser(tab, info, cb) {
 	xhrPost(window.spiderSlaveHelpmateApi,{
 		id:4,
 		method:"Robot.MoveKeepLiveBrowserUser",
-		params:[[window.workCreateFlag,window.userDataPath,window.spiderSlaveApiCb+'?isDelete=1&sFlag='+window.spiderSlaveFlag+'&workCreateFlag='+window.workCreateFlag+'&info='.encodeURIComponent(JSON.stringify(info))]]
+		params:[[window.workCreateFlag,window.userDataPath,window.spiderSlaveApiCb+'?isDelete=1&sFlag='+window.spiderSlaveFlag+'&workCreateFlag='+window.workCreateFlag+'&info='+encodeURIComponent(JSON.stringify(info))]]
 	},undefined,'json').then(function(data) {
 		if(cb) {
 			textToBase64(JSON.stringify(data),function(base64){
