@@ -8,10 +8,11 @@
                 if(response.indexOf('我们暂时停用了你的账户') > 0 || response.indexOf('我们会给你发送短信验证码') > 0) {
                     workPause();
                     moveKeepLiveUser();
-                    ReplaceNowUser();
+                    ReplaceNowUser(undefined,{'data':{'iStatus':2}});
                 }else if(response.indexOf('你暂时被禁止使用此功能') > 0) {
                     workPause();
-                    PauseNowUser(undefined,{'pauseMs':86400});
+                    RecordInfo();
+                    PauseNowUser(undefined,{'pauseMs':14400,'data':{'iStatus':3}});
                 }
                 `
         }
