@@ -1,7 +1,7 @@
 window.actionComplete = true;
 window.ajaxRecordDebug = false;
 
-function waitDomAddChildByText(dom,pattern,maxRunTime,minRunTime,watchAttrChange) {
+function waitDomAddChildByText(dom,pattern,maxRunTime,minRunTime,watchAttrChange,watchDomRemove,checkDomCb) {
 	var p = new Promise(function(resolve,reject) {
 		var observer = undefined;
 		var setTimeoutObj = undefined;
@@ -23,14 +23,14 @@ function waitDomAddChildByText(dom,pattern,maxRunTime,minRunTime,watchAttrChange
 			var callback = function(mutationsList, observerTemp) {
 				for(let mutation of mutationsList) {
 					if (watchAttrChange && (mutation.type === 'attributes' || mutation.type === 'characterData')) {
-						if(((mutation.type === 'attributes' && $(mutation.target).is(":visible")) || mutation.type === 'characterData') && pattern.test(mutation.target.textContent)) {
+						if(((mutation.type === 'attributes' && $(mutation.target).is(":visible")) || mutation.type === 'characterData') && pattern.test((checkDomCb !== undefined?checkDomCb(mutation.target):mutation.target.textContent))) {
 							obMatched = true;
 							if(setTimeoutObj !== undefined) {
 								clearTimeout(setTimeoutObj);
 								setTimeoutObj = undefined;
 							}
 
-							console.log('MutationObserver matched',pattern);
+							console.log('MutationObserver attr change matched',pattern);
 
 							if(setTimeoutMinObj === undefined) {
 								observerTemp.disconnect();
@@ -43,9 +43,10 @@ function waitDomAddChildByText(dom,pattern,maxRunTime,minRunTime,watchAttrChange
 						continue;
 					}
 
+					//add dom
 					if(mutation['addedNodes'].length > 0) {
 						for(var addNodeIdx in mutation['addedNodes']) {
-							if(pattern.test(mutation['addedNodes'][addNodeIdx].textContent)) {
+							if(pattern.test((checkDomCb !== undefined?checkDomCb(mutation['addedNodes'][addNodeIdx]):mutation['addedNodes'][addNodeIdx].textContent))) {
 								obMatched = true;
 								if(setTimeoutObj !== undefined) {
 									clearTimeout(setTimeoutObj);
@@ -62,17 +63,39 @@ function waitDomAddChildByText(dom,pattern,maxRunTime,minRunTime,watchAttrChange
 							}
 						}
 					}
+
+					//move dom
+					if(watchDomRemove && mutation['removedNodes'].length > 0) {
+						for(var addNodeIdx in mutation['removedNodes']) {
+							if(pattern.test((checkDomCb !== undefined?checkDomCb(mutation['removedNodes'][addNodeIdx]):mutation['removedNodes'][addNodeIdx].textContent))) {
+								obMatched = true;
+								if(setTimeoutObj !== undefined) {
+									clearTimeout(setTimeoutObj);
+									setTimeoutObj = undefined;
+								}
+
+								console.log('MutationObserver move node matched',pattern);
+
+								if(setTimeoutMinObj === undefined) {
+									observerTemp.disconnect();
+									resolve(1);
+								}
+								return;
+							}
+						}
+					}
 				}
 			};
 	
 			console.log('MutationObserver start');
 	
 			observer = new MutationObserver(callback);
+			var options = {childList: true, subtree: true};
 			if(watchAttrChange) {
-				observer.observe(dom, {childList: true, characterData:true, subtree: true, attributes: true});
-			}else{
-				observer.observe(dom, {childList: true, subtree: true});
+				options['characterData'] = true;
+				options['attributes'] = true;
 			}
+			observer.observe(dom, options);
 		}
 
 		//max run time
@@ -106,7 +129,9 @@ function waitDomAddChildByText(dom,pattern,maxRunTime,minRunTime,watchAttrChange
 // 		renderTime: 0,//渲染时间，也就是数据加载出来后再等会儿
 // 		maxTimes: 1,//连续执行次数
 // 		checkSelector: 'body',//监听字节点的父节点
+// 		checkDomCb: function(target) {return target.textContent;},//监听内容，checkDomCb为undefined监听target.textContent，target.textContent：文字；target.outerHTML：html
 // 		watchAttrChange: true,//监听attr改变，并判断dom是否可见，再进行checkContentRegExp判断
+// 		watchDomRemove: true,//监听dom移除，再进行checkContentRegExp判断
 // 		remark: "点击最相关",//备注文字
 // 		checkContentRegExp: /显示所有评论/,//新增子节点文字是否能通过这个正则，用于判断内容是否加载完成
 // 	}
@@ -188,7 +213,7 @@ function autoClicks(clicks) {
 				var r = undefined;
 				if(click['canBetch']) {
 					console.log('times',times,nodes.length);
-					var p = waitDomAddChildByText($(click['checkSelector'])[0], click['checkContentRegExp'],click['maxRunTime'],click['minRunTime'],click['watchAttrChange']);
+					var p = waitDomAddChildByText($(click['checkSelector'])[0], click['checkContentRegExp'],click['maxRunTime'],click['minRunTime'],click['watchAttrChange'],click['watchDomRemove'],click['checkDomCb']);
 					await new Promise(function(resolve,reject) {setTimeout(function() {resolve(1)},100)});
 					for(var nodeIdx = 0;nodeIdx < nodes.length;nodeIdx++){
 						if(click['click'] === undefined) {
@@ -200,7 +225,7 @@ function autoClicks(clicks) {
 					r = await p;
 				}else{
 					console.log('times',times,nodes.length);
-					var p = waitDomAddChildByText($(click['checkSelector'])[0], click['checkContentRegExp'],click['maxRunTime'],click['minRunTime'],click['watchAttrChange']);
+					var p = waitDomAddChildByText($(click['checkSelector'])[0], click['checkContentRegExp'],click['maxRunTime'],click['minRunTime'],click['watchAttrChange'],click['watchDomRemove'],click['checkDomCb']);
 					await new Promise(function(resolve,reject) {setTimeout(function() {resolve(1)},100)});
 					if(click['click'] === undefined) {
 						nodes[0].click();
