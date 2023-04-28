@@ -191,6 +191,8 @@ chrome.tabs.onCreated.addListener(function(tab) {
 });
 
 function workPlay(allCompeletedCb) {
+	window.spiderSlaveTabInfos['allTabLocked'] = false;
+	
 	//up active time
 	window.spiderSlaveActiveLastTime[0] = window.spiderSlaveActiveLastTime[1] = parseInt(new Date().getTime()/1000);
 
