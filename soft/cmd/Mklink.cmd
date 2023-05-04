@@ -1,0 +1,1 @@
+mklink/j "C:\Users\Administrator\AppData\Local\Chromium\User Data MDpider helpmate" "D:\User Data MDpider helpmate" 
