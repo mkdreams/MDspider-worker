@@ -78,8 +78,6 @@ function disabledProxy() {
 	);
 }
 
-var windowLeftOffset = 0;
-var windowTopOffset = 0;
 function autoCreateTab(url, cb, useBaseWindow, urlInfo) {
 	function createOneTab(newWin, tabId) {
 		var tabOption = { 'url': url };
@@ -132,13 +130,8 @@ function autoCreateTab(url, cb, useBaseWindow, urlInfo) {
 		return ;
 	}
 
-	windowLeftOffset += window.baseInfo['perWidth'];
-	if (windowLeftOffset + window.baseInfo['perWidth'] - 10 >= window.baseInfo['width']) {
-		windowLeftOffset = 0;
-	}
-
 	if(getObjectLen(window.spiderSlaveTabInfos['wins']) < window.spiderSlaveWinCount) {
-		chrome.windows.create({ focused: true, state: 'normal', 'url': url, top: windowTopOffset, left: windowLeftOffset, height: window.baseInfo['perHeight'], width: window.baseInfo['perWidth'] }, function (newWin) {
+		chrome.windows.create({ focused: true, state: 'normal', 'url': url}, function (newWin) {
 			window.spiderSlaveTabInfos['wins'][newWin.id] = newWin;
 			window.spiderSlaveTabInfos['wins'][newWin.id]['useTabs'] = {};
 			createOneTab(newWin, newWin.tabs.length > 0 ? newWin.tabs[0]['id'] : 0);

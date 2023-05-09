@@ -30,20 +30,6 @@ window.helpmateEvents = {
     "create": [],
     "open": [],
     "done": {
-		// 'test':[
-		// 	{
-		// 		"url":"return document.getElementsByTagName('html')[0].innerHTML;",
-		// 		"type":100,
-		// 		"then":
-		// 			`
-		// 			if(response.indexOf('some text') > 0) {
-		// 				console.log(info,response,'done then');
-		// 			}else{
-		// 				console.log(info,response,'is false');
-		// 			}
-		// 			`
-		// 	}
-		// ]
 	}
 };
 
@@ -69,23 +55,6 @@ function initDeviceInfo(cb) {
 			chrome.windows.getCurrent(function(win) {
 				window.spiderSlaveTabInfos['wins'][win.id] = win;
 				window.spiderSlaveTabInfos['wins'][win.id]['useTabs'] = {};
-
-				window.baseInfo['windowId'] = win.id;
-				window.baseInfo['height'] = info[0].bounds.height;
-				window.baseInfo['width'] = info[0].bounds.width;
-				
-				window.spiderSlaveWinCount = parseInt(window.spiderSlaveWinCount);
-				window.baseInfo['xCount'] = Math.ceil(Math.sqrt(window.spiderSlaveWinCount+1));
-				if(window.baseInfo['xCount'] < 3) {
-					window.baseInfo['xCount'] = window.spiderSlaveWinCount+1;
-					window.baseInfo['yCount'] = 1;
-				}else{
-					window.baseInfo['yCount'] = Math.ceil((window.spiderSlaveWinCount+1)/window.baseInfo['xCount']);
-				}
-				window.baseInfo['perHeight'] = parseInt(window.baseInfo['height']/window.baseInfo['yCount'])-150;
-				window.baseInfo['perWidth'] = parseInt(window.baseInfo['width']/window.baseInfo['xCount']);
-				
-
 
 				chrome.tabs.query({windowId:win.id},function(tabs) {
 					window.baseInfo['topHeight'] = win['height']-tabs[0]['height']+1-15;
