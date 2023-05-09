@@ -12,7 +12,7 @@
                 }else if(response.indexOf('你暂时被禁止使用此功能') > 0) {
                     workPause();
                     PauseNowUser(undefined,{'pauseMs':14400,'action':'socailRecordUserStatus','data':{'iStatus':3}});
-                }else if(response.indexOf('账户存在异常活动') > 0) {
+                }else if(response.indexOf('帐户存在异常活动') > 0) {
                     workPause();
                     PauseNowUser(undefined,{'pauseMs':86400,'action':'socailRecordUserStatus','data':{'iStatus':4}});
                 }
