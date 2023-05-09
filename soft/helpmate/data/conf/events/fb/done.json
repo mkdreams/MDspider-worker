@@ -11,7 +11,7 @@
                     ReplaceNowUser(undefined,{'data':{'iStatus':2}});
                 }else if(response.indexOf('你暂时被禁止使用此功能') > 0) {
                     workPause();
-                    PauseNowUser(undefined,{'pauseMs':14400,'action':'socailRecordUserStatus','data':{'iStatus':3}});
+                    PauseNowUser(undefined,{'pauseMs':7200,'action':'socailRecordUserStatus','data':{'iStatus':3}});
                 }else if(response.indexOf('存在异常活动') > 0) {
                     workPause();
                     PauseNowUser(undefined,{'pauseMs':86400,'action':'socailRecordUserStatus','data':{'iStatus':4}});
