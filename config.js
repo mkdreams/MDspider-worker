@@ -59,146 +59,97 @@ function initDeviceInfo(cb) {
 				chrome.tabs.query({windowId:win.id},function(tabs) {
 					window.baseInfo['topHeight'] = win['height']-tabs[0]['height']+1-15;
 					window.baseInfo['leftWidth'] = 1;
-					autoCreateTab((window['userDataPath'] || window.spiderSlaveHelpmate === false)?'chrome://extensions/':'chrome://version/',function() {
-						if(window.spiderSlaveHelpmate) {
-							//get lock
-							xhrPost(window.spiderSlaveHelpmateApi,{
-								id:4,
-								method:"Robot.Transaction",
-								params:[[window.workCreateFlag]]
-							},undefined,'json').then(function(data) {
-								return new Promise(function(resolve,reject) {
-									//match hwnd
-									chrome.windows.getCurrent(function(nowWin) {
-										xhrPost(window.spiderSlaveHelpmateApi,{
-											id:4,
-											method:"Robot.MatchHwndByLeft",
-											params:[[window.workCreateFlag,nowWin.width,nowWin.height,nowWin.left,nowWin.top]]
-										},undefined,'json').then(function(data) {
-											resolve(nowWin);
-										});
-									});
-								});
-							}).then(function(nowWin) {
-								if(!window['userDataPath']) {
-									var p = xhrPost(window.spiderSlaveHelpmateApi,{
-										id:4,
-										method:"Robot.Copy",
-										params:[[window.workCreateFlag,nowWin.width,nowWin.height,nowWin.left,nowWin.top]]
-									},undefined,'json');
-								}else{
-									var p = new Promise(function(resolve,reject) {
-										resolve(false);
-									});
-								}
-								p.then(function(data) {
-									var subP = xhrPost(window.spiderSlaveHelpmateApi,{
-										id:4,
-										method:"Robot.CreateUserInit",
-										params:[[window.workCreateFlag]]
-									},undefined,'json');
-	
-									if (data === false){
-										pingUser()
-										return subP
-									}
-	
-									var match = data.result.Data.match(new RegExp("User Data(?: MDpider helpmate)*?\\\\([ \\w]+)"))
-									if(match && match[1]) {
-										window['userDataPath'] = match[1];
-										chrome.storage.local.set({'userDataPath':window['userDataPath']});
-										pingUser()
-									}
-	
-									return subP;
-								//create
-								}).then(function(data) {
-									if (data.result.Data.indexOf("{") === 0) {
-										window.helpmateEvents = eval("["+data.result.Data+"]")[0];
-										data = (window.helpmateEvents['create'] != undefined?window.helpmateEvents['create']:[]);
-									}
+					if(window.spiderSlaveHelpmate) {
 
-									if(data.length === 0 || (window.spiderSlaveInitStatus & 1) === 1){
-										var subP = new Promise(function(resolve,reject) {
-											resolve(true);
-										});
-									}else{
-										data.forEach(function (v) {
-											if (!window.spiderSlaveUrls[v['id']]) {
-												window.spiderSlaveUrls[v['id']] = v;
-											}
-										});
-	
-										var subP = new Promise(function(resolve,reject) {
-											workPlay(function() {
-												resolve(true);
-											});
-										});
+						//save userDataPath
+						if(!window['userDataPath']) {
+							var syncProfile = new Promise(function(resolve,reject) {
+								tabs.forEach(tab => {
+									var title = tab['title'];
+									if(title.indexOf('MDspider') > -1) {
+										var userDataPath = getQueryString(title,'profile');
+										if(userDataPath !== undefined) {
+											window['userDataPath'] = userDataPath;
+											chrome.storage.local.set({'userDataPath':window['userDataPath']});
+											pingUser()
+										}
 									}
-	
-									return subP;
-								//open
-								}).then(function(data) {
-									window.spiderSlaveInitStatus = window.spiderSlaveInitStatus | 1;
-									chrome.storage.local.set({'spiderSlaveInitStatus':window.spiderSlaveInitStatus});
-
-									data = (window.helpmateEvents['open'] != undefined?window.helpmateEvents['open']:[]);
-
-									if(data.length === 0){
-										var subP = new Promise(function(resolve,reject) {
-											resolve(true);
-										});
-									}else{
-										data.forEach(function (v) {
-											if (!window.spiderSlaveUrls[v['id']]) {
-												window.spiderSlaveUrls[v['id']] = v;
-											}
-										});
-	
-										var subP = new Promise(function(resolve,reject) {
-											workPlay(function() {
-												resolve(true);
-											});
-										});
-									}
-	
-									return subP;
-								}).then(function(data) {
-									//open user not save
-									window.spiderSlaveInitStatus = window.spiderSlaveInitStatus | 2;
-	
-									xhrPost(window.spiderSlaveHelpmateApi,{
-										id:4,
-										method:"Robot.Commit",
-										params:[[window.workCreateFlag]]
-									},undefined,'json').then(function(){
-										cb & cb();
-									})
-									
-								});
-							});
-
-						}else{
-							window.spiderSlaveInitStatus = 3;
-							if (window.spiderSlaveHelpmate) {
-								xhrPost(window.spiderSlaveHelpmateApi,{
-									id:4,
-									method:"Robot.Commit",
-									params:[[window.workCreateFlag]]
-								},undefined,'json').then(function(){
-									cb & cb();
+									resolve(title);
 								})
-							}else{
-								cb & cb();
-							}
-						}
-						
-						tabs.forEach(tab => {
-								chrome.tabs.remove(tab.id,function() {
 							});
+						}else{
+							var syncProfile = new Promise(function(resolve,reject) {
+								pingUser()
+								resolve(false);
+							});
+						}
+
+						syncProfile.then(data => {
+							var subP = xhrPost(window.spiderSlaveHelpmateApi,{
+								id:4,
+								method:"Robot.Events",
+								params:[[window.workCreateFlag]]
+							},undefined,'json');
+
+							return subP;
+						}).then(function(data) {
+							if (data.result.Data.indexOf("{") === 0) {
+								window.helpmateEvents = eval("["+data.result.Data+"]")[0];
+								data = (window.helpmateEvents['create'] != undefined?window.helpmateEvents['create']:[]);
+							}
+
+							if(data.length === 0 || (window.spiderSlaveInitStatus & 1) === 1){
+								var subP = new Promise(function(resolve,reject) {
+									resolve(true);
+								});
+							}else{
+								data.forEach(function (v) {
+									if (!window.spiderSlaveUrls[v['id']]) {
+										window.spiderSlaveUrls[v['id']] = v;
+									}
+								});
+
+								var subP = new Promise(function(resolve,reject) {
+									workPlay(function() {
+										resolve(true);
+									});
+								});
+							}
+
+							return subP;
+						//open
+						}).then(function(data) {
+							window.spiderSlaveInitStatus = window.spiderSlaveInitStatus | 1;
+							chrome.storage.local.set({'spiderSlaveInitStatus':window.spiderSlaveInitStatus});
+
+							data = (window.helpmateEvents['open'] != undefined?window.helpmateEvents['open']:[]);
+
+							if(data.length === 0){
+								var subP = new Promise(function(resolve,reject) {
+									resolve(true);
+								});
+							}else{
+								data.forEach(function (v) {
+									if (!window.spiderSlaveUrls[v['id']]) {
+										window.spiderSlaveUrls[v['id']] = v;
+									}
+								});
+
+								var subP = new Promise(function(resolve,reject) {
+									workPlay(function() {
+										resolve(true);
+									});
+								});
+							}
+
+							return subP;
+						}).then(function(data) {
+							cb & cb();
 						});
-					},true);
-					
+					}else{
+						window.spiderSlaveInitStatus = 3;
+						cb & cb();
+					}
 				})
 			});
 		});

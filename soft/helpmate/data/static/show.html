@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>NaN</title>
+  </head>
+  <body>
+    <div>访问链接: <span id="title"></span></div>
+    <div>扩展: chrome://extensions/</div>
+  </body>
+  <script>
+    document.title = decodeURI(window.location.href);
+    window.document.getElementById('title').innerText = decodeURI(window.location.href);
+  </script>
+</html>

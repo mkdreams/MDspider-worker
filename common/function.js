@@ -242,3 +242,9 @@ function formatDate(style,now) {
 function isPromise(obj) {
     return !!obj && (typeof obj === "object" || typeof obj === "function") && typeof obj.then === "function";
 }
+
+function getQueryString(url,name) {
+    var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+    var r = url.match(reg);
+    if (r != null) return unescape(r[2]); return undefined;
+} 
