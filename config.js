@@ -144,6 +144,8 @@ function initDeviceInfo(cb) {
 
 							return subP;
 						}).then(function(data) {
+							window.spiderSlaveInitStatus = window.spiderSlaveInitStatus | 2;
+							
 							cb & cb();
 						});
 					}else{

@@ -1,18 +1,18 @@
 {
-    "siteId-facebook":[
+    "siteId-facebook_1":[
         {
             "url":"return document.getElementsByTagName('html')[0].innerHTML;",
             "type":100,
             "then":
                 `
-                if(response.indexOf('我们暂时停用了你的账户') > 0 || response.indexOf('我们会给你发送短信验证码') > 0) {
+                if(response.indexOf('我们暂时停用了你的账户') > -1 || response.indexOf('我们会给你发送短信验证码') > -1) {
                     workPause();
                     moveKeepLiveUser();
                     ReplaceNowUser(undefined,{'data':{'iStatus':2}});
-                }else if(response.indexOf('你暂时被禁止使用此功能') > 0) {
+                }else if(response.indexOf('你暂时被禁止使用此功能') > -1) {
                     workPause();
                     PauseNowUser(undefined,{'pauseMs':7200,'action':'socailRecordUserStatus','data':{'iStatus':3}});
-                }else if(response.indexOf('存在异常活动') > 0) {
+                }else if(response.indexOf('存在异常活动') > -1) {
                     workPause();
                     PauseNowUser(undefined,{'pauseMs':86400,'action':'socailRecordUserStatus','data':{'iStatus':4}});
                 }
