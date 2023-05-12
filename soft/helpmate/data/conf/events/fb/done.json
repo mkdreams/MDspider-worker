@@ -9,7 +9,7 @@
                     workPause();
                     moveKeepLiveUser();
                     ReplaceNowUser(undefined,{'data':{'iStatus':2}});
-                }else if(response.indexOf('你暂时被禁止使用此功能') > -1) {
+                }else if(response.indexOf('你暂时被禁止使用此功能') > -1 || response.indexOf('功能出现技术问题') > -1) {
                     workPause();
                     PauseNowUser(undefined,{'pauseMs':7200,'action':'socailRecordUserStatus','data':{'iStatus':3}});
                 }else if(response.indexOf('存在异常活动') > -1) {
