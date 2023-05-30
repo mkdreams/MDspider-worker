@@ -63,6 +63,9 @@ function xhrPost(url,post,cb,responseType,helpmateProxy) {
             }else{
                 xhr.open('POST', url)
             }
+            if(window.MDspiderRandom !== undefined) {
+                xhr.setRequestHeader('MDSPIDERRANDOM',window.MDspiderRandom);
+            }
             if(window.workCreateFlag !== undefined) {
                 xhr.setRequestHeader('WORKCREATEFLAG',window.workCreateFlag);
             }
@@ -78,18 +81,26 @@ function xhrPost(url,post,cb,responseType,helpmateProxy) {
             }
         }else{
             xhr.open('POST', window.spiderSlaveHelpmateApi)
+            if(post instanceof Object) {
+                if(window.MDspiderRandom !== undefined) {
+                    post['MDSPIDERRANDOM'] = window.MDspiderRandom;
+                }
+                if(window.workCreateFlag !== undefined) {
+                    post['WORKCREATEFLAG'] = window.workCreateFlag;
+                }
+                post['SPIDERSLAVEFLAG'] = window.spiderSlaveFlag;
+                if(window.spiderSlaveActiveLastTime !== undefined) {
+                    post['SPIDERSLAVEACTIVELASTTIME'] = window.spiderSlaveActiveLastTime[1];
+                }
+                var postString = JSON.stringify(post);
+            }else{
+                var postString = post;
+            }
             proxPost = {
                 id:4,
                 method:"Robot.Proxy",
-                params:[[url,post instanceof Object?JSON.stringify(post):post]]
+                params:[[url,postString]]
             };
-            if(window.workCreateFlag !== undefined) {
-                xhr.setRequestHeader('WORKCREATEFLAG',window.workCreateFlag);
-            }
-            if(window.spiderSlaveActiveLastTime !== undefined) {
-                xhr.setRequestHeader('SPIDERSLAVEACTIVELASTTIME',window.spiderSlaveActiveLastTime[1]);
-            }
-            xhr.setRequestHeader('SPIDERSLAVEFLAG',window.spiderSlaveFlag);
             xhr.responseType = responseType
             xhr.send(JSON.stringify(proxPost))
         }
@@ -132,8 +143,8 @@ function getRandomPos(pos,baseInfo) {
     }
 
     return [
-            parseInt(baseInfo['offsetLeft']+pos['left']+pos['width']/4+pos['width']/2*Math.random()),
-            parseInt(baseInfo['offsetTop']+pos['top']+pos['height']/4+pos['height']/2*Math.random())
+            parseInt(baseInfo['offsetLeft']+pos['left']+pos['width']/4+pos['width']/4*Math.random()),
+            parseInt(baseInfo['offsetTop']+pos['top']+pos['height']*3/8+pos['height']/8*Math.random())
         ];
 }
 

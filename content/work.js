@@ -441,7 +441,7 @@ chrome.runtime.onMessage.addListener(
 				case 2:
 					window.spiderData = {};//clean data before run action
 
-					if(request.info.url) {
+					if(request.info.url !== undefined) {
 						//1:a,
 						// 2:js,
 						// 4:css,
@@ -560,9 +560,19 @@ chrome.runtime.onMessage.addListener(
 								//click
 								//input
 								window.actionComplete = false;
+								window.workCreateFlag = request.info.workCreateFlag;
+								window.spiderSlaveFlag = request.info.spiderSlaveFlag;
 								window.spiderSlaveHelpmateApi = request.info.spiderSlaveHelpmateApi;
+								window.MDspiderRandom = randomStr();
+								window.document.title = window.document.title+'&MDspiderRandom='+window.MDspiderRandom;
+								console.log(request.info.param.method);
 								var func_go = function() {
-									var pos = getRandomPos(domCenter(eval(request.info.url)),request.info.spiderSlaveBaseInfo);
+									//for wtop,wdefualt
+									if(request.info.url === "") {
+										var pos = [0,0];
+									}else{
+										var pos = getRandomPos(domCenter(eval(request.info.url)),request.info.spiderSlaveBaseInfo);
+									}
 									if(pos === false) {
 										textToBase64("false",function(base64){
 											window.spiderData[request.info.id] = base64;
@@ -642,6 +652,30 @@ chrome.runtime.onMessage.addListener(
 														method:"Robot.KeyTap",
 														params:[['down',request.info.param.index?request.info.param.index:1]]
 													})
+												}).then(function(response){
+													blobToBase64(response,function(base64){
+														window.spiderData[request.info.id] = base64;
+														window.actionComplete = true;
+													}.bind(this));
+												});
+												break;
+											case 'wtop':
+												xhrPost(window.spiderSlaveHelpmateApi,{
+													id:4,
+													method:"Robot.WindowTop",
+													params:[[pos[0],pos[1]]]
+												}).then(function(response){
+													blobToBase64(response,function(base64){
+														window.spiderData[request.info.id] = base64;
+														window.actionComplete = true;
+													}.bind(this));
+												});
+												break;
+											case 'wdefault':
+												xhrPost(window.spiderSlaveHelpmateApi,{
+													id:4,
+													method:"Robot.WindowDefault",
+													params:[[pos[0],pos[1]]]
 												}).then(function(response){
 													blobToBase64(response,function(base64){
 														window.spiderData[request.info.id] = base64;
