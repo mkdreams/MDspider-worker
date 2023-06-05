@@ -93,64 +93,88 @@ var ajaxRecordString = `
         this.addEventListener("readystatechange", function(event) {
             if(this.readyState == 4){
                 var self = this;
-                var response = {
-                    method: method,
-                    url: url,
-                    responseText: self.responseType == 'arraybuffer'?'':self.responseText
-                };
 
-                var urlRules = window.ajaxRecordFilter[0];
-                var contentRules = window.ajaxRecordFilter[1];
-
-                var pass = false;
-                if(urlRules.length === 0) {
-                    pass = true;
-                }else{
-                    for(var urlRuleIdx in urlRules) {
-                        if(url.indexOf(urlRules[urlRuleIdx]) > -1) {
-                            pass = true;
+                if((self.responseType == '' || self.responseType == 'text')) {
+                    var p = new Promise(function(resolve,reject) {
+                        resolve(self.responseText);
+                    });
+                }else if(self.responseType == 'blob') {
+                    var p = new Promise(function(resolve,reject) {
+                        var utf8decoder = new TextDecoder();
+                        var fr = new FileReader();
+                        fr.readAsArrayBuffer(self.response);
+                        fr.onload = function() {
+                            var buffer = fr.result;
+                            var text = utf8decoder.decode(buffer);
+                            resolve(text);
                         }
-                    }
+                    });
+                }else{
+                    var p = new Promise(function(resolve,reject) {
+                        resolve('');
+                    });
                 }
+                
+                p.then(function(responseText){
+                    var response = {
+                        method: method,
+                        url: url,
+                        responseText: responseText
+                    };
     
-                var passContent = false;
-                if(contentRules.length === 0) {
-                    passContent = true;
-                }else{
-                    for(var contentRulsIdx in contentRules) {
-                        if(response.responseText.indexOf(contentRules[contentRulsIdx]) > -1) {
-                            passContent = true;
+                    var urlRules = window.ajaxRecordFilter[0];
+                    var contentRules = window.ajaxRecordFilter[1];
+    
+                    var pass = false;
+                    if(urlRules.length === 0) {
+                        pass = true;
+                    }else{
+                        for(var urlRuleIdx in urlRules) {
+                            if(url.indexOf(urlRules[urlRuleIdx]) > -1) {
+                                pass = true;
+                            }
                         }
                     }
-                }
-
-                if(pass === false || passContent === false) {
-                    if(window.ajaxRecordDebug) {
-                        console.error("not match ajax record!",url,response.responseText);
+        
+                    var passContent = false;
+                    if(contentRules.length === 0) {
+                        passContent = true;
+                    }else{
+                        for(var contentRulsIdx in contentRules) {
+                            if(response.responseText.indexOf(contentRules[contentRulsIdx]) > -1) {
+                                passContent = true;
+                            }
+                        }
                     }
-                    return;
-                }
-
-                if(window.ajaxRecordListRestult.length > 50 && window.ajaxRecordListRestult[url] === undefined) {
-                    if(window.ajaxRecordDebug) {
-                        console.error("lost ajax record!!",url,response.responseText);
+    
+                    if(pass === false || passContent === false) {
+                        if(window.ajaxRecordDebug) {
+                            console.error("not match ajax record!",url,response.responseText);
+                        }
+                        return;
                     }
-                    return;
-                }
-                if(!window.ajaxRecordListRestult[url]) {
-                    window.ajaxRecordListRestult[url] = [];
-                }
-                window.ajaxRecordListRestult[url].push(response.responseText);
-                if(window.ajaxRecordListRestult[url].length > 100) {
-                    if(window.ajaxRecordDebug) {
-                        console.error("lost ajax record!",url,window.ajaxRecordListRestult[url][0]);
+    
+                    if(window.ajaxRecordListRestult.length > 50 && window.ajaxRecordListRestult[url] === undefined) {
+                        if(window.ajaxRecordDebug) {
+                            console.error("lost ajax record!!",url,response.responseText);
+                        }
+                        return;
                     }
-                    window.ajaxRecordListRestult[url].slice(-100)
-                }
-
-                if(window.ajaxRecordDebug) {
-                    console.log(response);
-                }
+                    if(!window.ajaxRecordListRestult[url]) {
+                        window.ajaxRecordListRestult[url] = [];
+                    }
+                    window.ajaxRecordListRestult[url].push(response.responseText);
+                    if(window.ajaxRecordListRestult[url].length > 100) {
+                        if(window.ajaxRecordDebug) {
+                            console.error("lost ajax record!",url,window.ajaxRecordListRestult[url][0]);
+                        }
+                        window.ajaxRecordListRestult[url].slice(-100)
+                    }
+    
+                    if(window.ajaxRecordDebug) {
+                        console.log(response);
+                    }
+                });
             }
         }, false);
         this.OrgOpen(...arguments);
