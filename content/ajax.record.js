@@ -227,6 +227,9 @@ var ajaxRecordString = `
                             console.error("not match ajax record!",responseClone.url,content);
                         }
                     }else{
+                        if(!window.ajaxRecordListRestult[responseClone.url]) {
+                            window.ajaxRecordListRestult[responseClone.url] = [];
+                        }
                         window.ajaxRecordListRestult[responseClone.url].push(content);
                         if(window.ajaxRecordListRestult[responseClone.url].length > 100) {
                             if(window.ajaxRecordDebug) {
