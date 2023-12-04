@@ -62,8 +62,19 @@ function initDeviceInfo(cb) {
 										if(userDataPath !== undefined) {
 											window['userDataPath'] = userDataPath;
 											chrome.storage.local.set({'userDataPath':window['userDataPath']});
+											
+											if(!window['workCreateFlag']) {
+												var workCreateFlag = getQueryString(title,'sWorkCreateFlag');
+												if(workCreateFlag === undefined) {
+													workCreateFlag = randomStr();
+												}
+	
+												window['workCreateFlag'] = workCreateFlag;
+												chrome.storage.local.set({'workCreateFlag':window['workCreateFlag']});
+											}
 											pingUser()
 										}
+
 									}
 									resolve(title);
 								})
@@ -155,15 +166,6 @@ function loadConfig(cb) {
 			window[key] = result[key];
 		}
 
-		if(!window['workCreateFlag']) {
-			if(window.workCreateFlagDefault && window.workCreateFlagDefault !== '--workCreateFlagDefault--') {
-				window['workCreateFlag'] = window.workCreateFlagDefault;
-			}else{
-				window['workCreateFlag'] = randomStr();
-			}
-			chrome.storage.local.set({'workCreateFlag':window['workCreateFlag']});
-		}
-		
 		cb && cb();
 	});
 }
