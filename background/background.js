@@ -52,54 +52,85 @@ function initDeviceInfo(cb) {
 					window.baseInfo['leftWidth'] = 1;
 					if(window.spiderSlaveHelpmate) {
 
-						//save userDataPath
-						if(!window['userDataPath']) {
-							var syncProfile = new Promise(function(resolve,reject) {
-								tabs.forEach(tab => {
-									var title = tab['title'];
-									if(title.indexOf('MDspider') > -1) {
-										var userDataPath = getQueryString(title,'profile');
-										if(userDataPath !== undefined) {
-											window['userDataPath'] = userDataPath;
-											chrome.storage.local.set({'userDataPath':window['userDataPath']});
-											
-											if(!window['workCreateFlag']) {
-												var workCreateFlag = getQueryString(title,'sWorkCreateFlag');
-												if(workCreateFlag === undefined) {
-													workCreateFlag = randomStr();
-												}
-	
-												window['workCreateFlag'] = workCreateFlag;
-												chrome.storage.local.set({'workCreateFlag':window['workCreateFlag']});
-											}
-											pingUser()
+						var syncProfile = new Promise(function(resolve,reject) {
+							tabs.forEach(tab => {
+								var title = tab['title'];
+
+								console.log(title);
+
+								if(title.indexOf('MDspider') > -1) {
+									var userDataPath = getQueryString(title,'profile');
+									if(userDataPath !== undefined) {
+										window['userDataPath'] = userDataPath;
+										chrome.storage.local.set({'userDataPath':window['userDataPath']});
+									}
+
+									var workCreateFlag = getQueryString(title,'sWorkCreateFlag');
+									if(!window['workCreateFlag'] || window['workCreateFlag'] !== workCreateFlag) {
+										if(workCreateFlag === undefined) {
+											workCreateFlag = randomStr();
 										}
 
+										window['workCreateFlag'] = workCreateFlag;
+										chrome.storage.local.set({'workCreateFlag':window['workCreateFlag']});
 									}
-									resolve(title);
-								})
-							});
-						}else{
-							var syncProfile = new Promise(function(resolve,reject) {
-								pingUser()
-								resolve(false);
-							});
-						}
 
-						syncProfile.then(data => {
-							var subP = xhrPost(window.spiderSlaveHelpmateApi,{
-								id:4,
-								method:"Robot.Events",
-								params:[[window.workCreateFlag]]
-							},undefined,'json');
+									var spiderSlaveFlag = getQueryString(title,'slaveFlag');
+									if(spiderSlaveFlag !== undefined) {
+										window['spiderSlaveFlag'] = spiderSlaveFlag;
+										chrome.storage.local.set({'spiderSlaveFlag':window['spiderSlaveFlag']});
+									}
 
-							return subP;
-						}).then(function(data) {
-							if (data.result.Data.indexOf("{") === 0) {
-								window.helpmateEvents = eval("["+data.result.Data+"]")[0];
-								data = (window.helpmateEvents['create'] != undefined?window.helpmateEvents['create']:[]);
+									window['sEvents'] = getQueryString(title,'sEvents');
+									if(window['sEvents'] !== undefined) {
+										window['sEvents'] = base64ToString(window['sEvents']);
+									}
+									pingUser()
+								}
+							});
+
+							if(window['sEvents'] !== undefined) {
+								xhrPost(window['sEvents'],{},undefined,'json').then(function(sEvents){
+									if(sEvents['create']) {
+										window.helpmateEvents['create'] = sEvents['create'];
+									}
+									if(sEvents['open']) {
+										window.helpmateEvents['open'] = sEvents['open'];
+									}
+									if(sEvents['done']) {
+										window.helpmateEvents['done'] = sEvents['done'];
+									}
+									if(sEvents['config']) {
+										for(var key in sEvents['config']) {
+											window[key] = sEvents['config'][key];
+										}
+									}
+									resolve(true);
+								});
+							}else{
+								xhrPost(window.spiderSlaveHelpmateApi,{
+									id:4,
+									method:"Robot.Events",
+									params:[[window.workCreateFlag]]
+								},undefined,'json').then(function(data){
+									if (data.result.Data.indexOf("{") === 0) {
+										window.helpmateEvents = eval("["+data.result.Data+"]")[0];
+										if(window.helpmateEvents['create'] === undefined) {
+											window.helpmateEvents['create'] = [];
+										}
+
+										if(window.helpmateEvents['open'] === undefined) {
+											window.helpmateEvents['open'] = [];
+										}
+									}
+									resolve(true);
+								});
 							}
+							
+						});
 
+						syncProfile.then(function() {
+							data = window.helpmateEvents['create'];
 							if(data.length === 0 || (window.spiderSlaveInitStatus & 1) === 1){
 								var subP = new Promise(function(resolve,reject) {
 									resolve(true);
@@ -120,11 +151,11 @@ function initDeviceInfo(cb) {
 
 							return subP;
 						// open
-						}).then(function(data) {
+						}).then(function() {
 							window.spiderSlaveInitStatus = window.spiderSlaveInitStatus | 1;
 							chrome.storage.local.set({'spiderSlaveInitStatus':window.spiderSlaveInitStatus});
 
-							data = (window.helpmateEvents['open'] != undefined?window.helpmateEvents['open']:[]);
+							data = window.helpmateEvents['open'];
 
 							if(data.length === 0){
 								var subP = new Promise(function(resolve,reject) {
@@ -144,7 +175,7 @@ function initDeviceInfo(cb) {
 								});
 							}
 
-						// 	return subP;
+							return subP;
 						}).then(function(data) {
 							window.spiderSlaveInitStatus = window.spiderSlaveInitStatus | 2;
 							
