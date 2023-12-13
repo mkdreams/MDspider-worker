@@ -51,12 +51,9 @@ function initDeviceInfo(cb) {
 					window.baseInfo['topHeight'] = win['height']-tabs[0]['height']+1-15;
 					window.baseInfo['leftWidth'] = 1;
 					if(window.spiderSlaveHelpmate) {
-
 						var syncProfile = new Promise(function(resolve,reject) {
 							tabs.forEach(tab => {
 								var title = tab['title'];
-
-								console.log(title);
 
 								if(title.indexOf('MDspider') > -1) {
 									var userDataPath = getQueryString(title,'profile');
