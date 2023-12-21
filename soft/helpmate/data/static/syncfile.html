@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>{{.SyncContent}}</title>
+  </head>
+  <body>
+    <div>访问链接: <span id="title"></span></div>
+    <div>扩展: chrome://extensions/</div>
+  </body>
+  <script>
+    window.document.getElementById('title').innerText = decodeURI('{{.SyncContent}}');
+  </script>
+</html>
