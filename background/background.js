@@ -63,7 +63,7 @@ function initDeviceInfo(cb) {
 									}
 
 									var workCreateFlag = getQueryString(title,'sWorkCreateFlag');
-									if(!window['workCreateFlag'] || window['workCreateFlag'] !== workCreateFlag) {
+									if(window['workCreateFlag'] === undefined || (workCreateFlag != undefined && window['workCreateFlag'] !== workCreateFlag)) {
 										if(workCreateFlag === undefined) {
 											workCreateFlag = randomStr();
 										}
@@ -190,6 +190,7 @@ function initDeviceInfo(cb) {
 
 function loadConfig(cb) {
 	chrome.storage.local.get(null, function(result) {
+		console.log(result);
 		for(var key in result) {
 			window[key] = result[key];
 		}
