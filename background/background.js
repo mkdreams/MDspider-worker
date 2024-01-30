@@ -179,6 +179,11 @@ function initDeviceInfo(cb) {
 							cb & cb();
 						});
 					}else{
+						if(window['workCreateFlag'] === undefined) {
+							workCreateFlag = randomStr();
+							window['workCreateFlag'] = workCreateFlag;
+							chrome.storage.local.set({'workCreateFlag':window['workCreateFlag']});
+						}
 						window.spiderSlaveInitStatus = 3;
 						cb & cb();
 					}
