@@ -1,9 +1,51 @@
+// get cookies
 function getCookies(tab, info, cb) {
 	chrome.cookies.getAll({'url':info.url},function(cookies) {
 		textToBase64(JSON.stringify(cookies),function(base64){
 			cb(base64);
 		});
 	});
+}
+
+//delete cookies
+function clearCookies(tab, info, cb) {
+	chrome.cookies.getAll({'url':info.url},function(cookies) {
+		cookies.forEach(function(cookie) {
+			chrome.cookies.remove({
+				'url':info.url,
+				'name':cookie.name
+			});
+		});
+		cb();
+	});
+}
+
+// set cookies
+function setCookies(tab, info, cb) {
+	if (!info.param.cookies){
+		textToBase64("info.param.cookies is empty: " + JSON.stringify(info.param),function(base64){
+			cb(base64);
+		});
+	}
+	// 将字符串转换为Array
+	let cookies = JSON.parse(info.param.cookies)
+	let cookieSetTmp = false;
+	cookies.forEach(function(cookie) {
+		chrome.cookies.set({
+			'name': cookie.name??'',
+			'value': cookie.value??'',
+			'expirationDate': cookie.expirationDate??'',
+			'path': cookie.path??'/',
+			'secure': cookie.secure??false,
+			'httpOnly': cookie.httpOnly??false,
+			
+			'domain': cookie.domain??'',
+			'sameSite': cookie.sameSite??'',
+			'storeId': cookie.storeId??'0',
+			'url': cookie.url??'',
+		});
+		cookieSetTmp = 'url:' + info.url + ',name:' + cookie.name + ',value:' + cookie.value;
+	})
 }
 
 function screenshot(tab, info, cb) {
