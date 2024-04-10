@@ -27,9 +27,7 @@ function setCookies(tab, info, cb) {
 			cb(base64);
 		});
 	}
-	// 将字符串转换为Array
 	let cookies = JSON.parse(info.param.cookies)
-	let cookieSetTmp = false;
 	cookies.forEach(function(cookie) {
 		chrome.cookies.set({
 			'name': cookie.name??'',
@@ -44,7 +42,6 @@ function setCookies(tab, info, cb) {
 			'storeId': cookie.storeId??'0',
 			'url': cookie.url??'',
 		});
-		cookieSetTmp = 'url:' + info.url + ',name:' + cookie.name + ',value:' + cookie.value;
 	})
 }
 
