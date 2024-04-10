@@ -42,6 +42,16 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 	var form = layui.form;
 	var $ = layui.$;
 
+	function copyText(text) {
+		var oInput = document.createElement('input');
+		oInput.value = text;
+		document.body.appendChild(oInput);
+		oInput.select();
+		document.execCommand("Copy");
+		oInput.remove();
+		layer.msg('已复制: '+text);
+	}
+
 	var bg = chrome.extension.getBackgroundPage();
 	restoreData(bg, form, $);
 
@@ -78,6 +88,9 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 			shadeClose: true,
 			time: 30000
 		});
+	});
+	$('.copy').on('click',function () {
+		copyText($(this).text());
 	});
 
 	$('#spiderSlaveApiActionListTips').click(function () {

@@ -15,7 +15,7 @@
 	<div style="width:600px;">
 		<div class="layui-collapse" lay-filter="main">
 			<div class="layui-colla-item">
-				<h2 class="layui-colla-title">状态及控制 - <span id="userDataPath"></span> - <span id="workCreateFlag"></span> <a class="show-log" href="logs.html" target="_blank">查看日志</a></h2>
+				<h2 class="layui-colla-title">状态及控制 - <span id="userDataPath"></span><a class="show-log" href="logs.html" target="_blank">查看日志</a></h2>
 				<div class="layui-colla-content layui-show">
 					<form class="layui-form" action="" lay-filter="workerStatus">
 						<div class="layui-form-item">
@@ -25,7 +25,10 @@
 							</div>
 						</div>
 						<div class="layui-form-item">
-								用户：<span id="spiderSlaveUserName">NaN</span>
+								用户：<span id="spiderSlaveUserName" class="copy">NaN</span>
+						</div>
+						<div class="layui-form-item">
+							workCreateFlag：<span id="workCreateFlag" class="copy">NaN</span>
 						</div>
 						<div class="layui-form-item">
 								24小时内已执行<span id="spiderSlaveStackRunActionCount">NaN</span>/<span id="spiderSlavePerDayMaxRunTimes">NaN</span>个
@@ -111,7 +114,7 @@
 					</form>
 				</div>
 			</div>
-			<div class="layui-colla-item">
+			<div class="layui-colla-item" style="display: none;">
 				<h2 class="layui-colla-title">代理配置(未完善)</h2>
 				<div class="layui-colla-content">
 					<form class="layui-form" action="" lay-filter="proxyConfig">

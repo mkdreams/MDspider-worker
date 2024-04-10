@@ -44,3 +44,10 @@
 	margin-left: 15px;
 	text-decoration: underline;
 }
+
+.copy {
+	cursor: pointer;
+}
+.copy:hover {
+	color: #FF5722;
+}
