@@ -949,7 +949,7 @@ function getHml(tab, info, result) {
 				if(info.param && info.param.reportUrl) {
 					url = info.param.reportUrl;
 				}
-				ajaxPost({ 'admintype': 2, 'tab': {id:tab.id}, 'url': url, 'data': { 'id': info['id'], 'sResponse': sResponse,'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag,'userDataPath':window.userDataPath,'userName':(window.userName?window.userName:'')} },function(data) {
+				ajaxPost({ 'admintype': 2, 'tab': {id:tab.id}, 'url': url, 'data': { 'id': info['id'], 'sResponse': uint8ArrayToBlob(pako.gzip(sResponse)),'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag,'userDataPath':window.userDataPath,'userName':(window.userName?window.userName:'')} },function(data) {
 					isDone(tab, info);
 					if(data[0] === '{') {
 						data = eval("("+data+")")
@@ -1308,10 +1308,25 @@ function backgroundConsole(pre, obj) {
 }
 
 function ajaxPost(request,cb,errorcb) {
+	var formData = new FormData();
+	//blob default use gzip
+	var BlobFields = [];
+	for(var k in request.data) {
+		if(isBlob(request.data[k])) {
+			BlobFields.push(k);
+		}
+		formData.append(k, request.data[k]);
+	}
+
 	$.ajax({
-		type: 'POST',
 		url: request.url,
-		data: request.data,
+		type: 'POST',
+		headers: {
+			BlobFields: BlobFields.join(',')
+		},
+		data: formData,
+		processData: false,
+		contentType: false,
 		success: function(data){
 			if(typeof(data) == 'string') {
 				actionRecords(request.url +' :'+data.substr(0,50), 'BACKEND AJAX', 'POST DATA');

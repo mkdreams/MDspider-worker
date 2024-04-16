@@ -31,6 +31,15 @@ function base64ToString(base64) {
     }
 }
 
+function isBlob(val) {
+    return toString.call(val) === '[object Blob]';
+}
+
+function uint8ArrayToBlob(uint8Array){
+    return new Blob([uint8Array], { type: 'application/octet-binary' });
+  }
+  
+
 //text to base64
 function textToBase64(text, callback) {
     var blob = new Blob([text]);
