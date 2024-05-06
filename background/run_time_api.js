@@ -76,7 +76,7 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
 	},
 	{
 		urls: ["<all_urls>"],
-		types: ['main_frame', 'sub_frame', 'xmlhttprequest','fetch']
+		types: ['main_frame', 'sub_frame', 'xmlhttprequest']
 	},
 	["requestHeaders","extraHeaders"]
 );
@@ -93,7 +93,7 @@ chrome.webRequest.onBeforeRequest.addListener(
 	},
 	{
 	  urls: ['<all_urls>'],
-	  types: ['main_frame', 'sub_frame', 'xmlhttprequest','fetch']
+	  types: ['main_frame', 'sub_frame', 'xmlhttprequest']
 	},
 	['blocking']
   );
