@@ -1,4 +1,7 @@
 var ajaxRecordString = `
+    function randomStr() {
+        return Number(Math.random().toString().substr(3,5) + Date.now()).toString(36);
+    }
     function waitDomAddChildByText(dom,pattern,maxWaitTime) {
         var p = new Promise(function(resolve,reject) {
             var setTimeoutObj = undefined;
@@ -86,14 +89,35 @@ var ajaxRecordString = `
     };
     window.XMLHttpRequest.prototype.OrgOpen = window.XMLHttpRequest.prototype.open;
     window.XMLHttpRequest.prototype.OrgSend = window.XMLHttpRequest.prototype.send;
-    window.ajaxRecordListRestult = [];
+    window.ajaxRecordListRestult = {};
+    window.ajaxRecordListRestultParam = {};
+    window.ajaxRecordListRestultMap = {};
     window.XMLHttpRequest.prototype.open = function() {
-		var method = arguments[0];
-		var url = arguments[1];
+        this.method = arguments[0];
+		this.url = arguments[1];
+        this.mdUUID = randomStr();
+        if(arguments[1].indexOf('?') > -1) {
+            arguments[1] += '&UUID='+this.mdUUID;
+        }else{
+            arguments[1] += '?UUID='+this.mdUUID;
+        }
+        this.OrgOpen(...arguments);
+    };
+    window.XMLHttpRequest.prototype.send = function() {
+        var method = this.method;
+        var url = this.url;
+        var mdUUID = this.mdUUID;
+        
+        var requestPostData = arguments[0];
+        if(requestPostData == null) {
+            requestPostData = '';
+        }
+        
+        window.ajaxRecordListRestultMap[mdUUID] = [];
         this.addEventListener("readystatechange", function(event) {
             if(this.readyState == 4){
                 var self = this;
-
+                var responseHeaders = self.getAllResponseHeaders().trim().split('\\\\r\\\\n');
                 if((self.responseType == '' || self.responseType == 'text')) {
                     var p = new Promise(function(resolve,reject) {
                         resolve(self.responseText);
@@ -162,13 +186,22 @@ var ajaxRecordString = `
                     }
                     if(!window.ajaxRecordListRestult[url]) {
                         window.ajaxRecordListRestult[url] = [];
+                        window.ajaxRecordListRestultParam[url] = {requestHeaders:[],requestParams:[],responseHeaders:[],responseDatas:window.ajaxRecordListRestult[url]};
                     }
+
                     window.ajaxRecordListRestult[url].push(response.responseText);
+                    window.ajaxRecordListRestultParam[url].requestHeaders.push(window.ajaxRecordListRestultMap[mdUUID]);
+                    window.ajaxRecordListRestultParam[url].requestParams.push(requestPostData);
+                    window.ajaxRecordListRestultParam[url].responseHeaders.push(responseHeaders);
+
                     if(window.ajaxRecordListRestult[url].length > 100) {
                         if(window.ajaxRecordDebug) {
                             console.error("lost ajax record!",url,window.ajaxRecordListRestult[url][0]);
                         }
-                        window.ajaxRecordListRestult[url].slice(-100)
+                        window.ajaxRecordListRestult[url].slice(-100);
+                        window.ajaxRecordListRestultParam[url]['requestHeaders'].slice(-100);
+                        window.ajaxRecordListRestultParam[url]['requestParams'].slice(-100);
+                        window.ajaxRecordListRestultParam[url]['responseHeaders'].slice(-100);
                     }
     
                     if(window.ajaxRecordDebug) {
@@ -177,14 +210,14 @@ var ajaxRecordString = `
                 });
             }
         }, false);
-        this.OrgOpen(...arguments);
-    };
-    window.XMLHttpRequest.prototype.send = function() {
         this.OrgSend(...arguments);
     };
     window.oldFetch = fetch;
     window.fetch = (input, init) => {
         return window.oldFetch(input, init).then(response => {
+            var mdUUID = randomStr();
+
+            window.ajaxRecordListRestultMap[mdUUID] = [];
             return new Promise((resolve) => {
                 var responseClone = response.clone();
                 responseClone.text().then(content => {
@@ -229,13 +262,20 @@ var ajaxRecordString = `
                     }else{
                         if(!window.ajaxRecordListRestult[responseClone.url]) {
                             window.ajaxRecordListRestult[responseClone.url] = [];
+                            window.ajaxRecordListRestultParam[responseClone.url] = {requestHeaders:[],requestParams:[],responseHeaders:[],responseDatas:window.ajaxRecordListRestult[responseClone.url]};
                         }
                         window.ajaxRecordListRestult[responseClone.url].push(content);
+                        window.ajaxRecordListRestultParam[responseClone.url].requestHeaders.push(window.ajaxRecordListRestultMap[mdUUID]);
+                        window.ajaxRecordListRestultParam[responseClone.url].requestParams.push('');
+                        window.ajaxRecordListRestultParam[responseClone.url].responseHeaders.push([]);
                         if(window.ajaxRecordListRestult[responseClone.url].length > 100) {
                             if(window.ajaxRecordDebug) {
                                 console.error("lost ajax record!",url,window.ajaxRecordListRestult[responseClone.url][0]);
                             }
-                            window.ajaxRecordListRestult[responseClone.url].slice(-100)
+                            window.ajaxRecordListRestult[responseClone.url].slice(-100);
+                            window.ajaxRecordListRestultParam[responseClone.url]['requestHeaders'].slice(-100);
+                            window.ajaxRecordListRestultParam[responseClone.url]['requestParams'].slice(-100);
+                            window.ajaxRecordListRestultParam[responseClone.url]['responseHeaders'].slice(-100);
                         }
                     }
 

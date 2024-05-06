@@ -54,3 +54,47 @@ chrome.webRequest.onHeadersReceived.addListener(details => {
 	}
     return {responseHeaders: details.responseHeaders};
 }, {urls: ['*://*/*']}, ['blocking', 'responseHeaders']);
+
+window.requestIdToUUID = {};
+chrome.webRequest.onBeforeSendHeaders.addListener(
+	function(details) {
+		if(window.requestIdToUUID[details.requestId] !== undefined) {
+			var uuid = window.requestIdToUUID[details.requestId];
+			delete window.requestIdToUUID[details.requestId];
+			var headers = [];
+			for (var i = 0; i < details.requestHeaders.length; i++) {
+				headers.push(details.requestHeaders[i].name+": "+details.requestHeaders[i].value)
+			}
+			sendMessageToTabs({id:details.tabId}, { 'actiontype': 2, 'info': {
+				"id": "MDspider-UUID-"+uuid,
+				"url": "window.ajaxRecordListRestultMap[\""+uuid+"\"] = [decodeURIComponent(\""+encodeURIComponent(headers.join(`\r\n`))+"\")];window.ajaxRecordListRestultMap[\""+uuid+"\"] = window.ajaxRecordListRestultMap[\""+uuid+"\"][0].split(\"\\\\r\\\\n\");",
+				"type": 100
+			}});
+		} 
+
+		return {requestHeaders: details.requestHeaders};
+	},
+	{
+		urls: ["<all_urls>"],
+		types: ['main_frame', 'sub_frame', 'xmlhttprequest','fetch']
+	},
+	["requestHeaders","extraHeaders"]
+);
+
+
+chrome.webRequest.onBeforeRequest.addListener(
+	function(details) {
+	  if (details.url.includes('UUID=')) {
+		uuidInfo = details.url.split(/(?:\?|\&)UUID\=/);
+		newUrl = uuidInfo[0];
+		window.requestIdToUUID[details.requestId] = uuidInfo[1];
+		return { redirectUrl: newUrl };
+	  }
+	},
+	{
+	  urls: ['<all_urls>'],
+	  types: ['main_frame', 'sub_frame', 'xmlhttprequest','fetch']
+	},
+	['blocking']
+  );
+  
