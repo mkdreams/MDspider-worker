@@ -741,6 +741,29 @@ chrome.runtime.onMessage.addListener(
 						}
 					}
 					break;
+				//for got request headers
+				case 3:
+					if(request.info.url !== undefined) {
+						// 100:runjs
+						switch(request.info.type) {
+							case 100:
+								if(request.info.param && request.info.param.background !== undefined) {
+									var background = request.info.param.background;
+								}else{
+									var background = undefined;
+								}
+								if(request.info.param && request.info.param.delay) {
+									setTimeout(() => {
+										pageRunJs(request.info.url,function(base64) {
+										},background);
+									}, request.info.param.delay);
+								}else{
+									pageRunJs(request.info.url, function(base64) {
+									},background);
+								}
+								break;
+						}
+					}
 				default:
 					break;
 			}

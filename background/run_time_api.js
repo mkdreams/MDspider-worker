@@ -65,7 +65,7 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
 			for (var i = 0; i < details.requestHeaders.length; i++) {
 				headers.push(details.requestHeaders[i].name+": "+details.requestHeaders[i].value)
 			}
-			sendMessageToTabs({id:details.tabId}, { 'actiontype': 2, 'info': {
+			sendMessageToTabs({id:details.tabId}, { 'actiontype': 3, 'info': {
 				"id": "MDspider-UUID-"+uuid,
 				"url": "window.ajaxRecordListRestultMap[\""+uuid+"\"] = [decodeURIComponent(\""+encodeURIComponent(headers.join(`\r\n`))+"\")];window.ajaxRecordListRestultMap[\""+uuid+"\"] = window.ajaxRecordListRestultMap[\""+uuid+"\"][0].split(\"\\\\r\\\\n\");",
 				"type": 100
