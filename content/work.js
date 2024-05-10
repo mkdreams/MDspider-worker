@@ -248,7 +248,7 @@ function autoClicks(clicks) {
 	return p;
 }
 
-function contentRunJs(jsStr) {
+function topRunJs(jsStr) {
 	var p = new Promise(function(resolve,reject) {
 		pageRunJs(jsStr,function(base64){
 			resolve(base64ToString(base64))
