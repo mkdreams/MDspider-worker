@@ -790,7 +790,4 @@ chrome.runtime.onMessage.addListener(
 	}
 );
 
-console.log(chrome.runtime.id);
-chrome.runtime.sendMessage(chrome.runtime.id,{"type":1},{"includeTlsChannelId":false},function(response) {
-	console.log("response",response);
-});
+chrome.runtime.sendMessage(chrome.runtime.id,{"type":1},{"includeTlsChannelId":false},function() {});
