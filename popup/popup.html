@@ -33,6 +33,13 @@
 						<div class="layui-form-item">
 								24小时内已执行<span id="spiderSlaveStackRunActionCount">NaN</span>/<span id="spiderSlavePerDayMaxRunTimes">NaN</span>个
 						</div>
+						<div class="layui-form-item">
+							<button class="layui-btn">拉取Cookies</button>
+							<button class="layui-btn">推入Cookies</button>
+							<div class="layui-input-inline">
+								<input type="text" name="" placeholder="127.0.0.1@workCreateFlag" class="layui-input">
+							</div> 
+						</div>
 					</form>
 				</div>
 			</div>
@@ -114,9 +121,9 @@
 					</form>
 				</div>
 			</div>
-			<div class="layui-colla-item" style="display: none;">
-				<h2 class="layui-colla-title">代理配置(未完善)</h2>
-				<div class="layui-colla-content">
+			<div class="layui-colla-item">
+				<h2 class="layui-colla-title" style="display: none;">代理配置(未完善)</h2>
+				<div class="layui-colla-content" style="display: none;">
 					<form class="layui-form" action="" lay-filter="proxyConfig">
 						<div class="layui-form-item">
 							<label class="layui-form-label">当前代理IP</label>
@@ -176,6 +183,7 @@
 											<option value="502">案例-FS</option>
 											<option value="504">案例-AJAX</option>
 											<option value="505">案例-DNS-ERROR</option>
+											<option value="506">案例-请求头</option>
 										</select>
 									</div>
 									<button class="layui-btn" id="debugrefreshactions">刷新</button>

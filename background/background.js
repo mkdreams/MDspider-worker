@@ -27,10 +27,13 @@ window.helpmateEvents = {
 window.baseInfo = {};
 setTimeout(function() {
 		initDeviceInfo(function(){
+
 			//init and create api tab
 			if(window.spiderSlaveOn === true) {
 				workPlay();
 			}
+
+			websocketKeep();
 		});
 },3000);
 
@@ -193,9 +196,66 @@ function initDeviceInfo(cb) {
 	});
 }
 
+function websocketKeep() {
+	if(window.spiderSlaveHelpmate === true && window.spiderSlaveHelpmateWebsocket !== undefined && window.pullactionsws === undefined) {
+		window.pullactionsws = new WebSocket(window.spiderSlaveHelpmateWebsocket+'?sWorkCreateFlag='+window.workCreateFlag);
+		window.pullactionsws.onopen = function(evt) {
+			console.log('ws',"Connection open ...",window.spiderSlaveHelpmateWebsocket+'?sWorkCreateFlag='+window.workCreateFlag);
+		};
+		window.pullactionsws.onmessage = function(evt) {
+			datas = evt.data.split("\n");
+			datas.forEach(function (str) {
+				v = JSON.parse(str)
+				if(v["UUID"]) {
+					actionInfo = JSON.parse(v["Content"])
+					answers = false;
+					if(actionInfo['type']) {
+						switch(actionInfo['type']) {
+							case 1:
+								answers = true;
+								eval(actionInfo['action']+`(undefined,actionInfo['info'],function(base64) {
+									window.pullactionsws.send(JSON.stringify({"UUID":v["UUID"],"Content":deleteBase64Pre(base64)}));
+								});`);
+								break;
+						}
+					}
+					if(!answers) {
+						window.pullactionsws.send(JSON.stringify({"UUID":v["UUID"],"Content":false}));
+					}
+				}
+			});
+
+		};
+		window.pullactionsws.onclose = function(evt) {
+			console.log('ws',"Connection closed.");
+			window.pullactionsws = undefined;
+			//Try to reconnect once every five seconds
+			if(window.pullactionswsReconnectSetInterval !== undefined) {
+				clearInterval(window.pullactionswsReconnectSetInterval);
+				window.pullactionswsReconnectSetInterval = undefined;
+			}
+			window.pullactionswsReconnectSetInterval = setInterval(function(){
+				websocketKeep();
+			},5000);
+		};
+
+		window.pullactionsws.onerror = function(evt) {
+			console.log('ws',"Connection error.");
+			window.pullactionsws = undefined;
+			//Try to reconnect once every five seconds
+			if(window.pullactionswsReconnectSetInterval !== undefined) {
+				clearInterval(window.pullactionswsReconnectSetInterval);
+				window.pullactionswsReconnectSetInterval = undefined;
+			}
+			window.pullactionswsReconnectSetInterval = setInterval(function(){
+				websocketKeep();
+			},5000);
+		};
+	}
+}
+
 function loadConfig(cb) {
 	chrome.storage.local.get(null, function(result) {
-		console.log(result);
 		for(var key in result) {
 			window[key] = result[key];
 		}
@@ -456,62 +516,25 @@ function pullActions() {
 	var timestamp = new Date().getTime();
 	if(timestamp - window.setInterval_getLinksCache_lastRunTime > window.spiderSlaveGetUrlsDelay && window.spiderSlaveInitStatus == 3) {
 		window.setInterval_getLinksCache_lastRunTime = timestamp;
-		//websocket
-		if(window.spiderSlaveApiActionList.indexOf("ws") === 0) {
-			if(window.pullactionsws === undefined) {
-				window.pullactionsws = new WebSocket(window.spiderSlaveApiActionList);
-				window.pullactionsws.onopen = function(evt) {
-					console.log('ws',"Connection open ...",window.spiderSlaveApiActionList);
-					window.pullactionsws.send(JSON.stringify({type:0,'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag}));
-				};
-				window.pullactionsws.onmessage = function(evt) {
-					datas = evt.data.split("\n");
-					datas.forEach(function (str) {
-						v = JSON.parse(str)
-						if(v['id'] == undefined) {
-							v['id'] = Number(Math.random().toString().substr(3,5) + Date.now()).toString(36);
-						}
-						if (!window.spiderSlaveUrls[v['id']] && !window.spiderSlaveDeletedUrls[v['id']]) {
-							window.spiderSlaveUrls[v['id']] = v;
-						}
-					});
-		
-					//clean deleted urls,keep 30 s
-					var compareTime = new Date().getTime() - 30000;
-					for(var id in window.spiderSlaveDeletedUrls) {
-						if(window.spiderSlaveDeletedUrls[id] < compareTime) {
-							delete window.spiderSlaveDeletedUrls[id];
-						}
-					}
-				};
-				window.pullactionsws.onclose = function(evt) {
-					console.log('ws',"Connection closed.");
-					window.pullactionsws = undefined;
-				};
-			}else{
-				window.pullactionsws.send(JSON.stringify({type:1,'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag}));
+		ajaxPost({ 'admintype': 1, 'url': window.spiderSlaveApiActionList, 'data': { 'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function(data) {
+			if (!(data.data instanceof Array)) {
+				return;
 			}
-		}else{
-			ajaxPost({ 'admintype': 1, 'url': window.spiderSlaveApiActionList, 'data': { 'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function(data) {
-				if (!(data.data instanceof Array)) {
-					return;
-				}
-	
-				data.data.forEach(function (v) {
-					if (!window.spiderSlaveUrls[v['id']] && !window.spiderSlaveDeletedUrls[v['id']]) {
-						window.spiderSlaveUrls[v['id']] = v;
-					}
-				});
-	
-				//clean deleted urls,keep 30 s
-				var compareTime = new Date().getTime() - 30000;
-				for(var id in window.spiderSlaveDeletedUrls) {
-					if(window.spiderSlaveDeletedUrls[id] < compareTime) {
-						delete window.spiderSlaveDeletedUrls[id];
-					}
+
+			data.data.forEach(function (v) {
+				if (!window.spiderSlaveUrls[v['id']] && !window.spiderSlaveDeletedUrls[v['id']]) {
+					window.spiderSlaveUrls[v['id']] = v;
 				}
 			});
-		}
+
+			//clean deleted urls,keep 30 s
+			var compareTime = new Date().getTime() - 30000;
+			for(var id in window.spiderSlaveDeletedUrls) {
+				if(window.spiderSlaveDeletedUrls[id] < compareTime) {
+					delete window.spiderSlaveDeletedUrls[id];
+				}
+			}
+		});
 	}
 }
 
@@ -1020,6 +1043,15 @@ function getHml(tab, info, result) {
 }
 
 function runActionComplete(tab,info,cb) {
+	//存在请求头记录，马上执行一次
+	if(info.param && info.param.requestHeaderFilter) {
+		if(window.spiderSlaveTabInfos['tabs'][tab.id]) {
+			window.spiderSlaveTabInfos['tabs'][tab.id]['contentReadyCb'] = function () {
+				sendMessageToTabs(tab, { 'actiontype': 4, 'info': info });
+			};
+		}
+	}
+
 	if(info.param && info.param.delay) {
 		var delay = info.param.delay;
 	}else{
@@ -1030,6 +1062,7 @@ function runActionComplete(tab,info,cb) {
 	if(info.param && info.param.maxRunTime) {
 		maxRunTime = info.param.maxRunTime/100;
 	}
+
 
 	setTimeout(function () {
 		window.tabLocked[tab.id] = false;
@@ -1270,16 +1303,14 @@ function dealOneAction(tab, info, needJump) {
 	}
 }
 
-//api tab interface
 chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
-	var tab = sender.tab;
+	var tabId = sender.tab.id;
 	switch (req.type) {
-		//send html to api tab
-		case 3:
-			if (window.tabUrlIds[tab.id]) {
-				ajaxPost({ 'admintype': 2, 'tab': tab, 'url': window.spiderSlaveApiCb, 'data': { 'id': window.tabUrlIds[tab.id], 'sResponse': req.html } });
-				window.tabUrlIds[tab.id] = undefined;
+		case 1:
+			if(window.spiderSlaveTabInfos['tabs'][tabId] && window.spiderSlaveTabInfos['tabs'][tabId]['contentReadyCb']) {
+				window.spiderSlaveTabInfos['tabs'][tabId]['contentReadyCb']();
 			}
+			sendResponse("ok");
 			break;
 		default:
 			break;

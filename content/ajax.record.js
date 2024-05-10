@@ -63,6 +63,7 @@ var ajaxRecordString = `
             }
 
             var newRestults = [];
+            var newRestultsParam = [];
             for(var contentIdx in window.ajaxRecordListRestult[url]) {
                 var pass = false;
                 if(contentRules.length === 0) {
@@ -77,13 +78,16 @@ var ajaxRecordString = `
 
                 if(pass === true) {
                     newRestults.push(window.ajaxRecordListRestult[url][contentIdx]);
+                    newRestultsParam.push(window.ajaxRecordListRestultParam[url][contentIdx]);
                 }
             }
 
             if(newRestults.length === 0) {
                 delete window.ajaxRecordListRestult[url];
+                delete window.ajaxRecordListRestultParam[url];
             }else{
                 window.ajaxRecordListRestult[url] = newRestults;
+                window.ajaxRecordListRestultParam[url] = newRestultsParam;
             }
         }
     };
@@ -96,10 +100,21 @@ var ajaxRecordString = `
         this.method = arguments[0];
 		this.url = arguments[1];
         this.mdUUID = randomStr();
-        if(arguments[1].indexOf('?') > -1) {
-            arguments[1] += '&UUID='+this.mdUUID;
-        }else{
-            arguments[1] += '?UUID='+this.mdUUID;
+        if(window.requestHeaderFilter) {
+            var pass = false;
+            for(var filterIndex in window.requestHeaderFilter) {
+                if(arguments[1].indexOf(window.requestHeaderFilter[filterIndex]) > -1) {
+                    pass = true;
+                }
+            }
+
+            if(pass) {
+                if(arguments[1].indexOf('?') > -1) {
+                    arguments[1] += '&UUID='+this.mdUUID;
+                }else{
+                    arguments[1] += '?UUID='+this.mdUUID;
+                }
+            }
         }
         this.OrgOpen(...arguments);
     };
@@ -288,9 +303,5 @@ var ajaxRecordString = `
 `;
 
 pageRunJs(ajaxRecordString);
-var tempDom = $('#MDspider-help-dom-result');
-if(tempDom.length > 0) {
-	tempDom[0].remove();
-}
 
 

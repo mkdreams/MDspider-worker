@@ -794,6 +794,19 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 		}
 	];
 
+	var actionsTpl_506 = [
+		{
+			"id": "1",
+			"url": "https://search.bilibili.com/video?keyword=%E6%9F%90%E8%99%8E&search_source=1",
+			"type": 1,
+			"param": {
+				"delay":3000,
+				"requestHeaderFilter":["web-interface/nav"]
+			},
+			"code": 1
+		},
+	];
+
 	form.on('select(debugType)', function(data){
 		loadTestActions(data.value);
 	});

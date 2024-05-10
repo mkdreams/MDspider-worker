@@ -248,6 +248,15 @@ function autoClicks(clicks) {
 	return p;
 }
 
+function contentRunJs(jsStr) {
+	var p = new Promise(function(resolve,reject) {
+		pageRunJs(jsStr,function(base64){
+			resolve(base64ToString(base64))
+		});
+	});
+	return p;
+}
+
 function pageRunJs(jsStr,cb,background) {
 	var domRandomId = "MDspider-help-dom-result-"+randomStr();
 
@@ -295,7 +304,7 @@ function pageRunJs(jsStr,cb,background) {
 			}.bind(this));
 		}
 	}else{
-		var tempDom = $("<div id=\"MDspider-help-dom-result\" style=\"display:none;\" onclick=\"eval('\
+		var tempDom = $("<div id=\""+domRandomId+"\" style=\"display:none;\" onclick=\"eval('\
 		"+"window.ajaxRecordDebug = "+window.ajaxRecordDebug+";"+
 		('function blobToBase64(blob, callback) {\
 			var reader = new FileReader();\
@@ -741,7 +750,14 @@ chrome.runtime.onMessage.addListener(
 						}
 					}
 					break;
-				//for got request headers
+				//set got request headers filter
+				case 4:
+					console.log("window.requestHeaderFilter",request);
+					if(request.info && request.info.param && request.info.param.requestHeaderFilter) {
+						pageRunJs("window.requestHeaderFilter = "+JSON.stringify(request.info.param.requestHeaderFilter));
+					}
+					break;
+					//for got request headers
 				case 3:
 					if(request.info.url !== undefined) {
 						// 100:runjs
@@ -764,6 +780,7 @@ chrome.runtime.onMessage.addListener(
 								break;
 						}
 					}
+					break;
 				default:
 					break;
 			}
@@ -772,3 +789,8 @@ chrome.runtime.onMessage.addListener(
 		sendResponse('content: got it!');
 	}
 );
+
+console.log(chrome.runtime.id);
+chrome.runtime.sendMessage(chrome.runtime.id,{"type":1},{"includeTlsChannelId":false},function(response) {
+	console.log("response",response);
+});
