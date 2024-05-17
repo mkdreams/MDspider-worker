@@ -364,6 +364,7 @@ chrome.runtime.onMessage.addListener(
 	function (request, sender, sendResponse) {
 		if(window.spiderData === undefined) {
 			window.spiderData = {};
+			window.spiderDataLoading = {};
 		}
 
 		//api request
@@ -405,11 +406,12 @@ chrome.runtime.onMessage.addListener(
 							case 8:
 							case 16:
 							case 100:
-								break;
 							case 101:
-								break;
 							case 103:
-								break;
+								//not lost req, break wait for response
+								if(window.spiderDataLoading[request.info.id] != undefined) {
+									break;
+								}
 							case 102:
 							default:
 								var promiseArr = [];
@@ -449,6 +451,8 @@ chrome.runtime.onMessage.addListener(
 				//jump
 				case 2:
 					window.spiderData = {};//clean data before run action
+					window.spiderDataLoading = {};
+					window.spiderDataLoading[request.info.id] = true;
 
 					if(request.info.url !== undefined) {
 						//1:a,
@@ -494,14 +498,14 @@ chrome.runtime.onMessage.addListener(
 								if(request.info.param && request.info.param.delay) {
 									setTimeout(() => {
 										pageRunJs(request.info.url,function(base64) {
-											window.actionComplete = true;
 											window.spiderData[request.info.id] = base64;
+											window.actionComplete = true;
 										},background);
 									}, request.info.param.delay);
 								}else{
 									pageRunJs(request.info.url, function(base64) {
-										window.actionComplete = true;
 										window.spiderData[request.info.id] = base64;
+										window.actionComplete = true;
 									},background);
 								}
 								break;
