@@ -70,7 +70,7 @@ var ajaxRecordString = `
                     pass = true;
                 }else{
                     for(var contentRulsIdx in contentRules) {
-                        if(window.ajaxRecordListRestult[url][contentIdx].indexOf(contentRules[contentRulsIdx]) > -1) {
+                        if(typeof window.ajaxRecordListRestult[url][contentIdx] == "string" && window.ajaxRecordListRestult[url][contentIdx].indexOf(contentRules[contentRulsIdx]) > -1) {
                             pass = true;
                         }
                     }
