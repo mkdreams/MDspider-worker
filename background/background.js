@@ -39,12 +39,6 @@ setTimeout(function() {
 
 function initDeviceInfo(cb) {
 	loadConfig(function() {
-		if(window.spiderProxyOn) {
-			enabledProxy();
-		}else {
-			disabledProxy();
-		}
-		
 		chrome.system.display.getInfo(function(info) {
 			chrome.windows.getCurrent(function(win) {
 				window.spiderSlaveTabInfos['wins'][win.id] = win;
@@ -262,70 +256,6 @@ function loadConfig(cb) {
 
 		cb && cb();
 	});
-}
-
-function enabledProxy() {
-	disabledProxy();
-	$.ajax({
-		url: window.spiderProxyFetchApi,
-		cache: false,
-		success: function (html) {
-			var proxysTemp = html.split("\r\n");
-			chrome.storage.local.get(['proxys'], function (proxys) {
-				if (Object.keys(proxys).length == 0) {
-					proxys = [];
-				} else {
-					proxys = proxys.proxys;
-				}
-				proxysTemp.forEach(function (v) {
-					if (v != '') {
-						proxys.push(v);
-					}
-				});
-
-				chrome.storage.local.set({ 'proxys': proxys });
-				console.log(proxysTemp, proxys);
-			});
-		}
-	});
-
-	var config = {
-		mode: "pac_script",
-		pacScript: {
-			data: "function FindProxyForURL(url, host) {\n" +
-				"  alert(url);\n" +
-				"  if (host == 'www.baidu.com')\n" +
-				"    return 'PROXY 127.0.0.1:1080';\n" +
-				"  return 'DIRECT';\n" +
-				"}"
-			, mandatory: true
-		}
-	};
-
-	chrome.proxy.settings.set(
-		{
-			value: config,
-			scope: 'regular'
-		},
-		function (config) {
-		}
-	);
-}
-
-function disabledProxy() {
-	var config = {
-		mode: "system"
-	};
-
-	chrome.proxy.settings.set(
-		{
-			value: config,
-			scope: 'regular'
-		},
-		function (config) {
-
-		}
-	);
 }
 
 function autoCreateTab(url, cb, useBaseWindow, urlInfo) {

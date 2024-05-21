@@ -18,8 +18,7 @@ function restoreData(bg, form, $) {
 	});
 
 	form.val('proxyConfig', {
-		"spiderProxyOn": bg.spiderProxyOn
-		, "spiderProxyChangePerReqCount": bg.spiderProxyChangePerReqCount
+		"spiderProxyChangePerReqCount": bg.spiderProxyChangePerReqCount
 		, "spiderProxyFetchApi": bg.spiderProxyFetchApi
 	});
 
@@ -119,22 +118,6 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 			shadeClose: true,
 			time: 30000
 		});
-	});
-
-	//监听提交
-	form.on('submit(proxyConfig)', function (data) {
-		if (data.field['spiderProxyOn']) {
-			data.field['spiderProxyOn'] = true;
-		} else {
-			data.field['spiderProxyOn'] = false;
-		}
-
-		chrome.storage.local.set(data.field, function () {
-			layer.msg('储存成功');
-		});
-
-		bg.loadConfig();
-		return false;
 	});
 
 	//监听提交
