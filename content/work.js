@@ -342,7 +342,11 @@ function pageRunJs(jsStr,cb,background) {
 		var observer = new MutationObserver(callback);
 		observer.observe(tempDom[0], config);
 
-		tempDom.click();
+		if($("#MDtopRunjsListion").length > 0) {
+			$("#MDtopRunjsListion").attr("domid",domRandomId);
+		}else{
+			tempDom.click();
+		}
 	}
 
 	if(cb) {

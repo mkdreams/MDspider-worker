@@ -299,6 +299,33 @@ var ajaxRecordString = `
             });
         });
     };
+
+    document.addEventListener('DOMContentLoaded',function(){
+        var MDdiv = document.createElement('MDtopRunjsListion');
+        MDdiv.domid = '0';
+        MDdiv.id = 'MDtopRunjsListion';
+        document.body.appendChild(MDdiv);
+        var config = { attributes: true};
+        var observer = new MutationObserver(function(mutationsList, observer) {
+            for(let mutation of mutationsList) {
+                if (mutation.type === 'attributes') {
+                    if(mutation.attributeName === 'domid') {
+                        var element = document.getElementById(mutation.target.getAttribute('domid'));
+                        if (element) {
+                            var funcTemp = function(){
+                                eval(element.getAttribute('onclick'));
+                            }.bind(element);
+                            funcTemp();
+                        }
+                    }
+                }
+            }
+        });
+        observer.observe(MDdiv, config);
+
+        console.log("run top js is ready!");
+    });
+
     console.log("ajax records loaded!");
 `;
 
