@@ -48,9 +48,10 @@ function sendMessageToTabs(tab,sendInfoObj,callBack) {
 }
 
 chrome.webRequest.onHeadersReceived.addListener(details => {
-    let header = details.responseHeaders.find(e => e.name.toLowerCase() === 'content-security-policy');
-	if(header != undefined) {
-		header.value = '';
+    for (var i = 0; i < details.responseHeaders.length; i++) {
+		if ('content-security-policy' === details.responseHeaders[i].name.toLowerCase() || 'content-security-policy-report-only' === details.responseHeaders[i].name.toLowerCase()) {
+			details.responseHeaders[i].value = '';
+		}
 	}
     return {responseHeaders: details.responseHeaders};
 }, {urls: ['*://*/*']}, ['blocking', 'responseHeaders']);

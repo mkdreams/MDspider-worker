@@ -349,13 +349,12 @@ function removeTabCb(tabId) {
 //stop content-security-policy
 chrome.tabs.onCreated.addListener(function(tab) {
 	var tabId = tab.id;
-	var addRules = [],
-		removeRuleIds = [];
+	var addRules = [],removeRuleIds = [];
 	addRules.push({
 		id:tabId,
 		action: {
 		  type: 'modifyHeaders',
-		  responseHeaders: [{ header: 'content-security-policy', operation: 'set', value: '' }]
+		  responseHeaders: [{ header: 'content-security-policy', operation: 'set', value: '' },{ header: 'content-security-policy-report-only', operation: 'set', value: '' }]
 		},
 		condition: {urlFilter: '*', resourceTypes: ['main_frame', 'sub_frame']}
 	});
