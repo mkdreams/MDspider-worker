@@ -48,6 +48,23 @@
 .copy {
 	cursor: pointer;
 }
+
 .copy:hover {
 	color: #FF5722;
+}
+
+.cookie .layui-form-label {
+	width: 50px;
+}
+
+.cookie .sync-cookies {
+	text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+	border: gray solid 1px;
+	padding: 5px 5px;
+}
+
+.cookie .sync-cookies-box {
+	display: none;
 }

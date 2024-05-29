@@ -1,6 +1,6 @@
 // get cookies
 function getCookies(tab, info, cb) {
-	chrome.cookies.getAll({'url':info.url},function(cookies) {
+	chrome.cookies.getAll({'url':info.url, partitionKey: {}},function(cookies) {
 		textToBase64(JSON.stringify(cookies),function(base64){
 			cb(base64);
 		});
@@ -9,40 +9,74 @@ function getCookies(tab, info, cb) {
 
 //delete cookies
 function clearCookies(tab, info, cb) {
-	chrome.cookies.getAll({'url':info.url},function(cookies) {
+	var c = 0;
+	chrome.cookies.getAll({'url':info.url, partitionKey: {}},function(cookies) {
 		cookies.forEach(function(cookie) {
 			chrome.cookies.remove({
 				'url':info.url,
-				'name':cookie.name
+				'name':cookie.name,
+				'storeId':cookie.storeId,
+				'partitionKey':{}
 			});
+			c++;
 		});
-		cb();
+		cb(c);
 	});
 }
 
 // set cookies
 function setCookies(tab, info, cb) {
+	var c = -1;
 	if (!info.param.cookies){
 		textToBase64("info.param.cookies is empty: " + JSON.stringify(info.param),function(base64){
-			cb(base64);
+			cb(base64,c);
 		});
 	}
+
+	c++;
+
 	let cookies = JSON.parse(info.param.cookies)
 	cookies.forEach(function(cookie) {
-		chrome.cookies.set({
-			'name': cookie.name??'',
-			'value': cookie.value??'',
-			'expirationDate': cookie.expirationDate??'',
-			'path': cookie.path??'/',
-			'secure': cookie.secure??false,
-			'httpOnly': cookie.httpOnly??false,
-			
-			'domain': cookie.domain??'',
-			'sameSite': cookie.sameSite??'',
-			'storeId': cookie.storeId??'0',
-			'url': cookie.url??'',
-		});
+		c++;
+		chrome.cookies.set(fullCookie(info.url,cookie));
 	})
+
+	textToBase64("set cookies: " + JSON.stringify(info.param.cookies),function(base64){
+		cb(base64,c);
+	});
+}
+
+function fullCookie(url,fullCookie) {
+	var newCookie = {};
+	newCookie.url = url;
+
+	if (!fullCookie.hostOnly) {
+		newCookie.domain = fullCookie.domain;
+	}
+
+	newCookie.httpOnly = fullCookie.httpOnly;
+
+	newCookie.name = fullCookie.name;
+	newCookie.path = fullCookie.path;
+
+	if (fullCookie.sameSite !== undefined) {
+		newCookie.sameSite = fullCookie.sameSite;
+	}
+
+	if (fullCookie.partitionKey !== undefined) {
+		newCookie.partitionKey = fullCookie.partitionKey;
+	}
+
+	newCookie.secure = fullCookie.secure;
+
+	if (!fullCookie.session) {
+		newCookie.expirationDate = fullCookie.expirationDate;
+	}
+
+	newCookie.storeId = fullCookie.storeId;
+	newCookie.value = fullCookie.value;
+
+	return newCookie;
 }
 
 function screenshot(tab, info, cb) {

@@ -33,12 +33,35 @@
 						<div class="layui-form-item">
 								24小时内已执行<span id="spiderSlaveStackRunActionCount">NaN</span>/<span id="spiderSlavePerDayMaxRunTimes">NaN</span>个
 						</div>
+					</form>
+				</div>
+			</div>
+			<div class="layui-colla-item cookie">
+				<h2 class="layui-colla-title">Cookies</h2>
+				<div class="layui-colla-content">
+					<form class="layui-form" action="" lay-filter="cookies">
 						<div class="layui-form-item">
-							<button class="layui-btn">拉取Cookies</button>
-							<button class="layui-btn">推入Cookies</button>
-							<div class="layui-input-inline">
-								<input type="text" name="" placeholder="127.0.0.1@workCreateFlag" class="layui-input">
-							</div> 
+							<label class="layui-form-label">目标</label>
+							<div class="layui-input-block">
+								<input type="text" name="work" value="127.0.0.1@40d28c141713" lay-verify="required" autocomplete="off" placeholder="127.0.0.1@workCreateFlag" class="layui-input">
+							</div>
+						</div>
+						<div class="layui-form-item">
+							<label class="layui-form-label">站点</label>
+							<div class="layui-input-block">
+								<input type="text" name="url" value="https://news.discuss.com.hk" placeholder="https://www.baidu.com" class="layui-input">
+							</div>
+						</div>
+						<div class="layui-form-item sync-cookies-box">
+							<label class="layui-form-label">Cookies</label>
+							<div class="layui-input-block">
+								<div id="sync-cookies" class="copy sync-cookies"></div>
+							</div>
+						</div>
+						<div class="layui-form-item">
+							<button class="layui-btn" lay-submit lay-filter="clearcookies">删除</button>
+							<button class="layui-btn" lay-submit lay-filter="pullcookies">同步</button>
+							<button class="layui-btn" lay-submit lay-filter="pushcookies">推送</button>
 						</div>
 					</form>
 				</div>

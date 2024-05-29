@@ -844,4 +844,65 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 		});
 		return false;
 	});
+
+
+	function reloadCookie() {
+		var url = $('form[lay-filter=cookies] input[name=url]').val();
+
+		if(url === '') {
+			$('.sync-cookies-box').hidden();
+			$('#sync-cookies').html('');
+			return ;
+		}
+
+		bg.getCookies(undefined, {"url":url}, (base64)=>{
+			var cookiesJson = bg.base64ToString(base64)
+			console.log(cookiesJson);
+			$('.sync-cookies-box').show();
+			$('#sync-cookies').html(cookiesJson);
+		})
+	}
+
+	form.on('submit(pullcookies)', function (data) {
+		workArr = data.field.work.split('@',2);
+		url = 'http://'+workArr[0]+':1236/slave/action';
+		var formData = new FormData();
+		formData.append("sWorkCreateFlag", workArr[1]);
+		formData.append("Content", '{"type":1,"action":"getCookies","info":{"url":"'+data.field.url+'"}}');
+
+		bg.xhrPost(url,formData,undefined,'json').then((v)=>{
+			var cookiesJson = bg.base64ToString(v.Content);
+			bg.setCookies(undefined, {"url":data.field.url,"param":{"cookies":cookiesJson}}, (v2,c)=>{
+				if(c === -1) {
+					layer.msg(v2);
+				}else{
+					layer.msg('同步'+c+'个cookie');
+					reloadCookie();
+				}
+			})
+		});
+
+		return false;
+	});
+
+	form.on('submit(clearcookies)', function (data) {
+		layer.confirm('是否删除？', {
+			title: "操作提示",
+			icon: 0,
+			btn: ['确定', '取消']
+		}, function () {
+			bg.clearCookies(undefined, { "url": data.field.url }, (c) => {
+				layer.msg('删除' + c + '个cookie');
+				reloadCookie();
+			});
+		});
+
+		return false;
+	});
+
+	$("form[lay-filter=cookies] input[name=url]").on("input",function(e){
+		reloadCookie();
+	});
+
+	reloadCookie();
 });

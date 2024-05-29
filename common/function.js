@@ -83,10 +83,16 @@ function xhrPost(url,post,cb,responseType,helpmateProxy) {
             }
             xhr.setRequestHeader('SPIDERSLAVEFLAG',window.spiderSlaveFlag);
             xhr.responseType = responseType
+            console.log(post,JSON.stringify(post))
             if(post=== undefined) {
                 xhr.send()
             }else{
-                xhr.send(post instanceof Object?JSON.stringify(post):post)
+                if(post instanceof Object) {
+                    post = JSON.stringify(post);
+                }else if(post instanceof FormData) {
+                    xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+                }
+                xhr.send(post)
             }
         }else{
             xhr.open('POST', window.spiderSlaveHelpmateApi)
