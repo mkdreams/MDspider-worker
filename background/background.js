@@ -857,7 +857,7 @@ function resultIsOk(tab, info, cb) {
 				isDone(tab, info, true);
 			}
 		});
-	}, 5000);
+	}, 100);
 }
 
 //try every 50 ms
