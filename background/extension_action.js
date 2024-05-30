@@ -28,8 +28,8 @@ function clearCookies(tab, info, cb) {
 function setCookies(tab, info, cb) {
 	var c = -1;
 	if (!info.param.cookies){
-		textToBase64("info.param.cookies is empty: " + JSON.stringify(info.param),function(base64){
-			cb(base64,c);
+		textToBase64(c,function(base64){
+			cb(base64);
 		});
 	}
 
@@ -41,8 +41,8 @@ function setCookies(tab, info, cb) {
 		chrome.cookies.set(fullCookie(info.url,cookie));
 	})
 
-	textToBase64("set cookies: " + JSON.stringify(info.param.cookies),function(base64){
-		cb(base64,c);
+	textToBase64(c,function(base64){
+		cb(base64);
 	});
 }
 

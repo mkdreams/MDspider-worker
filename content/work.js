@@ -422,7 +422,7 @@ chrome.runtime.onMessage.addListener(
 								var p = new Promise(function(resolve,reject) {
 									textToBase64(document.getElementsByTagName('html')[0].innerHTML,function(base64){
 										resolve(base64)
-									}.bind(this));
+									});
 								});
 								promiseArr.push(p);
 
@@ -430,7 +430,16 @@ chrome.runtime.onMessage.addListener(
 									var iframes = document.getElementsByTagName('iframe');
 									for(var iframeIdx=0; iframeIdx<iframes.length; iframeIdx++) {
 										var p = new Promise(function(resolve,reject) {
+											//get html max run time： 3s
+											var setTimeoutGetHtml = setTimeout(()=>{
+												textToBase64('time out!',function(base64){
+													console.warn("获取frame html执行超时")
+													resolve(base64);
+												});
+											},3000);
+
 											pageRunJs("if (document.getElementsByTagName('iframe')["+iframeIdx+"] && document.getElementsByTagName('iframe')["+iframeIdx+"].contentDocument) {return document.getElementsByTagName('iframe')["+iframeIdx+"].contentDocument.getElementsByTagName('html')[0].innerHTML;}else{return false} ",function(base64) {
+												clearTimeout(setTimeoutGetHtml);
 												resolve(base64)
 											});
 										});
@@ -582,7 +591,6 @@ chrome.runtime.onMessage.addListener(
 								window.spiderSlaveHelpmateApi = request.info.spiderSlaveHelpmateApi;
 								window.MDspiderRandom = randomStr();
 								window.document.title = window.document.title+'&MDspiderRandom='+window.MDspiderRandom;
-								console.log(request.info.param.method);
 								var func_go = function() {
 									//for wtop,wdefualt
 									if(request.info.url === "") {
@@ -760,7 +768,6 @@ chrome.runtime.onMessage.addListener(
 					break;
 				//set got request headers filter
 				case 4:
-					console.log("window.requestHeaderFilter",request);
 					if(request.info && request.info.param && request.info.param.requestHeaderFilter) {
 						pageRunJs("window.requestHeaderFilter = "+JSON.stringify(request.info.param.requestHeaderFilter));
 					}

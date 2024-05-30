@@ -83,7 +83,6 @@ function xhrPost(url,post,cb,responseType,helpmateProxy) {
             }
             xhr.setRequestHeader('SPIDERSLAVEFLAG',window.spiderSlaveFlag);
             xhr.responseType = responseType
-            console.log(post,JSON.stringify(post))
             if(post=== undefined) {
                 xhr.send()
             }else{

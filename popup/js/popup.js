@@ -857,7 +857,6 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 
 		bg.getCookies(undefined, {"url":url}, (base64)=>{
 			var cookiesJson = bg.base64ToString(base64)
-			console.log(cookiesJson);
 			$('.sync-cookies-box').show();
 			$('#sync-cookies').html(cookiesJson);
 		})
@@ -872,14 +871,42 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 
 		bg.xhrPost(url,formData,undefined,'json').then((v)=>{
 			var cookiesJson = bg.base64ToString(v.Content);
-			bg.setCookies(undefined, {"url":data.field.url,"param":{"cookies":cookiesJson}}, (v2,c)=>{
-				if(c === -1) {
-					layer.msg(v2);
+			bg.setCookies(undefined, {"url":data.field.url,"param":{"cookies":cookiesJson}}, (c)=>{
+				c = bg.base64ToString(c)
+				if(c === '-1') {
+					layer.msg("同步失败");
 				}else{
 					layer.msg('同步'+c+'个cookie');
 					reloadCookie();
 				}
 			})
+		});
+
+		return false;
+	});
+
+	form.on('submit(pushcookies)', function (data) {
+		workArr = data.field.work.split('@',2);
+		url = 'http://'+workArr[0]+':1236/slave/action';
+
+		reloadCookie();
+
+		var formData = new FormData();
+		formData.append("sWorkCreateFlag", workArr[1]);
+		var content = {
+			"type":1,
+			"action":"setCookies",
+			"info":{
+				"url":data.field.url,
+				"param":{
+					"cookies":$('#sync-cookies').html()
+				}
+			},
+		};
+		formData.append("Content", JSON.stringify(content));
+
+		bg.xhrPost(url,formData,undefined,'json').then((v)=>{
+			layer.msg('同步'+bg.base64ToString(v)+'个cookie');
 		});
 
 		return false;
@@ -903,6 +930,18 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 	$("form[lay-filter=cookies] input[name=url]").on("input",function(e){
 		reloadCookie();
 	});
+
+	function storeData() {
+		chrome.storage.local.set(data.field, function () {
+			layer.msg('储存成功');
+		});
+	}
+
+	function reStoreData() {
+		chrome.storage.local.set(data.field, function () {
+			layer.msg('储存成功');
+		});
+	}
 
 	reloadCookie();
 });

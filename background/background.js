@@ -17,6 +17,8 @@ window.spiderSlaveActiveLastTime[0] = window.spiderSlaveActiveLastTime[1] = pars
 // 1-create inti 2-reopen init
 window.spiderSlaveInitStatus = 0;
 
+window.debug = false;
+
 window.helpmateEvents = {
     "create": [],
     "open": [],
@@ -29,7 +31,14 @@ setTimeout(function() {
 		initDeviceInfo(function(){
 
 			//init and create api tab
-			if(window.spiderSlaveOn === true) {
+			if(window.debug) {
+				console.warn("Debug模式：只打开浏览器并做初始化，不执行任务")
+			}
+			if(!window.spiderSlaveHelpmate) {
+				console.warn("单机模式：不会自动开关浏览器")
+			}
+
+			if(window.spiderSlaveOn === true && !window.debug) {
 				workPlay();
 			}
 
@@ -73,6 +82,11 @@ function initDeviceInfo(cb) {
 									if(spiderSlaveFlag !== undefined) {
 										window['spiderSlaveFlag'] = spiderSlaveFlag;
 										chrome.storage.local.set({'spiderSlaveFlag':window['spiderSlaveFlag']});
+									}
+
+									var debug = getQueryString(title,'debug');
+									if(debug !== undefined && debug === "1") {
+										window['debug'] = true;
 									}
 
 									window['sEvents'] = getQueryString(title,'sEvents');
@@ -843,7 +857,7 @@ function resultIsOk(tab, info, cb) {
 				isDone(tab, info, true);
 			}
 		});
-	}, 100);
+	}, 5000);
 }
 
 //try every 50 ms
