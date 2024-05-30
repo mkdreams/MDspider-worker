@@ -1,0 +1,1 @@
+https://github.com/ungoogled-software/ungoogled-chromium-windows/releases/download/125.0.6422.112-1.1/ungoogled-chromium_125.0.6422.112-1.1_windows_x64.zip
