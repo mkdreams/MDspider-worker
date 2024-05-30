@@ -1,1 +1,4 @@
 https://github.com/ungoogled-software/ungoogled-chromium-windows/releases/download/125.0.6422.112-1.1/ungoogled-chromium_125.0.6422.112-1.1_windows_x64.zip
+
+windows server 2012:
+https://ungoogled-software.github.io/ungoogled-chromium-binaries/releases/windows/64bit/108.0.5359.125-1
