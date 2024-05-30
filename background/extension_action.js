@@ -1,6 +1,22 @@
+function isSupportPartitionKey() {
+	if(navigator && navigator.userAgentData && navigator.userAgentData.brands && navigator.userAgentData.brands[0] && parseInt(navigator.userAgentData.brands[0].version) >= 119) {
+		return true;
+	}else{
+		return false;
+	}
+}
+
 // get cookies
 function getCookies(tab, info, cb) {
-	chrome.cookies.getAll({'url':info.url, partitionKey: {}},function(cookies) {
+	var option = {"url":info.url};
+	if(isSupportPartitionKey()) {
+		option["partitionKey"] = {};
+	}else{
+		console.warn("浏览器版本小于119，getCookies可能存在不完整");
+	}
+
+	navigator.userAgentData.brands[0].version
+	chrome.cookies.getAll(option,function(cookies) {
 		textToBase64(JSON.stringify(cookies),function(base64){
 			cb(base64);
 		});
@@ -10,14 +26,29 @@ function getCookies(tab, info, cb) {
 //delete cookies
 function clearCookies(tab, info, cb) {
 	var c = 0;
-	chrome.cookies.getAll({'url':info.url, partitionKey: {}},function(cookies) {
+	var option = {"url":info.url};
+	if(isSupportPartitionKey()) {
+		option["partitionKey"] = {};
+	}else{
+		console.warn("浏览器版本小于119，clearCookies可能存在不完整");
+	}
+
+	chrome.cookies.getAll(option,function(cookies) {
 		cookies.forEach(function(cookie) {
-			chrome.cookies.remove({
-				'url':info.url,
-				'name':cookie.name,
-				'storeId':cookie.storeId,
-				'partitionKey':{}
-			});
+			if(isSupportPartitionKey()) {
+				chrome.cookies.remove({
+					'url':info.url,
+					'name':cookie.name,
+					'storeId':cookie.storeId,
+					'partitionKey':{}
+				});
+			}else{
+				chrome.cookies.remove({
+					'url':info.url,
+					'name':cookie.name,
+					'storeId':cookie.storeId
+				});
+			}
 			c++;
 		});
 		cb(c);
@@ -63,7 +94,7 @@ function fullCookie(url,fullCookie) {
 		newCookie.sameSite = fullCookie.sameSite;
 	}
 
-	if (fullCookie.partitionKey !== undefined) {
+	if (fullCookie.partitionKey !== undefined && isSupportPartitionKey()) {
 		newCookie.partitionKey = fullCookie.partitionKey;
 	}
 
