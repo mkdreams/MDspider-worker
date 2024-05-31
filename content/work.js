@@ -287,8 +287,15 @@ function pageRunJs(jsStr,cb,background) {
 		var observer = new MutationObserver(callback);
 		observer.observe(tempDom[0], config);
 
-		var r = eval('(function () {window.ajaxRecordDebug = '+window.ajaxRecordDebug+';'
-		+jsStr.replace(/[\r\n]/g,"") + '})()');
+		var js = '(function () {window.ajaxRecordDebug = '+window.ajaxRecordDebug+';'
+		+jsStr.replace(/[\r\n]/g,"") + '})()';
+
+		try {
+			var r = eval(js);
+		} catch (e) {
+			console.error(e);
+			var r = "ERROR: r\n"+JSON.stringify(e.error.stack)+"\r\n\r\nRUN JS: \r\n"+js;
+		}
 		
 		if(isPromise(r)) {
 			r.then(function(promiseR){
@@ -304,7 +311,7 @@ function pageRunJs(jsStr,cb,background) {
 			}.bind(this));
 		}
 	}else{
-		var tempDom = $("<div id=\""+domRandomId+"\" style=\"display:none;\" onclick=\"eval('\
+		var tempDom = $("<div id=\""+domRandomId+"\" style=\"display:none;\" onclick=\"var js = '\
 		"+"window.ajaxRecordDebug = "+window.ajaxRecordDebug+";"+
 		('function blobToBase64(blob, callback) {\
 			var reader = new FileReader();\
@@ -321,22 +328,28 @@ function pageRunJs(jsStr,cb,background) {
 			blobToBase64(blob,callback);\
 		};\
 		var r = (function () {'
-		+jsStr.replace(/'/g,"\\'").replace(/[\r\n]/g,"") + '})();\
-		if(isPromise(r)) {\
-			r.then(function(promiseR){\
-				textToBase64(promiseR==undefined?0:promiseR,function(base64){\
-					this.innerHTML = base64;\
-					this.setAttribute("isdone",1);\
-				}.bind(this));\
-			}.bind(this));\
-		}else{\
-			textToBase64(r==undefined?0:r,function(base64){\
-				this.innerHTML = base64;\
-				this.setAttribute("isdone",1);\
-			}.bind(this));\
-		}\
-		')
-		.replace(/"/g,'&quot;')+"')\"></div>");
+		+jsStr.replace(/'/g,"\\'").replace(/[\r\n]/g,"") + '})();'
+		).replace(/"/g,'&quot;')
+		+`';
+		try {
+			eval(js);
+		} catch (e) {
+			console.error(e);
+			var r = &quot;ERROR: \r\n&quot;+JSON.stringify(e.error.stack)+&quot;\r\n\r\nRUN JS: \r\n&quot;+js;
+		}
+		if(isPromise(r)) {
+			r.then(function(promiseR){
+				textToBase64(promiseR==undefined?0:promiseR,function(base64){
+					this.innerHTML = base64;
+					this.setAttribute(&quot;isdone&quot;,1);
+				}.bind(this));
+			}.bind(this));
+		}else{
+			textToBase64(r==undefined?0:r,function(base64){
+				this.innerHTML = base64;
+				this.setAttribute(&quot;isdone&quot;,1);
+			}.bind(this));
+		}`.replace(/[\r\n]/g,"")+"\"></div>");
 		$("html").append(tempDom);
 
 		var observer = new MutationObserver(callback);
