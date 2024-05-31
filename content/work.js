@@ -294,7 +294,7 @@ function pageRunJs(jsStr,cb,background) {
 			var r = eval(js);
 		} catch (e) {
 			console.error(e);
-			var r = "ERROR: r\n"+JSON.stringify(e.error.stack)+"\r\n\r\nRUN JS: \r\n"+js;
+			var r = "ERROR: r\n"+JSON.stringify(e.stack)+"\r\n\r\nRUN JS: \r\n"+js;
 		}
 		
 		if(isPromise(r)) {
@@ -335,7 +335,7 @@ function pageRunJs(jsStr,cb,background) {
 			eval(js);
 		} catch (e) {
 			console.error(e);
-			var r = &quot;ERROR: \r\n&quot;+JSON.stringify(e.error.stack)+&quot;\r\n\r\nRUN JS: \r\n&quot;+js;
+			var r = &quot;ERROR: \r\n&quot;+JSON.stringify(e.stack)+&quot;\r\n\r\nRUN JS: \r\n&quot;+js;
 		}
 		if(isPromise(r)) {
 			r.then(function(promiseR){
