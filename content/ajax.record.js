@@ -238,6 +238,14 @@ var ajaxRecordString = `
             clearTimeout(reqSetTimeout);
         },30000);
 
+        this.addEventListener("readystatechange", function(event) {
+            if(this.readyState == 4){
+                clearTimeout(reqSetTimeoutMaxRunTime);
+                clearTimeout(reqSetTimeout);
+                doneFunc();
+            }
+        }, false);
+
         this.OrgSend(...arguments);
     };
     window.oldFetch = fetch;
