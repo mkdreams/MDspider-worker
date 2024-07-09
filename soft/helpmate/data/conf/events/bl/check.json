@@ -7,14 +7,24 @@
                 "url": "",
                 "type": 103,
                 "param": {
-                    "delay": 6000,
+                    "delay": 3000,
                     "method": "wtop"
+                }
+            },
+            {
+                "url": "",
+                "type": 200,
+                "action": "tabUpdate",
+                "param": {
+                    "method": "click",
+                    "tabProperties":{"active": true ,"autoDiscardable": false }
                 }
             },
             {
                 "url": "[$('#turnstile-wrapper')[0],{'left':20,'top':20,'width':27,'height':27}]",
                 "type": 103,
                 "param": {
+                    "delay": 3000,
                     "method": "click"
                 }
             },

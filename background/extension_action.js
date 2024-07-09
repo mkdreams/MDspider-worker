@@ -6,6 +6,15 @@ function isSupportPartitionKey() {
 	}
 }
 
+function tabUpdate(tab, info, cb) {
+	//{active: true ,autoDiscardable: false } info.param.tabProperties
+	chrome.tabs.update(tab.id, info.param.tabProperties, function () {
+		textToBase64(true,function(base64){
+			cb && cb(base64);
+		});
+	});
+}
+
 // get cookies
 function getCookies(tab, info, cb) {
 	var option = {"url":info.url};
