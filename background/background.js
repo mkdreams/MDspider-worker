@@ -909,6 +909,7 @@ function getHml(tab, info, result) {
 			
 			if(info['doneCheckActionPromiseResolve']) {
 				info['doneCheckActionPromiseResolve']([info,((info.param && info.param.musave)?JSON.stringify(base64ToString(info['results'])):base64ToString(info['results'][info['results'].length-1]))]);
+				return;
 			}
 
 			function maincb() {
@@ -1076,10 +1077,8 @@ function recaptcha(resolve,tab,info,res) {
 	let doneCheckAction = {
 		"url":"return document.getElementsByTagName('html')[0].innerHTML;",
 		"type":100,
-		// "includeIframe": 1,
 		"param": {
 			"skipRecaptcha":true,
-			// "musave":true,
 		}
 	};
         
@@ -1097,7 +1096,6 @@ function recaptcha(resolve,tab,info,res) {
 
 		for(var i in window.helpmateEvents['check']) {
 			var checkActionInfo = window.helpmateEvents['check'][i];
-			console.log("checkActionInfo",checkActionInfo);
 			if(eval(checkActionInfo['match'])) {
 				console.log('check '+checkActionInfo['name']);
 				return new Promise(function(doneCheckActionPromiseResolve,reject) {
@@ -1112,13 +1110,13 @@ function recaptcha(resolve,tab,info,res) {
 					runSub(tab, infoTemp, function(tab, infoTemp) {
 						isDone(tab, info, true);
 						resolve(false);
-					},0)
+					},0);
 				});
-			}else{
-				console.log('check default');
-				resolve(true);
 			}
 		}
+
+		console.log('check default');
+		resolve(true);
 	});
 }
 
