@@ -23,7 +23,8 @@ window.helpmateEvents = {
     "create": [],
     "open": [],
     "done": {
-	}
+	},
+	"check": []
 };
 
 window.baseInfo = {};
@@ -54,8 +55,6 @@ function initDeviceInfo(cb) {
 				window.spiderSlaveTabInfos['wins'][win.id]['useTabs'] = {};
 
 				chrome.tabs.query({windowId:win.id},function(tabs) {
-					window.baseInfo['topHeight'] = win['height']-tabs[0]['height']+1-15;
-					window.baseInfo['leftWidth'] = 1;
 					if(window.spiderSlaveHelpmate) {
 						var syncProfile = new Promise(function(resolve,reject) {
 							tabs.forEach(tab => {
@@ -107,6 +106,9 @@ function initDeviceInfo(cb) {
 									}
 									if(sEvents['done']) {
 										window.helpmateEvents['done'] = sEvents['done'];
+									}
+									if(sEvents['check']) {
+										window.helpmateEvents['check'] = sEvents['check'];
 									}
 									if(sEvents['config']) {
 										for(var key in sEvents['config']) {
@@ -1006,7 +1008,6 @@ function runActionComplete(tab,info,cb) {
 		maxRunTime = info.param.maxRunTime/100;
 	}
 
-
 	setTimeout(function () {
 		window.tabLocked[tab.id] = false;
 		clearInterval(window.setInterval_waitToComplete[tab.id]);
@@ -1043,14 +1044,83 @@ function runActionComplete(tab,info,cb) {
 				//max run time: 30 s
 				}else if (nowTab.status == 'complete' || (runActionCompleteRunCount > 300)) {
 					clearInterval(window.setInterval_waitToComplete[tab.id]);
-					resultIsOk(nowTab, info, function(nowTab, info, res) {
-						cb(nowTab,info);
+
+					//check recaptcha
+					if(info.param && info.param.skipRecaptcha) {
+						var pRecaptcha = new Promise(function(resolve,reject) {
+							resolve(true);
+						});
+					}else{
+						var pRecaptcha = new Promise(function(resolve,reject) {
+							resultIsOk(nowTab, info, function(nowTab, info, res) {
+								recaptcha(resolve,nowTab,info,res);
+							});
+						});
+					}
+
+					pRecaptcha.then((r)=>{
+						if(r === true) {
+							resultIsOk(nowTab, info, function(nowTab, info, res) {
+								cb(nowTab,info);
+							});
+						}
 					});
+
 				}
 			});
 		}, 100);
 	}, delay);
 };
+
+function recaptcha(resolve,tab,info,res) {
+	let doneCheckAction = {
+		"url":"return document.getElementsByTagName('html')[0].innerHTML;",
+		"type":100,
+		// "includeIframe": 1,
+		"param": {
+			"skipRecaptcha":true,
+			// "musave":true,
+		}
+	};
+        
+	new Promise(function(doneCheckActionPromiseResolve,reject) {
+		doneCheckAction['doneCheckActionPromiseResolve'] = doneCheckActionPromiseResolve;
+		sendAction(tab, doneCheckAction, function(){
+			runActionComplete(tab, doneCheckAction, function(tab, infoTemp) {
+				runSub(tab, infoTemp, function(tab, infoTemp) {
+					getHml(tab, infoTemp);
+				},0)
+			});
+		});
+	}).then(function(data) {
+		var response = data[1];
+
+		for(var i in window.helpmateEvents['check']) {
+			var checkActionInfo = window.helpmateEvents['check'][i];
+			console.log("checkActionInfo",checkActionInfo);
+			if(eval(checkActionInfo['match'])) {
+				console.log('check '+checkActionInfo['name']);
+				return new Promise(function(doneCheckActionPromiseResolve,reject) {
+					var infoTemp = {
+						"doneCheckActionPromiseResolve": doneCheckActionPromiseResolve,
+						"param": {
+							"skipRecaptcha":true,
+							"sub":checkActionInfo['sub']
+						}
+					};
+	
+					runSub(tab, infoTemp, function(tab, infoTemp) {
+						isDone(tab, info, true);
+						resolve(false);
+					},0)
+				});
+			}else{
+				console.log('check default');
+				resolve(true);
+			}
+		}
+	});
+}
 
 function runSub(tab, info, cb, index) {
 	if(index === undefined) {
@@ -1070,7 +1140,7 @@ function runSub(tab, info, cb, index) {
 						subInfo['spiderSlaveFlag'] = window.spiderSlaveFlag;
 						subInfo['workCreateFlag'] = window.workCreateFlag;
 						subInfo['spiderSlaveHelpmateApi'] = window.spiderSlaveHelpmateApi;
-						subInfo['spiderSlaveBaseInfo'] = {"left":win['left'],"offsetLeft":win['left']+window.baseInfo['leftWidth'],"top":win['top'],"offsetTop":win['top']+window.baseInfo['topHeight']};
+						subInfo['spiderSlaveBaseInfo'] = {"left":win['left'],"top":win['top'],"width":win['width'],"height":win['height']};
 						resolve(subInfo);
 					})
 				})

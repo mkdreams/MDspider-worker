@@ -147,19 +147,33 @@ function domCenter(dom,behavior,container) {
     return dom.getBoundingClientRect();
 }
 
-function getRandomPos(pos,baseInfo) {
+function getRandomPos(pos,baseInfo,offset) {
     if(pos === false) {
         return false;
     }
-
+    
     if(pos === 'topLeftPoint') {
         return [baseInfo['left']+10,baseInfo['top']+6];
     }
 
-    return [
-            parseInt(baseInfo['offsetLeft']+pos['left']+pos['width']/4+pos['width']/4*Math.random()),
-            parseInt(baseInfo['offsetTop']+pos['top']+pos['height']*3/8+pos['height']/8*Math.random())
-        ];
+    var posTemp = {left: pos['left'], top: pos['top'], width: pos['width'], height: pos['height'], };
+    if(offset !== undefined) {
+        if (offset['left']) posTemp['left'] += offset['left'];
+        if (offset['top']) posTemp['top'] += offset['top'];
+        if (offset['width']) posTemp['width'] = offset['width'];
+        if (offset['height']) posTemp['height'] = offset['height'];
+    }
+
+    var offsetLeft = (baseInfo['width']-window.innerWidth)/2+baseInfo['left'];
+    var offsetTop = baseInfo['top']+baseInfo['height']-window.innerHeight;
+
+    var r = [
+        parseInt(offsetLeft+posTemp['left']+posTemp['width']/4+posTemp['width']/4*Math.random()),
+        parseInt(offsetTop+posTemp['top']+posTemp['height']*3/8+posTemp['height']/8*Math.random())
+    ];
+    console.log("post",baseInfo,posTemp,offset,r);
+    
+    return r;
 }
 
 var Position = {};

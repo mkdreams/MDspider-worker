@@ -609,8 +609,14 @@ chrome.runtime.onMessage.addListener(
 									if(request.info.url === "") {
 										var pos = [0,0];
 									}else{
-										var pos = getRandomPos(domCenter(eval(request.info.url)),request.info.spiderSlaveBaseInfo);
+										var evalInfo = eval(request.info.url);
+										if(Array.isArray(evalInfo)) {
+											var pos = getRandomPos(domCenter(evalInfo[0]),request.info.spiderSlaveBaseInfo,evalInfo[1]);
+										}else{
+											var pos = getRandomPos(domCenter(evalInfo),request.info.spiderSlaveBaseInfo);
+										}
 									}
+
 									if(pos === false) {
 										textToBase64("false",function(base64){
 											window.spiderData[request.info.id] = base64;

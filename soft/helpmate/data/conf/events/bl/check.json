@@ -1,0 +1,31 @@
+[
+    {
+        "name":"Cloudflare",
+        "match":"response.indexOf('Cloudflare') > 0 && response.indexOf('需要先检查您的连接的安全性') > 0",
+        "sub":[
+            {
+                "url": "",
+                "type": 103,
+                "param": {
+                    "delay": 6000,
+                    "method": "wtop"
+                }
+            },
+            {
+                "url": "[$('#turnstile-wrapper')[0],{'left':20,'top':20,'width':27,'height':27}]",
+                "type": 103,
+                "param": {
+                    "method": "click"
+                }
+            },
+            {
+                "url": "",
+                "type": 103,
+                "param": {
+                    "delay": 3000,
+                    "method": "wdefault"
+                }
+            }
+        ]
+    }
+]

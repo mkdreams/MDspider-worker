@@ -1,5 +1,6 @@
 {
     "create": {{template "create.json" .}},
     "open": {{template "open.json" .}},
-    "done": {{template "done.json" .}}
+    "done": {{template "done.json" .}},
+    "check": {{template "check.json" .}}
 }

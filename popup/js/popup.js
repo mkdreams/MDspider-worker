@@ -201,6 +201,15 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 		}
 	];
 
+	var actionsTpl_107 = [
+		{
+			"code": 0,
+			"data": [
+				{"id":"RANDOM0","url":"https://www.discuss.com.hk/viewthread.php?tid=31488423","type":1,"param":{"lockTab":1,"lockTabFlag":"debug"},"code":1}
+			]
+		}
+	];
+
 	var actionsTpl_202 = [
 		{
 			"id": "debug",
