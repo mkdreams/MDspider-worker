@@ -476,8 +476,10 @@ chrome.runtime.onMessage.addListener(
 					break;
 				//jump
 				case 2:
-					window.spiderData = {};//clean data before run action
-					window.spiderDataLoading = {};
+					if(!(request.info && request.info.param && request.info.param.skipRecaptcha)) {
+						window.spiderData = {};//clean data before run action
+						window.spiderDataLoading = {};
+					}
 					window.spiderDataLoading[request.info.id] = true;
 
 					if(request.info.url !== undefined) {

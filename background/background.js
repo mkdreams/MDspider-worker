@@ -1209,6 +1209,10 @@ function sendAction(tab, info, cb) {
 		eval(info.param.preeval);
 	}
 
+	if(!info.id) {
+		info.id = randomStr();
+	}
+
 	if(info.type === 200) {
 		if(info.param && info.param.delay) {
 			setTimeout(function(){
