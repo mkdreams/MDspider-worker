@@ -1053,9 +1053,13 @@ function runActionComplete(tab,info,cb) {
 						});
 					}else{
 						var pRecaptcha = new Promise(function(resolve,reject) {
-							resultIsOk(nowTab, info, function(nowTab, info, res) {
-								recaptcha(resolve,nowTab,info,res);
-							});
+							if(info.isEnd) {
+								resultIsOk(nowTab, info, function(nowTab, info, res) {
+									recaptcha(resolve,nowTab,info,res);
+								});
+							}else{
+								resolve(true);
+							}
 						});
 					}
 
@@ -1165,6 +1169,10 @@ function runSub(tab, info, cb, index) {
 					subInfo['pinfo'] = info;
 					//run action
 					sendAction(tab, subInfo, function(result) {
+						if(subCount === index) {
+							info['isEnd'] = true;
+						}
+
 						runActionComplete(tab, info, function(tab, info) {
 							if(subInfo.param && subInfo.param.saveas) {
 								if(info['saveas'] === undefined) {
@@ -1292,6 +1300,9 @@ function dealOneAction(tab, info, needJump) {
 			case 1:
 			case 101:
 			case 200:
+				if(!(info.param && info.param.sub)){
+					info['isEnd'] = true;
+				}
 				runActionComplete(tab, info, function(tab, info) {
 					runSub(tab, info, function(tab, info) {
 						getHml(tab, info, result);
