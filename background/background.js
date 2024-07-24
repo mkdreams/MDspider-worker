@@ -764,6 +764,10 @@ function oneActionRun() {
 function isDone(tab, info, isError) {
 	window.spiderSlaveTabInfos['tabs'][tab.id]['iActiveTime'] = new Date().getTime();
 
+	if(window.spiderSlaveUrls[info['id']] === undefined) {
+		return ;
+	}
+
 	if(isError === undefined) {
 		window.spiderSlaveTabInfos['tabs'][tab.id]['runStatus'] = 0;
 		window.spiderSlaveDeletedUrls[info['id']] = new Date().getTime();
