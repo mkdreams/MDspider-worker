@@ -1247,19 +1247,18 @@ function dealOneAction(tab, info, needJump) {
 			window.spiderSlaveRunActionCount = 0;
 
 			workPause();
-
+			
+			var now = new Date();
+			var Ymd = formatDate('Ymd',now.getTime());
+			if(window.spiderSlaveStackRunActionCount[Ymd] === undefined) {
+				window.spiderSlaveStackRunActionCount = {};
+				window.spiderSlaveStackRunActionCount[Ymd] = 0;
+			}
+			window.spiderSlaveStackRunActionCount[Ymd] += 1;
+			
+			chrome.storage.local.set({'spiderSlaveStackRunActionCount':window.spiderSlaveStackRunActionCount});
+			
 			if(window.spiderSlavePerDayMaxRunTimes > 0) {
-
-				var now = new Date();
-				var Ymd = formatDate('Ymd',now.getTime());
-				if(window.spiderSlaveStackRunActionCount[Ymd] === undefined) {
-					window.spiderSlaveStackRunActionCount = {};
-					window.spiderSlaveStackRunActionCount[Ymd] = 0;
-				}
-				window.spiderSlaveStackRunActionCount[Ymd] += 1;
-
-				chrome.storage.local.set({'spiderSlaveStackRunActionCount':window.spiderSlaveStackRunActionCount});
-				
 				if(window.spiderSlaveStackRunActionCount[Ymd] > window.spiderSlavePerDayMaxRunTimes) {
 					PauseNowUser(undefined,{'pauseMs':strtotime(formatDate('Y-m-d',now.getTime())+' 00:00')+86400 - parseInt(now.getTime()/1000)});
 					return;
