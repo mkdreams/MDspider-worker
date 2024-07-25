@@ -1,0 +1,1 @@
+netsh interface ipv4 set subinterface "这里填写内网网卡名" mtu=1450 store=persistent
