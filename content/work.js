@@ -620,6 +620,8 @@ chrome.runtime.onMessage.addListener(
 									}
 
 									if(pos === false) {
+										console.error("dom lost: "+request.info.url);
+
 										textToBase64("false",function(base64){
 											window.spiderData[request.info.id] = base64;
 											window.actionComplete = true;
