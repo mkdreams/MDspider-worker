@@ -1102,10 +1102,12 @@ function recaptcha(resolve,tab,info,res) {
 	}).then(function(data) {
 		var response = data[1];
 
+		var checked = false;
 		for(var i in window.helpmateEvents['check']) {
 			var checkActionInfo = window.helpmateEvents['check'][i];
 			if(eval(checkActionInfo['match'])) {
 				console.log('check '+checkActionInfo['name']);
+				checked = true;
 				return new Promise(function(doneCheckActionPromiseResolve,reject) {
 					var infoTemp = {
 						"doneCheckActionPromiseResolve": doneCheckActionPromiseResolve,
@@ -1123,8 +1125,10 @@ function recaptcha(resolve,tab,info,res) {
 			}
 		}
 
-		console.log('check default');
-		resolve(true);
+		if(checked === false) {
+			console.log('check default');
+			resolve(true);
+		}
 	});
 }
 
