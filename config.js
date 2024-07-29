@@ -10,9 +10,10 @@ window.spiderSlaveApi = spiderSlaveApiInfo[0];
 window.spiderSlaveGetUrlsDelay = 5000;
 window.spiderSlaveWinCount = 1;
 window.spiderSlavePerWinTabCount = 5;
+
 window.spiderSlaveRunActionCount = 0;
 window.spiderSlaveActionCountChangeUser = 0;
-//每60秒执行一个
+//每xx秒执行xxx个
 window.spiderSlaveRunActionFrequency = '0/86400';
 
 window.spiderSlaveStackRunActionCount = {};
