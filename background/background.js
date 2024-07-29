@@ -7,8 +7,16 @@ window.tabLocked = {};
 window.setTimeout_checkIsDie = {};
 window.tabUrlIds = {};
 window.baseWindow = undefined;
-window.setInterval_getLinksCache_lastRunTime = new Date().getTime();
+window.spiderSlaveRunActionFrequencyStartTime = window.setInterval_getLinksCache_lastRunTime = new Date().getTime();
 window.lockTabFlagToTab = {};
+
+if(window.spiderSlaveRunActionFrequency === undefined) {
+	window.spiderSlaveRunActionFrequency = '0/86400';
+}
+var frequencyTemp = window.spiderSlaveRunActionFrequency.split('/');
+window.spiderSlaveRunActionFrequencyCount = parseInt(frequencyTemp[0]);
+window.spiderSlaveRunActionFrequencyRang = parseInt(frequencyTemp[1]);
+window.spiderSlaveRunActionFrequencyRunCount = 0;
 
 //active time
 window.spiderSlaveActiveLastTime = [0,0];
@@ -459,7 +467,7 @@ function workPause() {
 
 function pullActions() {
 	var timestamp = new Date().getTime();
-	if(timestamp - window.setInterval_getLinksCache_lastRunTime > window.spiderSlaveGetUrlsDelay && window.spiderSlaveInitStatus == 3) {
+	if(checkFrequency(timestamp) && timestamp - window.setInterval_getLinksCache_lastRunTime > window.spiderSlaveGetUrlsDelay && window.spiderSlaveInitStatus == 3) {
 		window.setInterval_getLinksCache_lastRunTime = timestamp;
 		ajaxPost({ 'admintype': 1, 'url': window.spiderSlaveApiActionList, 'data': { 'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function(data) {
 			if (!(data.data instanceof Array)) {
@@ -481,6 +489,20 @@ function pullActions() {
 			}
 		});
 	}
+}
+
+function checkFrequency(timestamp) {
+	if(window.spiderSlaveRunActionFrequencyStartTime < timestamp-window.spiderSlaveRunActionFrequencyRang*1000) {
+		window.spiderSlaveRunActionFrequencyStartTime = timestamp;
+		window.spiderSlaveRunActionFrequencyRunCount = 0;
+	}
+
+	if(window.spiderSlaveRunActionFrequencyCount > 0 && window.spiderSlaveRunActionFrequencyRunCount >= window.spiderSlaveRunActionFrequencyCount) {
+		console.log("checkFrequency failed！");
+		return false;
+	}
+
+	return true;
 }
 
 // 5 min before
@@ -1245,6 +1267,8 @@ function sendAction(tab, info, cb) {
 }
 
 function dealOneAction(tab, info, needJump) {
+	window.spiderSlaveRunActionFrequencyRunCount++;
+
 	if(window.spiderSlaveActionCountChangeUser > 0 && window.spiderSlaveHelpmate) {
 		window.spiderSlaveRunActionCount++;
 		if(window.spiderSlaveRunActionCount > window.spiderSlaveActionCountChangeUser) {

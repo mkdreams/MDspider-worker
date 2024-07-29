@@ -18,13 +18,13 @@
 	"content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
 	"background":{
 		"scripts":[
+	    	"config.js",
 			"common/jquery-2.0.3.js",
 			"common/pako.min.js",
 			"common/base64.min.js",
 	    	"common/function.js",
 	    	"background/extension_action.js",
 	    	"background/background.js",
-	    	"config.js",
 	    	"background/run_time_api.js"
     	]
 	},

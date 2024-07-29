@@ -12,6 +12,9 @@ window.spiderSlaveWinCount = 1;
 window.spiderSlavePerWinTabCount = 5;
 window.spiderSlaveRunActionCount = 0;
 window.spiderSlaveActionCountChangeUser = 0;
+//每60秒执行一个
+window.spiderSlaveRunActionFrequency = '0/86400';
+
 window.spiderSlaveStackRunActionCount = {};
 window.spiderSlaveLockTabTimeout = 180000;
 window.spiderSlavePerDayMaxRunTimes = 0;

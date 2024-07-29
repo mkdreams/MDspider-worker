@@ -34,6 +34,9 @@ function restoreData(bg, form, $) {
 	var Ymd = formatDate('Ymd',now.getTime());
 	$('#spiderSlaveStackRunActionCount').html(bg.spiderSlaveStackRunActionCount[Ymd]===undefined?0:bg.spiderSlaveStackRunActionCount[Ymd]);
 	$('#spiderSlaveActionCountChangeUser').html(bg.spiderSlaveActionCountChangeUser);
+	$('#spiderSlaveRunActionFrequencyCount').html(bg.spiderSlaveRunActionFrequencyCount);
+	$('#spiderSlaveRunActionFrequencyRang').html(bg.spiderSlaveRunActionFrequencyRang);
+	$('#spiderSlaveRunActionFrequencyRunCount').html(bg.spiderSlaveRunActionFrequencyRunCount);
 	$('#spiderSlavePerDayMaxRunTimes').html(bg.spiderSlavePerDayMaxRunTimes);
 	$('#spiderSlaveUserName').html(bg.userName);
 }
