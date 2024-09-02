@@ -967,45 +967,43 @@ function getHml(tab, info, result) {
 
 			if(info.param && info.param.lockTabFlag && window.helpmateEvents && window.helpmateEvents['done'] && window.helpmateEvents['done'][info.param.lockTabFlag]) {
 				var doneCheckActions = window.helpmateEvents['done'][info.param.lockTabFlag];
-				var doneCheckActionIndex = info['doneCheckActionIndex']!==undefined?(info['doneCheckActionIndex']+1):0;
-				if(doneCheckActions.length > doneCheckActionIndex) {
-					var doneCheckAction = $.extend(true, {}, doneCheckActions[doneCheckActionIndex]);
+				function doneForEach() {
+					var doneCheckActionIndex = info['doneCheckActionIndex'] = info['doneCheckActionIndex']!==undefined?(info['doneCheckActionIndex']+1):0;
+					if(doneCheckActions.length > doneCheckActionIndex) {
+						var doneCheckAction = $.extend(true, {}, doneCheckActions[doneCheckActionIndex]);
+						
+						doneCheckAction['doneCheckActionIndex'] = doneCheckActionIndex;
+						doneCheckAction['isDoneCheckAction'] = true;
+						if(doneCheckAction['param'] === undefined) {
+							doneCheckAction['param'] = {};
+						}
+						if(doneCheckAction['param']['lockTabFlag'] === undefined) {
+							doneCheckAction['param']['lockTabFlag'] = info.param.lockTabFlag;
+						}
 
-					if(doneCheckActionIndex === 0) {
-						doneCheckAction['maincb'] = maincb
-					}else{
-						doneCheckAction['maincb'] = doneCheckActions[doneCheckActionIndex-1]['maincb'];
-					}
-
-					doneCheckAction['id'] = 'temp';
-					doneCheckAction['doneCheckActionIndex'] = doneCheckActionIndex;
-					doneCheckAction['isDoneCheckAction'] = true;
-					if(doneCheckAction['param'] === undefined) {
-						doneCheckAction['param'] = {};
-					}
-					if(doneCheckAction['param']['lockTabFlag'] === undefined) {
-						doneCheckAction['param']['lockTabFlag'] = info.param.lockTabFlag;
-					}
-
-					var p = new Promise(function(resolve,reject) {
-						doneCheckAction['doneCheckActionPromiseResolve'] = resolve;
-						sendAction(tab, doneCheckAction, function(){
-							runActionComplete(tab, doneCheckAction, function(tab, infoTemp) {
-								runSub(tab, infoTemp, function(tab, infoTemp) {
-									getHml(tab, infoTemp);
-								},0)
+						var p = new Promise(function(resolve,reject) {
+							doneCheckAction['doneCheckActionPromiseResolve'] = resolve;
+							sendAction(tab, doneCheckAction, function(){
+								runActionComplete(tab, doneCheckAction, function(tab, infoTemp) {
+									runSub(tab, infoTemp, function(tab, infoTemp) {
+										getHml(tab, infoTemp);
+									},0)
+								});
 							});
 						});
-					});
-					
-					p.then(function(data) {
-						var info = data[0];
-						var response = data[1];
-						eval(info['then']);
-					});
-				}else{
-					info['maincb']();
+						
+						p.then(function(data) {
+							var info = data[0];
+							var response = data[1];
+							eval(info['then']);
+							doneForEach();
+						});
+					}else{
+						maincb();
+					}
 				}
+
+				doneForEach();
 			}else{
 				maincb();
 			}
