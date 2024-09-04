@@ -9,7 +9,9 @@ window.tabUrlIds = {};
 window.baseWindow = undefined;
 window.lockTabFlagToTab = {};
 
-window.spiderSlavePerDayMaxRunTimesFrequencyRang = 86400;
+if(window.spiderSlavePerDayMaxRunTimesFrequencyRang === undefined) {
+	window.spiderSlavePerDayMaxRunTimesFrequencyRang = 86400;
+}
 
 //active time
 window.spiderSlaveActiveLastTime = [0,0];
