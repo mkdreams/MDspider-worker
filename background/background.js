@@ -1272,7 +1272,7 @@ function dealOneAction(tab, info, needJump) {
 			
 			if(window.spiderSlavePerDayMaxRunTimes > 0) {
 				if(window.spiderSlaveStackRunActionCount[Ymd] > window.spiderSlavePerDayMaxRunTimes) {
-					PauseNowUser(undefined,{'pauseMs':strtotime(formatDate('Y-m-d',now.getTime())+' 00:00')+86400 - parseInt(now.getTime()/1000)});
+					PauseNowUser(undefined,{'pauseMs':parseInt(Ymd*window.spiderSlavePerDayMaxRunTimesFrequencyRang - now.getTime()/1000)});
 					return;
 				}
 			}
