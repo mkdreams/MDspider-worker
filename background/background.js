@@ -1255,8 +1255,6 @@ function sendAction(tab, info, cb) {
 }
 
 function dealOneAction(tab, info, needJump) {
-	window.spiderSlaveRunActionFrequencyRunCount++;
-
 	if(window.spiderSlaveActionCountChangeUser > 0 && window.spiderSlaveHelpmate) {
 		window.spiderSlaveRunActionCount++;
 		if(window.spiderSlaveRunActionCount > window.spiderSlaveActionCountChangeUser) {
@@ -1288,7 +1286,7 @@ function dealOneAction(tab, info, needJump) {
 
 	if(window.spiderSlavePerDayMaxRunTimes > 0) {
 		var now = new Date();
-		var Ymd = formatDate('Ymd',now.getTime());
+		var Ymd = Math.ceil(now.getTime()/1000/window.spiderSlavePerDayMaxRunTimesFrequencyRang);
 		if(window.spiderSlaveStackRunActionCount[Ymd] === undefined) {
 			window.spiderSlaveStackRunActionCount = {};
 			window.spiderSlaveStackRunActionCount[Ymd] = 0;
