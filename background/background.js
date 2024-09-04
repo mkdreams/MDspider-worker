@@ -7,16 +7,9 @@ window.tabLocked = {};
 window.setTimeout_checkIsDie = {};
 window.tabUrlIds = {};
 window.baseWindow = undefined;
-window.spiderSlaveRunActionFrequencyStartTime = window.setInterval_getLinksCache_lastRunTime = new Date().getTime();
 window.lockTabFlagToTab = {};
 
-if(window.spiderSlaveRunActionFrequency === undefined) {
-	window.spiderSlaveRunActionFrequency = '0/86400';
-}
-var frequencyTemp = window.spiderSlaveRunActionFrequency.split('/');
-window.spiderSlaveRunActionFrequencyCount = parseInt(frequencyTemp[0]);
-window.spiderSlaveRunActionFrequencyRang = parseInt(frequencyTemp[1]);
-window.spiderSlaveRunActionFrequencyRunCount = 0;
+window.spiderSlavePerDayMaxRunTimesFrequencyRang = 86400;
 
 //active time
 window.spiderSlaveActiveLastTime = [0,0];
@@ -45,6 +38,13 @@ setTimeout(function() {
 			}
 			if(!window.spiderSlaveHelpmate) {
 				console.warn("单机模式：不会自动开关浏览器")
+			}
+
+			//init run Frequency
+			var frequencyTemp = (window.spiderSlavePerDayMaxRunTimes+"").split('/');
+			window.spiderSlavePerDayMaxRunTimes = parseInt(frequencyTemp[0]);
+			if(frequencyTemp[1]) {
+				window.spiderSlavePerDayMaxRunTimesFrequencyRang = parseInt(frequencyTemp[1]);
 			}
 
 			if(window.spiderSlaveOn === true && !window.debug) {
@@ -467,7 +467,7 @@ function workPause() {
 
 function pullActions() {
 	var timestamp = new Date().getTime();
-	if(checkFrequency(timestamp) && timestamp - window.setInterval_getLinksCache_lastRunTime > window.spiderSlaveGetUrlsDelay && window.spiderSlaveInitStatus == 3) {
+	if(timestamp - window.setInterval_getLinksCache_lastRunTime > window.spiderSlaveGetUrlsDelay && window.spiderSlaveInitStatus == 3) {
 		window.setInterval_getLinksCache_lastRunTime = timestamp;
 		ajaxPost({ 'admintype': 1, 'url': window.spiderSlaveApiActionList, 'data': { 'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function(data) {
 			if (!(data.data instanceof Array)) {
@@ -489,20 +489,6 @@ function pullActions() {
 			}
 		});
 	}
-}
-
-function checkFrequency(timestamp) {
-	if(window.spiderSlaveRunActionFrequencyStartTime < timestamp-window.spiderSlaveRunActionFrequencyRang*1000) {
-		window.spiderSlaveRunActionFrequencyStartTime = timestamp;
-		window.spiderSlaveRunActionFrequencyRunCount = 0;
-	}
-
-	if(window.spiderSlaveRunActionFrequencyCount > 0 && window.spiderSlaveRunActionFrequencyRunCount >= window.spiderSlaveRunActionFrequencyCount) {
-		console.log("checkFrequency failed！");
-		return false;
-	}
-
-	return true;
 }
 
 // 5 min before
@@ -1275,7 +1261,7 @@ function dealOneAction(tab, info, needJump) {
 			workPause();
 			
 			var now = new Date();
-			var Ymd = formatDate('Ymd',now.getTime());
+			var Ymd = Math.ceil(now.getTime()/1000/window.spiderSlavePerDayMaxRunTimesFrequencyRang);
 			if(window.spiderSlaveStackRunActionCount[Ymd] === undefined) {
 				window.spiderSlaveStackRunActionCount = {};
 				window.spiderSlaveStackRunActionCount[Ymd] = 0;
