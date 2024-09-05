@@ -1292,6 +1292,8 @@ function dealOneAction(tab, info, needJump) {
 			window.spiderSlaveStackRunActionCount[Ymd] = 0;
 		}
 		window.spiderSlaveStackRunActionCount[Ymd] += 1;
+		
+		chrome.storage.local.set({'spiderSlaveStackRunActionCount':window.spiderSlaveStackRunActionCount});
 	}
 
 	// 1:a(jump and get data)
