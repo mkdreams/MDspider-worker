@@ -31,7 +31,7 @@ function restoreData(bg, form, $) {
 	$('#workCreateFlag').html(bg.workCreateFlag);
 
 	var now = new Date();
-	var Ymd = formatDate('Ymd',now.getTime());
+	var Ymd = Math.ceil(now.getTime()/1000/bg.spiderSlavePerDayMaxRunTimesFrequencyRang);
 	$('#spiderSlaveStackRunActionCount').html(bg.spiderSlaveStackRunActionCount[Ymd]===undefined?0:bg.spiderSlaveStackRunActionCount[Ymd]);
 	$('#spiderSlaveActionCountChangeUser').html(bg.spiderSlaveActionCountChangeUser);
 	$('#spiderSlavePerDayMaxRunTimes').html(bg.spiderSlavePerDayMaxRunTimes);
