@@ -258,6 +258,10 @@ function topRunJs(jsStr) {
 }
 
 function pageRunJs(jsStr,cb,background) {
+	//xml force background
+	if($("#webkit-xml-viewer-source-xml").length > 0) {
+		background = true;
+	}
 	var domRandomId = "MDspider-help-dom-result-"+randomStr();
 
 	const config = { attributes: true};
