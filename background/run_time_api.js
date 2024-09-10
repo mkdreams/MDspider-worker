@@ -9,17 +9,32 @@ function sendMessageToNowTabs(sendInfoObj,callBack) {
 	});
 }
 
-function sendMessageAction(tabId,sendInfoObj,callBack,frames) {
+function sendMessageAction(tabId,sendInfoObj,callBack,frames,reTryTimes) {
 	if(frames != undefined) {
 		this.allFrames = frames;
 		this.response = undefined;
 	}
-	
-	chrome.tabs.sendMessage(tabId, sendBeforeClean(sendInfoObj),{frameId: 0}, function(msg) {
-		if(callBack) {
-	        callBack(msg);
+
+	if(reTryTimes === undefined) {
+		if(sendInfoObj && sendInfoObj.info && sendInfoObj.info.reTryTimes > 0) {
+			var reTryTimes = sendInfoObj.info.reTryTimes;			
+		}else{
+			var reTryTimes = 1;			
 		}
-	});
+	}
+
+	chrome.tabs.sendMessage(tabId, sendBeforeClean(sendInfoObj),{frameId: 0}, function(msg) {
+		if((!msg || (msg && sendInfoObj && sendInfoObj.info && sendInfoObj.info.NotJump && msg.id !== undefined)) && reTryTimes > 0) {
+			//retry after 1 min
+			setTimeout(function(){
+				sendMessageAction(tabId,sendInfoObj,callBack,frames,--reTryTimes);
+			},1000);
+		}else{
+			if(callBack) {
+				callBack(msg);
+			}
+		}
+	}.bind(this));
 }
 
 function sendBeforeClean(sendInfoObj) {

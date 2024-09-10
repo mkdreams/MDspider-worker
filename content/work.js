@@ -418,7 +418,11 @@ chrome.runtime.onMessage.addListener(
 					if(window.spiderData[request.info.id] != undefined && window.actionComplete === true) {
 						var blob = new Blob([JSON.stringify(window.spiderData[request.info.id])], { type: 'text/plain' });
 						var file = URL.createObjectURL(blob);
-						var data = {'html':file,'actionComplete':window.actionComplete};
+						var data = {"id":request.info.id,'html':file,'actionComplete':window.actionComplete};
+						//含有ID就是未跳转页面的结果，用于校验是否执行成功
+						if(window.spiderDataLoading[request.info.id]) {
+							data["id"] = request.info.id;
+						}
 						sendResponse(data);
 						return ;
 					}
