@@ -1130,6 +1130,7 @@ function recaptcha(resolve,tab,info,res) {
 					runSub(tab, infoTemp, function(tab, infoTemp) {
 						isDone(tab, info, true);
 						resolve(false);
+						console.log('check '+checkActionInfo['name']+' end!',tab.id, info.id);
 					},0);
 				});
 			}
