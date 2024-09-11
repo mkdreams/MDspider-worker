@@ -1,5 +1,9 @@
 //block to base64
 function blobToBase64(blob, callback) {
+    if(!isBlob(blob)) {
+        blob = new Blob([JSON.stringify(blob)]);
+    }
+
     var reader = new FileReader();
     reader.readAsDataURL(blob);
     reader.onload = function (e) {
@@ -66,6 +70,10 @@ function xhrPost(url,post,cb,responseType,helpmateProxy) {
                 }
             }
         }
+        xhr.timeout = 120000;
+        xhr.ontimeout = function () { 
+            resolve(false);
+        };
         if(helpmateProxy === undefined) {
             if(post === undefined) {
                 xhr.open('GET', url)
