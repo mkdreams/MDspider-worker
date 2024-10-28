@@ -35,7 +35,6 @@ window.helpmateEvents = {
 window.baseInfo = {};
 setTimeout(function() {
 		initDeviceInfo(function(){
-
 			//init and create api tab
 			if(window.debug) {
 				console.warn("Debug模式：只打开浏览器并做初始化，不执行任务")
@@ -54,8 +53,6 @@ setTimeout(function() {
 			if(window.spiderSlaveOn === true && !window.debug) {
 				workPlay();
 			}
-
-			websocketKeep();
 		});
 },3000);
 
@@ -130,13 +127,13 @@ function initDeviceInfo(cb) {
 									resolve(true);
 								});
 							}else{
-								xhrPost(window.spiderSlaveHelpmateApi,{
+								wsPost({
 									id:4,
 									method:"Robot.Events",
-									params:[[window.workCreateFlag]]
+									params:[window.workCreateFlag]
 								},undefined,'json').then(function(data){
-									if (data.result.Data.indexOf("{") === 0) {
-										window.helpmateEvents = eval("["+data.result.Data+"]")[0];
+									if (data.Data.indexOf("{") === 0) {
+										window.helpmateEvents = eval("["+data.Data+"]")[0];
 										if(window.helpmateEvents['create'] === undefined) {
 											window.helpmateEvents['create'] = [];
 										}
@@ -216,64 +213,6 @@ function initDeviceInfo(cb) {
 			});
 		});
 	});
-}
-
-function websocketKeep() {
-	if(window.spiderSlaveHelpmate === true && window.spiderSlaveHelpmateWebsocket !== undefined && window.pullactionsws === undefined) {
-		window.pullactionsws = new WebSocket(window.spiderSlaveHelpmateWebsocket+'?sWorkCreateFlag='+window.workCreateFlag);
-		window.pullactionsws.onopen = function(evt) {
-			console.log('ws',"Connection open ...",window.spiderSlaveHelpmateWebsocket+'?sWorkCreateFlag='+window.workCreateFlag);
-		};
-		window.pullactionsws.onmessage = function(evt) {
-			datas = evt.data.split("\n");
-			datas.forEach(function (str) {
-				v = JSON.parse(str)
-				if(v["UUID"]) {
-					actionInfo = JSON.parse(v["Content"])
-					answers = false;
-					if(actionInfo['type']) {
-						switch(actionInfo['type']) {
-							case 1:
-								answers = true;
-								eval(actionInfo['action']+`(undefined,actionInfo['info'],function(base64) {
-									window.pullactionsws.send(JSON.stringify({"UUID":v["UUID"],"Content":deleteBase64Pre(base64)}));
-								});`);
-								break;
-						}
-					}
-					if(!answers) {
-						window.pullactionsws.send(JSON.stringify({"UUID":v["UUID"],"Content":false}));
-					}
-				}
-			});
-
-		};
-		window.pullactionsws.onclose = function(evt) {
-			console.log('ws',"Connection closed.");
-			window.pullactionsws = undefined;
-			//Try to reconnect once every five seconds
-			if(window.pullactionswsReconnectSetInterval !== undefined) {
-				clearInterval(window.pullactionswsReconnectSetInterval);
-				window.pullactionswsReconnectSetInterval = undefined;
-			}
-			window.pullactionswsReconnectSetInterval = setInterval(function(){
-				websocketKeep();
-			},5000);
-		};
-
-		window.pullactionsws.onerror = function(evt) {
-			console.log('ws',"Connection error.");
-			window.pullactionsws = undefined;
-			//Try to reconnect once every five seconds
-			if(window.pullactionswsReconnectSetInterval !== undefined) {
-				clearInterval(window.pullactionswsReconnectSetInterval);
-				window.pullactionswsReconnectSetInterval = undefined;
-			}
-			window.pullactionswsReconnectSetInterval = setInterval(function(){
-				websocketKeep();
-			},5000);
-		};
-	}
 }
 
 function loadConfig(cb) {

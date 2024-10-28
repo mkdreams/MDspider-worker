@@ -17,7 +17,3 @@ window.spiderSlaveActionCountChangeUser = 0;
 window.spiderSlaveStackRunActionCount = {};
 window.spiderSlaveLockTabTimeout = 180000;
 window.spiderSlavePerDayMaxRunTimes = 0;
-
-window.spiderSlaveHelpmate = true;
-window.spiderSlaveHelpmateApi = 'http://127.0.0.1:1234/rpc';
-	
