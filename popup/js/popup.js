@@ -502,20 +502,21 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 	var actionsTpl_105 = [
 		{
 			"id": "1",
-			"url": "https://www.google.com/sorry/index?continue=https://www.google.com/&q=EgQIFQsFGNyZkJYGIhDAT5GDa6MdBKEqxECUHPxlMgFyShNTT1JSWV9NRVJJU19NRVNTQUdF",
+			"url": "https://www.97caijing.com/article/119515",
 			"type": 1,
 			"param": {
 				'delay':3000
 				,'lockTab':1
+				,'musave':1
 				,sub:[
 					{
 						"id": "2",
-						"url": "document.getElementById('recaptcha-anchor')",
-						"type": 103,
+						"url": "",
+						"type": 105,
 						"param": {
 							'delay':3000
-							,'method':"click"
 							,'lockTab':1
+							,'save':1
 						},
 						"code": 1
 					}

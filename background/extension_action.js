@@ -119,8 +119,13 @@ function fullCookie(url,fullCookie) {
 	return newCookie;
 }
 
-function screenshot(tab, info, cb) {
-	chrome.windows.update(tab.windowId, { focused: true }, function () {
+function screenshot(tab, info, cb,screenshotCount) {
+	if(screenshotCount === undefined) {
+		screenshotCount = 0;
+	}
+
+	screenshotCount++;
+	chrome.windows.update(tab.windowId, { focused: true, height: 1080, width: 1920 }, function () {
 		chrome.tabs.update(tab.id, { active: true }, function () {
 			if (chrome.runtime.lastError) {
 				console.error(chrome.runtime.lastError);
@@ -128,7 +133,14 @@ function screenshot(tab, info, cb) {
 			chrome.tabs.captureVisibleTab(null, {
 				format: 'png'
 			}, function (data) {
-				cb(data);
+				//retry 3 times
+				if(!data && screenshotCount <= 3) {
+					setTimeout(()=>{
+						screenshot(tab, info, cb,screenshotCount);
+					},500);
+				}else{
+					cb(data);
+				}
 			});
 		})
 	})
