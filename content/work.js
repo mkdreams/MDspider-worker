@@ -284,24 +284,25 @@ function pageRunJs(jsStr,cb,background) {
 		try {
 			var tempDom = $("<div id=\""+domRandomId+"\" style=\"display:none;\" onclick=\"var js = '\
 			"+"window.ajaxRecordDebug = "+window.ajaxRecordDebug+";"+
-			('function blobToBase64(blob, callback) {\
-				var reader = new FileReader();\
-				reader.readAsDataURL(blob);\
-				reader.onload = function (e) {\
-					callback(e.target.result);\
-				}\
-			 };\
-			 function isPromise(obj) {\
-				return !!obj && (typeof obj === "object" || typeof obj === "function") && typeof obj.then === "function";\
-			 };\
-			 var textToBase64 = function(text, callback) {\
-				var blob = new Blob([text]);\
-				blobToBase64(blob,callback);\
-			};\
-			var r = (function () {'
+			('var r = (function () {'
 			+jsStr.replace(/'/g,"\\'").replace(/[\r\n]/g,"") + '})();'
 			).replace(/"/g,'&quot;')
 			+`';
+			function blobToBase64(blob, callback) {
+				var reader = new FileReader();
+				reader.readAsDataURL(blob);
+				reader.onload = function (e) {
+					callback(e.target.result);
+				}
+			 };
+			 function isPromise(obj) {
+				return !!obj && (typeof obj === &quot;object&quot; || typeof obj === &quot;function&quot;) && typeof obj.then === &quot;function&quot;;
+			 };
+			 var textToBase64 = function(text, callback) {
+				var blob = new Blob([text]);
+				blobToBase64(blob,callback);
+			};
+
 			try {
 				eval(js);
 			} catch (e) {

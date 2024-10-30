@@ -334,7 +334,11 @@ var ajaxRecordString = `
                         var element = document.getElementById(mutation.target.getAttribute('domid'));
                         if (element) {
                             var funcTemp = function(){
-                                eval(element.getAttribute('onclick'));
+                                try {
+                                    eval(element.getAttribute('onclick'));
+                                } catch (e) {
+                                    element.onclick();
+                                }
                             }.bind(element);
                             funcTemp();
                         }
