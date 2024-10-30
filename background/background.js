@@ -1302,6 +1302,14 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
 			}
 			sendResponse("ok");
 			break;
+		//screenshot
+		case 2:
+			screenshot(sender.tab,undefined,(img)=>{
+				sendResponse(img);
+			})
+			
+			return true;
+			break;
 		default:
 			break;
 	}

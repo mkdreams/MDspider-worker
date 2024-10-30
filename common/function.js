@@ -373,3 +373,19 @@ function websocketKeep() {
 		})();
 	}
 }
+
+console.image = function (url) {
+    const image = new Image();
+    image.onload = function () {
+        var isChromium = navigator.userAgent.match(/chrome|chromium|crios/i) && !!window.chrome;
+        var style = [
+            'font-size: 0px;',
+            !isChromium ? `line-height: ${this.height}px;` : '',
+            `padding: ${this.height / 2}px ${this.width / 2}px;`,
+            `background: url(${url}) center center no-repeat;`,
+            'background-size: contain;'
+        ].join(' ');
+        console.log('%c ', style);
+    }
+    image.src = url;
+}

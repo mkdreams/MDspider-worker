@@ -503,7 +503,8 @@ chrome.runtime.onMessage.addListener(
 						// 16:others,
 						// 100:runjs
 						// 103:human action
-						// 104:html screenshot
+						// 104:screenshot html2canvas
+						// 105:screenshot captureVisibleTab
 						switch(request.info.type) {
 							case 2:
 							case 4:
@@ -795,6 +796,27 @@ chrome.runtime.onMessage.addListener(
 										window.spiderData[request.info.id] = result;
 										window.actionComplete = true;
 									})
+								});
+								break;		
+							case 105:
+								window.actionComplete = false;
+								if(request.info.param && request.info.param.delay) {
+									var action = new Promise(function(resolve,reject) {
+										setTimeout(function(){
+											resolve(1);
+										},request.info.param.delay)
+									});
+								}else{
+									var action = new Promise(function(resolve,reject) {
+										resolve(1);
+									});
+								}
+								action.then(function() {
+									fullPageScreenShot(request.info).then((result)=>{
+										window.spiderData[request.info.id] = result;
+										window.actionComplete = true;
+										restorEntireCapture();
+									});
 								});
 								break;		
 							default:
