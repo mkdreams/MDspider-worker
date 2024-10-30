@@ -641,10 +641,12 @@ async function fullPageScreenShot() {
     },500);
   });
 
+  var runTimes = 1;
+  var maxRunTimes = 5;
   while(true) {
+    runTimes++;
     scrollInfo = scrollNext();
-
-    if(scrollInfo !== true) {
+    if(scrollInfo.isEnd === true || runTimes > maxRunTimes+1) {
       break;
     }
     
@@ -718,7 +720,11 @@ function scrollNext() {
       counter++;
       document.scrollingElement.scrollTop = 0;
       
-      return true;
+      return {
+        ratio:{ x: 1, y: 1 },
+        clientH: clientH,
+        isEnd: false
+      };
     }
 
     var r = {};
@@ -728,12 +734,17 @@ function scrollNext() {
     document.scrollingElement.scrollLeft = initScrollLeft;
 
     return {
-      ratio: entireStopped ? { x: 1, y: 1 } : r,
+      ratio: r,
       clientH: clientH,
+      isEnd: true
     };
   }
 
-  return true;
+  return {
+    ratio: { x: 1, y: 1 },
+    clientH: clientH,
+    isEnd: false
+  };
 }
 function sendMessage(e, t) {
   chrome.runtime.sendMessage({'type':2,"params":e}, t)
