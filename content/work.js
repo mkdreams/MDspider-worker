@@ -282,12 +282,8 @@ function pageRunJs(jsStr,cb,background) {
 
 	if(background === undefined) {
 		try {
-			var tempDom = $("<div id=\""+domRandomId+"\" style=\"display:none;\" onclick=\"var js = '\
-			"+"window.ajaxRecordDebug = "+window.ajaxRecordDebug+";"+
-			('var r = (function () {'
-			+jsStr.replace(/'/g,"\\'").replace(/[\r\n]/g,"") + '})();'
-			).replace(/"/g,'&quot;')
-			+`';
+			var tempDom = $("<div id=\""+domRandomId+"\" style=\"display:none;\" onclick=\""+
+			`window.ajaxRecordDebug = `+window.ajaxRecordDebug+`;
 			function blobToBase64(blob, callback) {
 				var reader = new FileReader();
 				reader.readAsDataURL(blob);
@@ -304,9 +300,11 @@ function pageRunJs(jsStr,cb,background) {
 			};
 
 			try {
-				eval(js);
+				`+('var r = (function () {'
+				+jsStr.replace(/'/g,"\'").replace(/[\r\n]/g,"") + '})();'
+				).replace(/"/g,'&quot;')+`
 			} catch (e) {
-				console.error(e);
+				console.error(e,js);
 				var r = &quot;ERROR: \r\n&quot;+JSON.stringify(e.stack)+&quot;\r\n\r\nRUN JS: \r\n&quot;+js;
 			}
 			if(isPromise(r)) {
