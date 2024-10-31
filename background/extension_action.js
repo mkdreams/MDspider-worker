@@ -124,8 +124,17 @@ function screenshot(tab, info, cb,screenshotCount) {
 		screenshotCount = 0;
 	}
 
+	var width = 1920;
+	if(info && info.param && info.param.width) {
+		width = info.param.width;
+	}
+	var height = 1920;
+	if(info && info.param && info.param.height) {
+		height = info.param.height;
+	}
+
 	screenshotCount++;
-	chrome.windows.update(tab.windowId, { focused: true, height: 1080, width: 1920 }, function () {
+	chrome.windows.update(tab.windowId, { focused: true, width: width, height: height }, function () {
 		chrome.tabs.update(tab.id, { active: true }, function () {
 			if (chrome.runtime.lastError) {
 				console.error(chrome.runtime.lastError);
