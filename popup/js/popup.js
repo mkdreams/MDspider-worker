@@ -517,6 +517,9 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 							'delay':3000
 							,'lockTab':1
 							,'save':1
+							,'width':1920
+							,'height':1080
+							,'maxHeight':4000
 						},
 						"code": 1
 					}
