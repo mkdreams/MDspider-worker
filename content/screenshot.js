@@ -31,10 +31,12 @@ function hasClass(e, t) {
   return e.className.match(new RegExp('(\\s|^)' + t + '(\\s|$)'))
 }
 function addClass(e, t) {
-  hasClass(e, t) || (e.className += ' ' + t)
+  if(e) {
+    hasClass(e, t) || (e.className += ' ' + t);
+  }
 }
 function removeClass(e, t) {
-  if (hasClass(e, t)) {
+  if (e && hasClass(e, t)) {
     var n = new RegExp('(\\s|^)' + t + '(\\s|$)')
     e.className = e.className.replace(n, ' ')
   }
@@ -626,19 +628,19 @@ async function fullPageScreenShot(info) {
   var tempCanvas = tempDom.getContext('2d');
   initEntireCapture();
 
-  if(info.param && info.param.maxHeight) {
+  if(info && info.param && info.param.maxHeight) {
     var maxHeight = info.param.maxHeight;
   }else{
     var maxHeight = 4000;
   }
 
-  if(info.param && info.param.width) {
+  if(info && info.param && info.param.width) {
     var width = info.param.width;
   }else{
     var width = 1920;
   }
 
-  if(info.param && info.param.height) {
+  if(info && info.param && info.param.height) {
     var height = info.param.height;
   }else{
     var height = 1080;
@@ -646,6 +648,12 @@ async function fullPageScreenShot(info) {
 
   var sumHeightTemp = 0;
   var imgs = [];
+  scrollInfo = {
+    ratio: { x: 1, y: 1 },
+    clientH: clientH,
+    isEnd: false
+  };
+
   await new Promise(function(resolve,reject) {
     setTimeout(()=>{
       chrome.runtime.sendMessage({"type":2,"param":{"action":"screenshot","width":width,"height":height}},(r)=>{
@@ -678,11 +686,13 @@ async function fullPageScreenShot(info) {
               sumHeightTemp +=  image.height;
               imgs.push(image);
               resolve(true);
+              console.log('end');
             }
           })
         },350);
       },150);
     });
+
   }
 
   //merge imgs
@@ -697,31 +707,38 @@ async function fullPageScreenShot(info) {
   }
 
   tempDom.width = widthTemp;
-  tempDom.height = (imgs.length-1+scrollInfo.ratio.y)*scrollInfo.clientH;
+  if(scrollInfo.ratio.y === 0) {
+    tempDom.height = imgs.length*scrollInfo.clientH;
+  }else{
+    tempDom.height = (imgs.length-1+scrollInfo.ratio.y)*scrollInfo.clientH;
+  }
 
   var sumDy = 0;
   for(var i=0;i<imgs.length;i++) {
     var sx = 0;
+    var sy = 0;
+    var sw = imgs[i].width;
+    var sh = imgs[i].height;
+
     if(i === imgs.length-1) {
-      var sy = (1-scrollInfo.ratio.y)*scrollInfo.clientH;
-      var sw = imgs[i].width;
-      var sh = scrollInfo.ratio.y*scrollInfo.clientH;
+      var dx = 0;
+      var dy = tempDom.height-sh;
+      var dw = sw;
+      var dh = sh;
     }else{
-      var sy = 0;
-      var sw = imgs[i].width;
-      var sh = imgs[i].height;
+      var dx = 0;
+      var dy = sumDy;
+      var dw = sw;
+      var dh = sh;
     }
 
-    var dx = 0;
-    var dy = sumDy;
-    var dw = sw;
-    var dh = sh;
 
     tempCanvas.drawImage(imgs[i], sx, sy, sw, sh, dx, dy, dw, dh);
 
     sumDy += sh;
   }
 
+  console.log('show screenshot');
   console.image(tempDom.toDataURL('png'));
 
   return tempDom.toDataURL('png')
@@ -729,40 +746,26 @@ async function fullPageScreenShot(info) {
 
 function scrollNext() {
   var top = Math.ceil(document.scrollingElement.scrollTop);
-  left = Math.ceil(document.scrollingElement.scrollLeft);
 
   document.scrollingElement.scrollTop = top + clientH;
 
   if (Math.ceil(document.scrollingElement.scrollTop) == top) {
-    left = document.scrollingElement.scrollLeft;
-    document.scrollingElement.scrollLeft = left + clientW;
-    if (scrollBar.x && document.scrollingElement.scrollLeft != left) {
-      counter++;
-      document.scrollingElement.scrollTop = 0;
-      
-      return {
-        ratio:{ x: 1, y: 1 },
-        clientH: clientH,
-        isEnd: false
-      };
-    }
-
     var r = {};
     r.y = (top % clientH) / clientH;
-    r.x = (left % clientW) / clientW;
     document.scrollingElement.scrollTop = initScrollTop;
-    document.scrollingElement.scrollLeft = initScrollLeft;
 
     return {
       ratio: r,
       clientH: clientH,
+      scrollTop: top,
       isEnd: true
     };
   }
 
   return {
-    ratio: { x: 1, y: 1 },
+    ratio: {y: 1 },
     clientH: clientH,
+    scrollTop: top,
     isEnd: false
   };
 }
