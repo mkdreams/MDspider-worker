@@ -86,6 +86,57 @@ function setCookies(tab, info, cb) {
 	});
 }
 
+// set cookies
+function waiteComplete(tab, info, cb) {
+	var delay = 3000;
+	if(info && info.param && info.param.delay) {
+		delay = info.param.delay;
+	}
+
+	var maxTimes = 20;
+	if(info && info.param && info.param.maxTimes) {
+		maxTimes = info.param.maxTimes;
+	}
+
+	(async ()=>{
+		while(true) {
+			var canBreak = false;
+			let doneCheckAction = {
+				"url":"return document.getElementsByTagName('html')[0].innerHTML;",
+				"type":100,
+				"param": {
+					"delay":delay,
+					"skipRecaptcha":true,
+				}
+			};
+
+			await new Promise(function(doneCheckActionPromiseResolve,reject) {
+				doneCheckAction['doneCheckActionPromiseResolve'] = doneCheckActionPromiseResolve;
+				sendAction(tab, doneCheckAction, function(){
+					runActionComplete(tab, doneCheckAction, function(tab, infoTemp) {
+						runSub(tab, infoTemp, function(tab, infoTemp) {
+							getHml(tab, infoTemp);
+						},0)
+					});
+				});
+			}).then(function(data) {
+				var response = data[1];
+				if(info && info.param && info.param.match && !eval(info.param.match)) {
+					canBreak = true;
+				}
+			});
+
+			if(--maxTimes <= 0 || canBreak) {
+				console.log(maxTimes,canBreak);
+				textToBase64('1',function(base64){
+					cb(base64);
+				});
+				break;
+			}
+		}
+	})();
+}
+
 function fullCookie(url,fullCookie) {
 	var newCookie = {};
 	newCookie.url = url;
