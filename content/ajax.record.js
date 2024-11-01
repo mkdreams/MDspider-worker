@@ -337,7 +337,7 @@ var ajaxRecordString = `
                                 try {
                                     eval(element.getAttribute('onclick'));
                                 } catch (e) {
-                                    element.onclick();
+                                    element.click();
                                 }
                             }.bind(element);
                             funcTemp();

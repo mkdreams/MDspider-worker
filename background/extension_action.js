@@ -106,6 +106,7 @@ function waiteComplete(tab, info, cb) {
 				"type":100,
 				"param": {
 					"delay":delay,
+					"background":true,
 					"skipRecaptcha":true,
 				}
 			};
