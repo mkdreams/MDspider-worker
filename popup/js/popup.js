@@ -520,6 +520,7 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 							,'width':1920
 							,'height':1080
 							,'maxHeight':4000
+							,'smartMaxHeight':1000
 						},
 						"code": 1
 					}

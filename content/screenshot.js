@@ -627,11 +627,16 @@ async function fullPageScreenShot(info) {
   var tempDom = document.createElement('canvas');
   var tempCanvas = tempDom.getContext('2d');
   initEntireCapture();
+  enableFixedPosition(false,3);
 
   if(info && info.param && info.param.maxHeight) {
     var maxHeight = info.param.maxHeight;
   }else{
     var maxHeight = 4000;
+  }
+
+  if(info && info.param && info.param.smartMaxHeight) {
+    maxHeight = document.scrollingElement.scrollHeight+info.param.smartMaxHeight;
   }
 
   if(info && info.param && info.param.width) {
@@ -686,7 +691,6 @@ async function fullPageScreenShot(info) {
               sumHeightTemp +=  image.height;
               imgs.push(image);
               resolve(true);
-              console.log('end');
             }
           })
         },350);
@@ -741,6 +745,10 @@ async function fullPageScreenShot(info) {
   console.log('show screenshot');
   console.image(tempDom.toDataURL('png'));
 
+
+  document.scrollingElement.scrollTop = initScrollTop;
+  restorEntireCapture();
+
   return tempDom.toDataURL('png')
 }
 
@@ -752,8 +760,6 @@ function scrollNext() {
   if (Math.ceil(document.scrollingElement.scrollTop) == top) {
     var r = {};
     r.y = (top % clientH) / clientH;
-    document.scrollingElement.scrollTop = initScrollTop;
-
     return {
       ratio: r,
       clientH: clientH,
@@ -807,7 +813,7 @@ function keydownHandler(e) {
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 // http://code.google.com/p/chrome-screen-capture/
-function enableFixedPosition(e) {
+function enableFixedPosition(e,type) {
   if (e)
     for (var t = 0, n = fixedElements.length; t < n; ++t) {
       var o = fixedElements[t]
@@ -834,23 +840,39 @@ function enableFixedPosition(e) {
           0 < $(i).parents('#pagelet_group_mall').length
         )
       ) {
-        var r = l.getPropertyValue('position')
-          ; ('fixed' != r && 'sticky' !== r) ||
-            (fixedElements.push({ element: i, cssText: i.style.cssText }),
-              (i.style.cssText =
-                i.style.cssText +
-                'position:' +
-                ('fixed' === r ? 'absolute' : 'relative') +
-                ' !important;opacity: 0; animation: unset !important; transition-duration: 0s !important;'),
-              'rc-QuizAttemptHeader' === i.className &&
-              0 < $(i).parents('.c-open-single-page-attempt').length &&
-              /coursera.org/.test(window.location.host) &&
-              entireCaptureStyleChange.push(
-                new StyleChange('changeCssText', {
-                  element: $(i).parents('.c-open-single-page-attempt')[0],
-                  cssObj: { position: 'static' }
-                })
-              ))
+        var r = l.getPropertyValue('position'); 
+        if('fixed' === r || 'sticky' === r) {
+          if(clientH === undefined) {
+            clientH = getClientH();
+          }
+
+          var top = l.getPropertyValue('top');
+          var typeTemp = 1;//1: top 2: center 3: bottom
+          if(l.getPropertyValue('bottom') == 'auto' && top != 'auto') {
+            var typeTemp = 1;
+          }else if(parseInt(top) > clientH*2/3){
+            typeTemp = 3;
+          }
+
+          if(type !== undefined && type !== typeTemp) {
+            continue;
+          }
+
+          fixedElements.push({ element: i, cssText: i.style.cssText,type:type});
+          i.style.cssText = i.style.cssText + 'position:' + ('fixed' === r ? 'absolute' : 'relative')
+                           + ' !important;opacity: 0; animation: unset !important; transition-duration: 0s !important;';
+
+          if('rc-QuizAttemptHeader' === i.className && 0 < $(i).parents('.c-open-single-page-attempt').length 
+            && /coursera.org/.test(window.location.host)) {
+
+            entireCaptureStyleChange.push(
+              new StyleChange('changeCssText', {
+                element: $(i).parents('.c-open-single-page-attempt')[0],
+                cssObj: { position: 'static' }
+              })
+            )
+          }
+        }
       }
     }
 }

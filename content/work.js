@@ -813,7 +813,6 @@ chrome.runtime.onMessage.addListener(
 									fullPageScreenShot(request.info).then((result)=>{
 										window.spiderData[request.info.id] = result;
 										window.actionComplete = true;
-										restorEntireCapture();
 									});
 								});
 								break;		
