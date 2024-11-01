@@ -677,6 +677,23 @@ async function fullPageScreenShot(info) {
   while(true) {
     scrollInfo = scrollNext();
     if(scrollInfo.isEnd === true || sumHeightTemp > maxHeight) {
+      restoreFixedElements(3);
+
+      await new Promise(function(resolve,reject) {
+        setTimeout(()=>{
+          setTimeout(()=>{
+            chrome.runtime.sendMessage({"type":2,"param":{"action":"screenshot","width":width,"height":height}},(r)=>{
+              var image = new Image();
+              image.src = r;
+              image.onload = function(){
+                imgs[imgs.length-1] = image;
+                resolve(true);
+              }
+            })
+          },350);
+        },150);
+      });
+      
       break;
     }
 
@@ -854,11 +871,12 @@ function enableFixedPosition(e,type) {
             typeTemp = 3;
           }
 
+          fixedElements.push({ element: i, cssText: i.style.cssText,type:type});
+          
           if(type !== undefined && type !== typeTemp) {
             continue;
           }
 
-          fixedElements.push({ element: i, cssText: i.style.cssText,type:type});
           i.style.cssText = i.style.cssText + 'position:' + ('fixed' === r ? 'absolute' : 'relative')
                            + ' !important;opacity: 0; animation: unset !important; transition-duration: 0s !important;';
 
@@ -876,11 +894,13 @@ function enableFixedPosition(e,type) {
       }
     }
 }
-function restoreFixedElements() {
+function restoreFixedElements(type) {
   if (fixedElements) {
     for (var e = 0, t = fixedElements.length; e < t; e++) {
-      var n = fixedElements[e]
-      n.element.style.cssText = n.cssText
+      var n = fixedElements[e];
+      if(type === undefined || type === n.type) {
+        n.element.style.cssText = n.cssText
+      }
     }
     fixedElements = []
   }
