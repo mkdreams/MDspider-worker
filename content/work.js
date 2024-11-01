@@ -280,6 +280,7 @@ function pageRunJs(jsStr,cb,background) {
 		}
 	};
 
+	console.log(jsStr);
 	if(background === undefined) {
 		try {
 			var tempDom = $("<div id=\""+domRandomId+"\" style=\"display:none;\" onclick=\""+
@@ -301,7 +302,8 @@ function pageRunJs(jsStr,cb,background) {
 
 			try {
 				`+('var r = (function () {'
-				+jsStr.replace(/'/g,"\'").replace(/[\r\n]/g,"") + '})();'
+				+jsStr.replace(/\\\\/g,"\\")//compatible with older versions
+				.replace(/'/g,"\'").replace(/[\r\n]/g,"") + '})();'
 				).replace(/"/g,'&quot;')+`
 			} catch (e) {
 				console.error(e,js);
