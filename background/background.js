@@ -1097,6 +1097,7 @@ function recaptcha(resolve,tab,info,res) {
 		"type":100,
 		"param": {
 			"skipRecaptcha":true,
+			"background":true,
 		}
 	};
         
