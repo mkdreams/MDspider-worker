@@ -306,6 +306,7 @@ function pageRunJs(jsStr,cb,background) {
 				.replace(/'/g,"\'").replace(/[\r\n]/g,"") + '})();'
 				).replace(/"/g,'&quot;')+`
 			} catch (e) {
+				var js = `+('\''+jsStr.replace(/'/g,"\\'")+'\'').replace(/[\r\n]/g,"").replace(/"/g,'&quot;')+`;
 				console.error(e,js);
 				var r = &quot;ERROR: \r\n&quot;+JSON.stringify(e.stack)+&quot;\r\n\r\nRUN JS: \r\n&quot;+js;
 			}
