@@ -280,11 +280,11 @@ function pageRunJs(jsStr,cb,background) {
 		}
 	};
 
-	console.log(jsStr);
 	if(background === undefined) {
 		try {
 			var tempDom = $("<div id=\""+domRandomId+"\" style=\"display:none;\" onclick=\""+
-			`window.ajaxRecordDebug = `+window.ajaxRecordDebug+`;
+			`window.domRandomId = &quot;`+domRandomId+`&quot;;
+			window.ajaxRecordDebug = `+window.ajaxRecordDebug+`;
 			function blobToBase64(blob, callback) {
 				var reader = new FileReader();
 				reader.readAsDataURL(blob);

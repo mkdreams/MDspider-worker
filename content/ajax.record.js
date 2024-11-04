@@ -321,6 +321,24 @@ var ajaxRecordString = `
         });
     };
 
+
+    function blobToBase64(blob, callback) {
+        var reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onload = function (e) {
+            callback(e.target.result);
+        }
+     };
+
+     function isPromise(obj) {
+        return !!obj && (typeof obj === &quot;object&quot; || typeof obj === &quot;function&quot;) && typeof obj.then === &quot;function&quot;;
+     };
+
+     var textToBase64 = function(text, callback) {
+        var blob = new Blob([text]);
+        blobToBase64(blob,callback);
+    };
+
     document.addEventListener('DOMContentLoaded',function(){
         var MDdiv = document.createElement('MDtopRunjsListion');
         MDdiv.domid = '0';
@@ -331,13 +349,23 @@ var ajaxRecordString = `
             for(let mutation of mutationsList) {
                 if (mutation.type === 'attributes') {
                     if(mutation.attributeName === 'domid') {
-                        var element = document.getElementById(mutation.target.getAttribute('domid'));
+                        var domid = mutation.target.getAttribute('domid');
+                        var element = document.getElementById(domid);
                         if (element) {
                             var funcTemp = function(){
                                 try {
                                     eval(element.getAttribute('onclick'));
                                 } catch (e) {
-                                    element.click();
+                                    setTimeout(function(){
+                                        if(window.domRandomId !== domid) {
+                                            console.error(e);
+                                            var r = 'ERROR: \r\n'+JSON.stringify(e.stack)+'\r\n\r\nRUN JS: \r\n'+element.getAttribute('onclick');
+                                            textToBase64(r,function(base64){
+                                                this.innerHTML = base64;
+                                                this.setAttribute('isdone',1);
+                                            }.bind(this));
+                                        }
+                                    }.bind(this),200);
                                 }
                             }.bind(element);
                             funcTemp();
