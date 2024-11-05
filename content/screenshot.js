@@ -651,6 +651,12 @@ async function fullPageScreenShot(info) {
     var height = 1080;
   }
 
+  if(info && info.param && info.param.scrollDelay) {
+    var scrollDelay = info.param.scrollDelay;
+  }else{
+    var scrollDelay = 500;
+  }
+
   var sumHeightTemp = 0;
   var imgs = [];
   scrollInfo = {
@@ -671,7 +677,7 @@ async function fullPageScreenShot(info) {
           enableFixedPosition(false);
         }
       })
-    },500);
+    },scrollDelay);
   });
 
   while(true) {
@@ -680,7 +686,6 @@ async function fullPageScreenShot(info) {
       restoreFixedElements(3);
 
       await new Promise(function(resolve,reject) {
-        setTimeout(()=>{
           setTimeout(()=>{
             chrome.runtime.sendMessage({"type":2,"param":{"action":"screenshot","width":width,"height":height}},(r)=>{
               var image = new Image();
@@ -690,8 +695,7 @@ async function fullPageScreenShot(info) {
                 resolve(true);
               }
             })
-          },350);
-        },150);
+          },scrollDelay);
       });
       
       break;
@@ -871,7 +875,7 @@ function enableFixedPosition(e,type) {
             typeTemp = 3;
           }
 
-          fixedElements.push({ element: i, cssText: i.style.cssText,type:type});
+          fixedElements.push({ element: i, cssText: i.style.cssText,type:typeTemp});
           
           if(type !== undefined && type !== typeTemp) {
             continue;
