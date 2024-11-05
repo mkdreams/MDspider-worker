@@ -871,8 +871,13 @@ function resultIsOk(tab, info, cb) {
 			}
 
 			if(res === undefined) {
-				clearInterval(window.setInterval_getHtml[tab.id]);
-				isDone(tab, info, true);
+				if(info && info.param && info.param.skipRecaptcha) {
+					clearInterval(window.setInterval_getHtml[tab.id]);
+					cb(tab, info, res);
+				}else{
+					clearInterval(window.setInterval_getHtml[tab.id]);
+					isDone(tab, info, true);
+				}
 			}
 		});
 	}, 100);
@@ -924,7 +929,10 @@ function getHml(tab, info, result) {
 		if(info['isEnd'] === true) {
 			
 			if(info['doneCheckActionPromiseResolve']) {
-				info['doneCheckActionPromiseResolve']([info,((info.param && info.param.musave)?JSON.stringify(base64ToString(info['results'])):base64ToString(info['results'][info['results'].length-1]))]);
+				if(!info['results']) {
+					info['results'] = [];
+				}
+				info['doneCheckActionPromiseResolve']([info,((info.param && info.param.musave)?JSON.stringify(base64ToString(info['results'])):base64ToString(info['results'][info['results'].length-1]??''))]);
 				return;
 			}
 
