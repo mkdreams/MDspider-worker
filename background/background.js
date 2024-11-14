@@ -1241,14 +1241,6 @@ function sendAction(tab, info, cb) {
 		delete info['pinfo'];
 	}
 
-	if(info.param && info.param.preeval) {
-		eval(info.param.preeval);
-	}
-
-	if(!info.id) {
-		info.id = randomStr();
-	}
-
 	if(info.type === 200) {
 		if(info.param && info.param.delay) {
 			setTimeout(function(){
@@ -1356,6 +1348,14 @@ function dealOneAction(tab, info, needJump) {
 	actionRecords(info['url'], typesToName[info['type']]);
 
 	window.tabUrlIds[tab.id] = info['id'];
+
+	if(info.param && info.param.preeval) {
+		eval(info.param.preeval);
+	}
+	if(!info.id) {
+		info.id = randomStr();
+	}
+
 	if (!needJump) {//jump
 		sendAction(tab, info, actionDoneCb);
 	}else{
