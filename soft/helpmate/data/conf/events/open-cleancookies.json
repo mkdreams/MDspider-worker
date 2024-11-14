@@ -1,0 +1,18 @@
+[
+    {
+        "id": "RANDOM-{{.Timestamp}}-{{funcRandom}}",
+        "url": "https://www.google.com",
+        "type": 1,
+        "param": {
+            "delay": 3000,
+            "lockTab": 1,
+            "preeval": `chrome.storage.local.get('clearTime', function(r) {
+                        if(r.clearTime {{unescapeHTML "<"}} (new Date().getTime() - 86400*2*1000)) {
+                            clearCookies(tab, {'url':'https://www.google.com'},(r)=>{});
+                            clearCookies(tab, {'url':'https://www.discuss.com.hk'},(r)=>{});
+                            chrome.storage.local.set({'clearTime':new Date().getTime()});
+                        }
+                    });`,
+        }
+    }
+]
