@@ -60,6 +60,8 @@ function clearCookies(tab, info, cb) {
 			}
 			c++;
 		});
+
+		console.log("clearCookies "+info.url+" => "+c);
 		cb(c);
 	});
 }
