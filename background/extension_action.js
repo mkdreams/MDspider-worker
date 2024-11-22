@@ -131,6 +131,9 @@ function waiteComplete(tab, info, cb) {
 
 			if(--maxTimes <= 0 || canBreak) {
 				console.log(maxTimes,canBreak);
+				if(maxTimes <= 0 && info && info.param && info.param.timeOutCb) {
+					eval(info.param.timeOutCb)
+				}
 				textToBase64('1',function(base64){
 					cb(base64);
 				});
