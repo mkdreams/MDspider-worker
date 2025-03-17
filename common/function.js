@@ -54,11 +54,13 @@ function getObjectLen(obj) {
     return Object.keys(obj).length;
 }
 
-function wsPost(post,cb,responseType) {
+function wsPost(post,cb,responseType,heades) {
     websocketKeep();
 
     return new Promise(function(resolve,reject) {
-        var heades = {};
+        if (heades == undefined) {
+            heades = {};
+        }
         if(window.MDspiderRandom !== undefined) {
             heades['MDSPIDERRANDOM'] = window.MDspiderRandom;
         }
@@ -80,6 +82,38 @@ function wsPost(post,cb,responseType) {
             console.error(r);
             resolve(false);
         });
+    });
+}
+
+function wsPostForWork(post,cb,responseType) {
+    return new Promise(function(resolve,reject) {
+        var heades = {};
+        if(window.MDspiderRandom !== undefined) {
+            heades['MDSPIDERRANDOM'] = window.MDspiderRandom;
+        }
+        if(window.workCreateFlag !== undefined) {
+            heades['WORKCREATEFLAG'] = window.workCreateFlag;
+        }
+        if(window.spiderSlaveActiveLastTime !== undefined) {
+            heades['SPIDERSLAVEACTIVELASTTIME'] = window.spiderSlaveActiveLastTime[1];
+        }
+        heades['SPIDERSLAVEFLAG'] = window.spiderSlaveFlag;
+
+        chrome.runtime.sendMessage(chrome.runtime.id,{"type":3,"post":post,"heades":heades},{"includeTlsChannelId":false},function(details) {
+            if(cb) {
+                cb(resolve,reject,details.argsDict);
+            }else{
+                resolve(details.argsDict);
+            }
+        });
+    });
+}
+
+function timeoutPromise(time) {
+    return new Promise(function(resolve,reject) {
+        setTimeout(function() {
+            resolve(true);
+        },time)
     });
 }
 

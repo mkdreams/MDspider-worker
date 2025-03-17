@@ -1180,6 +1180,8 @@ function sendAction(tab, info, cb) {
 		delete info['pinfo'];
 	}
 
+	info.windowId = tab['windowId'];
+
 	if(info.type === 200) {
 		if(info.param && info.param.delay) {
 			setTimeout(function(){
@@ -1316,6 +1318,15 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
 			screenshot(sender.tab,req,(img)=>{
 				sendResponse(img);
 			})
+			
+			return true;
+			break;
+		//wsPostForWork
+		case 3:
+			wsPost(req.post,function(resolve,reject,details) {
+				sendResponse(details);
+				resolve(true);
+			},undefined,req.heades)
 			
 			return true;
 			break;
