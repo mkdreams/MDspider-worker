@@ -1370,6 +1370,7 @@ function ajaxPost(request,cb,errorcb) {
 	$.ajax({
 		url: request.url,
 		type: 'POST',
+		timeout: 60000,
 		headers: {
 			BlobFields: BlobFields.join(',')
 		},
