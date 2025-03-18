@@ -810,6 +810,69 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 		},
 	];
 
+	var actionsTpl_507 = [
+		{
+			"id": "1",
+			"url": "https://www.google.com/",
+			"type": 1,
+			"param": {
+				'delay':3000
+				,'lockTab':1
+				,sub:[
+					{
+						"id": "2",
+						"url": "$('textarea[aria-label=搜索]')[0]",
+						"type": 103,
+						"param": {
+							'delay':3000
+							,'method':"input"
+							,'text':"阿里巴巴"
+							,'lockTab':1
+						},
+						"code": 1
+					},
+					{
+						"id": "4",
+						"url": "$('textarea[aria-label=搜索]')[0]",
+						"type": 103,
+						"param": {
+							'delay':3000
+							,'method':"KeyTap"
+							,'text':"enter"
+							,'lockTab':1
+						},
+						"code": 1
+					},
+					{
+						"id": "4",
+						"url": "$('textarea[aria-label=搜索]')[0]",
+						"type": 103,
+						"param": {
+							'predelay':5000
+							,'method':"input"
+							,'text':"国美"
+							,'lockTab':1
+						},
+						"code": 1
+					},
+					{
+						"id": "4",
+						"url": "$('textarea[aria-label=搜索]')[0]",
+						"type": 103,
+						"param": {
+							'delay':3000
+							,'method':"KeyTap"
+							,'text':"enter"
+							,'lockTab':1
+						},
+						"code": 1
+					}
+				]
+			},
+			"code": 1
+		},
+	];
+
 	form.on('select(debugType)', function(data){
 		loadTestActions(data.value);
 	});

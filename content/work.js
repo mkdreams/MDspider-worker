@@ -663,14 +663,8 @@ chrome.runtime.onMessage.addListener(
 											case 'input':
 												wsPostForWork({
 													id:4,
-													method:"Robot.MoveSmooth",
-													params:[pos[0],pos[1]]
-												}).then(function(response){
-													return wsPostForWork({
-														id:4,
-														method:"Robot.Click",
-														params:['left',false]
-													})
+													method:"Robot.MoveClick",
+													params:[pos[0],pos[1],'left',false]
 												}).then(function(response){
 													//动态输入内容
 													if(request.info.param.text && request.info.param.text.indexOf("http") === 0) {
@@ -678,7 +672,7 @@ chrome.runtime.onMessage.addListener(
 															wsPostForWork({
 																id:4,
 																method:"Robot.TypeStr",
-																params:[nowresponse.result.Data]
+																params:[nowresponse.result.Data,1]
 															}).then(function(response){
 																resolve(response);
 															});
@@ -687,7 +681,7 @@ chrome.runtime.onMessage.addListener(
 														return wsPostForWork({
 															id:4,
 															method:"Robot.TypeStr",
-															params:[request.info.param.text?request.info.param.text:'']
+															params:[request.info.param.text?request.info.param.text:'',1]
 														})
 													}
 												}).then(function(response){
@@ -700,20 +694,26 @@ chrome.runtime.onMessage.addListener(
 											case 'select':
 												wsPostForWork({
 													id:4,
-													method:"Robot.MoveSmooth",
-													params:[pos[0],pos[1]]
-												}).then(function(response){
-													return wsPostForWork({
-														id:4,
-														method:"Robot.Click",
-														params:['left',false]
-													})
+													method:"Robot.MoveClick",
+													params:[pos[0],pos[1],'left',false]
 												}).then(function(response){
 													return wsPostForWork({
 														id:4,
 														method:"Robot.KeyTap",
 														params:['down',request.info.param.index?request.info.param.index:1]
 													})
+												}).then(function(response){
+													blobToBase64(response,function(base64){
+														window.spiderData[request.info.id] = base64;
+														window.actionComplete = true;
+													}.bind(this));
+												});
+												break;
+											case 'KeyTap':
+												wsPostForWork({
+													id:4,
+													method:"Robot.KeyTap",
+													params:[request.info.param.text??"",1]
 												}).then(function(response){
 													blobToBase64(response,function(base64){
 														window.spiderData[request.info.id] = base64;
