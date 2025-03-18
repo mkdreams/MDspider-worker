@@ -1,5 +1,5 @@
 function isSupportPartitionKey() {
-	if(navigator && navigator.userAgentData && navigator.userAgentData.brands && navigator.userAgentData.brands[0] && parseInt(navigator.userAgentData.brands[0].version) >= 119) {
+	if(navigator && navigator.userAgentData && navigator.userAgentData.brands && parseInt(navigator.userAgentData.brands.find((v)=>{return v.brand === "Chromium";}).version) >= 119) {
 		return true;
 	}else{
 		return false;
@@ -24,7 +24,6 @@ function getCookies(tab, info, cb) {
 		console.warn("浏览器版本小于119，getCookies可能存在不完整");
 	}
 
-	navigator.userAgentData.brands[0].version
 	chrome.cookies.getAll(option,function(cookies) {
 		textToBase64(JSON.stringify(cookies),function(base64){
 			cb(base64);

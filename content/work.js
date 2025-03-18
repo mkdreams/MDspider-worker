@@ -654,7 +654,6 @@ chrome.runtime.onMessage.addListener(
 													method:"Robot.MoveClick",
 													params:[pos[0],pos[1],'left',false]
 												}).then(function(response){
-													console.log(response);
 													blobToBase64(response,function(base64){
 														window.spiderData[request.info.id] = base64;
 														window.actionComplete = true;
