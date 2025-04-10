@@ -383,7 +383,6 @@ function workPlay(allCompeletedCb) {
 		}
 	}, window.spiderSlaveGetUrlsDelay);
 
-
 	//health check
 	if(window.spiderSlaveHelpmate === true) {
 		clearInterval(window.spiderSlaveHelpmateSetInterval);
@@ -396,6 +395,8 @@ function workPlay(allCompeletedCb) {
 			}
 		}, 60000);
 	}
+
+	websocketKeep("pullactionws");
 
 	backgroundConsole('已开始', 1);
 }
@@ -432,6 +433,54 @@ function pullActions() {
 			}
 		});
 	}
+}
+
+function parseAction(data) {
+	v = JSON.parse(data);
+	if (!v["type"]) {
+		v["type"] = 1;
+	}
+
+	if (v['id'] == 0) {
+		v['id'] = randomStr();
+	}else{
+		v['id'] = ""+v['id'];
+	}
+
+	if (v["param"]) {
+		for(var key in v["param"]) {
+			if (v["param"][key] === "") {
+				delete v["param"][key];
+			}
+		}
+	}
+
+	if (v["param"] && v["param"]["sync"] === "1") {
+		var p = new Promise(function(resolve,reject) {
+			new Promise(function(resolveTemp,rejectTemp) {
+				v['doneCheckActionPromiseResolve'] = resolveTemp;
+			}).then((data)=>{
+				resolve(data);
+				isDone(data[2], data[0]);
+			});
+
+		});
+	}else{
+		var p = new Promise(function(resolve,reject) {
+			resolve([v,'ok']);
+		});
+	}
+
+
+	if (!window.spiderSlaveUrls[v['id']] && !window.spiderSlaveDeletedUrls[v['id']]) {
+		window.spiderSlaveUrls[v['id']] = v;
+	}else{
+		var p = new Promise(function(resolve,reject) {
+			resolve([v,'Repeat req']);
+		});
+	}
+
+	return p;
 }
 
 // 5 min before
@@ -871,7 +920,7 @@ function getHml(tab, info, result) {
 				if(!info['results']) {
 					info['results'] = [];
 				}
-				info['doneCheckActionPromiseResolve']([info,((info.param && info.param.musave)?JSON.stringify(base64ToString(info['results'])):base64ToString(info['results'][info['results'].length-1]??''))]);
+				info['doneCheckActionPromiseResolve']([info,((info.param && info.param.musave)?JSON.stringify(base64ToString(info['results'])):base64ToString(info['results'][info['results'].length-1]??'')),tab]);
 				return;
 			}
 

@@ -55,7 +55,7 @@ function getObjectLen(obj) {
 }
 
 function wsPost(post,cb,responseType,heades) {
-    websocketKeep();
+    websocketKeep("localrpcws");
 
     return new Promise(function(resolve,reject) {
         if (heades == undefined) {
@@ -72,7 +72,7 @@ function wsPost(post,cb,responseType,heades) {
         }
         heades['SPIDERSLAVEFLAG'] = window.spiderSlaveFlag;
 
-        window.pullactionsws.call("MDspiderRPC.xhrPost",[post,heades],{"timeout":120000}).then((details)=>{
+        window.localrpcws.call("MDspiderRPC.xhrPost",[post,heades],{"timeout":120000}).then((details)=>{
             if(cb) {
                 cb(resolve,reject,details.argsDict);
             }else{
@@ -358,37 +358,45 @@ function getQueryString(url,name) {
 } 
 
 
-function websocketKeep() {
-	if(window.spiderSlaveHelpmate === true && window.pullactionsws === undefined) {
+function websocketKeep(key) {
+	if(window.spiderSlaveHelpmate === true && window[key] === undefined) {
 		(async()=>{
 			try {
-				window.pullactionsws = new Wampy(window.spiderSlaveHelpmateWebsocket, { realm: 'MDspiderRPC' });
+                var wsInfo = window.spiderSlaveApiActionListWSS[key];
+				window[key] = new Wampy(wsInfo[0], { 
+                    realm: 'MDspiderRPC',
+                    authid: "default",
+                    authmethods: ['ticket'],
+                    onChallenge: (method, info) => {
+                        return 'ticket1234';
+                    }
+                });
 				//retry
-				window.pullactionsws.setOptions(
+				window[key].setOptions(
 					{
 						maxRetries: 0,
 						onClose: function () {
 							console.log('ws',"Connection onClose.");
-							window.pullactionsws = undefined;
+							window[key] = undefined;
 							//Try to reconnect once every five seconds
-							if(window.pullactionswsReconnectSetInterval !== undefined) {
-								clearInterval(window.pullactionswsReconnectSetInterval);
-								window.pullactionswsReconnectSetInterval = undefined;
+							if(window[key+"ReconnectSetInterval"] !== undefined) {
+								clearInterval(window[key+"ReconnectSetInterval"]);
+								window[key+"ReconnectSetInterval"] = undefined;
 							}
-							window.pullactionswsReconnectSetInterval = setInterval(function(){
-								websocketKeep();
+							window[key+"ReconnectSetInterval"] = setInterval(function(){
+								websocketKeep(key);
 							},5000);
 						},
 						onError: function () {
 							console.log('ws',"Connection onError.");
-							window.pullactionsws = undefined;
+							window[key] = undefined;
 							//Try to reconnect once every five seconds
-							if(window.pullactionswsReconnectSetInterval !== undefined) {
-								clearInterval(window.pullactionswsReconnectSetInterval);
-								window.pullactionswsReconnectSetInterval = undefined;
+							if(window[key+"ReconnectSetInterval"] !== undefined) {
+								clearInterval(window[key+"ReconnectSetInterval"]);
+								window[key+"ReconnectSetInterval"] = undefined;
 							}
-							window.pullactionswsReconnectSetInterval = setInterval(function(){
-								websocketKeep();
+							window[key+"ReconnectSetInterval"] = setInterval(function(){
+								websocketKeep(key);
 							},5000);
 						},
 						onReconnect: function () {
@@ -399,8 +407,27 @@ function websocketKeep() {
 						},
 					}
 				);
-				await window.pullactionsws.connect();
-				console.log('ws',"Connection open ...",window.spiderSlaveHelpmateWebsocket);
+				await window[key].connect();
+				console.log('ws',"Connection open ...",wsInfo[0]);
+
+                if (wsInfo[1]) {
+                    var topic = wsInfo[1]+"."+window.spiderSlaveFlag
+                    window[key].subscribe(topic,
+                        async function(event) {
+                            info = JSON.parse(event['argsDict']['action']);
+                            var p = eval(wsInfo[2]+"(event['argsDict']['action'])");
+                            p.then((data)=>{
+                                textToBase64(data[1],function(base64){
+                                    window[key].call("MDspiderRPC.action.callback",{"topic":topic, "user":window.workCreateFlag, "sessionId": event['argsDict']['sessionId'],"sessionIds":event['argsDict']['sessionIds'],"id": info['id'],"data": deleteBase64Pre(base64)}, {"timeout":120000}).then((details)=>{
+                                    },(r)=>{
+                                        console.error(r);
+                                    });
+                                }.bind(this));
+                            });
+                        }
+                    )
+                }
+
 			} catch (error) {
                 console.error(error);
 			} 
