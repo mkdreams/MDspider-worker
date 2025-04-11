@@ -389,15 +389,6 @@ function websocketKeep(key) {
 						},
 						onError: function () {
 							console.log('ws',"Connection onError.");
-							window[key] = undefined;
-							//Try to reconnect once every five seconds
-							if(window[key+"ReconnectSetInterval"] !== undefined) {
-								clearInterval(window[key+"ReconnectSetInterval"]);
-								window[key+"ReconnectSetInterval"] = undefined;
-							}
-							window[key+"ReconnectSetInterval"] = setInterval(function(){
-								websocketKeep(key);
-							},5000);
 						},
 						onReconnect: function () {
 							console.log('ws Reached onReconnect');
