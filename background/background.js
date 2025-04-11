@@ -457,13 +457,7 @@ function parseAction(data) {
 
 	if (v["param"] && v["param"]["sync"] === "1") {
 		var p = new Promise(function(resolve,reject) {
-			new Promise(function(resolveTemp,rejectTemp) {
-				v['doneCheckActionPromiseResolve'] = resolveTemp;
-			}).then((data)=>{
-				resolve(data);
-				isDone(data[2], data[0]);
-			});
-
+			v['parseActionPromiseResolve'] = resolve;
 		});
 	}else{
 		var p = new Promise(function(resolve,reject) {
@@ -922,6 +916,13 @@ function getHml(tab, info, result) {
 				}
 				info['doneCheckActionPromiseResolve']([info,((info.param && info.param.musave)?JSON.stringify(base64ToString(info['results'])):base64ToString(info['results'][info['results'].length-1]??'')),tab]);
 				return;
+			}
+
+			if(info['parseActionPromiseResolve']) {
+				if(!info['results']) {
+					info['results'] = [];
+				}
+				info['parseActionPromiseResolve']([info,((info.param && info.param.musave)?JSON.stringify(base64ToString(info['results'])):base64ToString(info['results'][info['results'].length-1]??'')),tab]);
 			}
 
 			function maincb() {
