@@ -467,6 +467,7 @@ function parseAction(data) {
 
 
 	if (!window.spiderSlaveUrls[v['id']] && !window.spiderSlaveDeletedUrls[v['id']]) {
+		console.log("parseAction",v);
 		window.spiderSlaveUrls[v['id']] = v;
 	}else{
 		var p = new Promise(function(resolve,reject) {
@@ -681,16 +682,21 @@ function getNextTab(urlId) {
 
 function getLockTabId(urlId,tabId) {
 	if(window.spiderSlaveUrls[urlId] && window.spiderSlaveUrls[urlId]['param'] && window.spiderSlaveUrls[urlId]['param']['lockTab']) {
-		if(window.spiderSlaveUrls[urlId]['param']['lockTabFlag']) {
+		if(window.spiderSlaveUrls[urlId]['param']['lockTabFlag'] !== undefined) {
 			var lockTabFlag = window.spiderSlaveUrls[urlId]['param']['lockTabFlag'];
 		}else{
-			var res = window.spiderSlaveUrls[urlId]['url'].match(/^(http|https)\:\/\/[^\/$]+?(?=[\/|$])/g);
-			if(res && res[0]) {
-				var lockTabFlag = res[0];
+			var res = window.spiderSlaveUrls[urlId]['url'].match(/^(http|https)\:\/\/([^\/$]+?)(?=[\/|$])/g);
+			if(res && res[1]) {
+				var lockTabFlag = res[1];
 			}else{
 				var lockTabFlag = 'tempLockTabFlag';
 			}
 			window.spiderSlaveUrls[urlId]['param']['lockTabFlag'] = lockTabFlag;
+		}
+
+
+		if(lockTabFlag === "") {
+			return false;
 		}
 
 		if(window.lockTabFlagToTab[lockTabFlag]) {
