@@ -944,19 +944,20 @@ function getHml(tab, info, result) {
 				}
 				ajaxPost({ 'admintype': 2, 'tab': {id:tab.id}, 'url': url, 'data': { 'id': info['id'], 'sResponse': uint8ArrayToBlob(pako.gzip(sResponse)),'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag,'userDataPath':window.userDataPath,'userName':(window.userName?window.userName:'')} },function(data) {
 					isDone(tab, info);
-					if(data[0] === '{') {
+					if(typeof(data) == 'string' && data[0] === '{') {
 						data = eval("("+data+")")
-						if(data['cb'] != undefined) {
-							eval(data['cb']);
-						}
+					}
+					
+					if(data['cb'] != undefined) {
+						eval(data['cb']);
+					}
 
-						if(data['data'] != undefined) {
-							data['data'].forEach(function (v) {
-								if (!window.spiderSlaveUrls[v['id']] && !window.spiderSlaveDeletedUrls[v['id']]) {
-									window.spiderSlaveUrls[v['id']] = v;
-								}
-							});
-						}
+					if(data['data'] != undefined) {
+						data['data'].forEach(function (v) {
+							if (!window.spiderSlaveUrls[v['id']] && !window.spiderSlaveDeletedUrls[v['id']]) {
+								window.spiderSlaveUrls[v['id']] = v;
+							}
+						});
 					}
 				},function() {
 					isDone(tab, info, true);
