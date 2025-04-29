@@ -359,7 +359,7 @@ function getQueryString(url,name) {
 
 
 function websocketKeep(key) {
-	if(window.spiderSlaveHelpmate === true && window[key] === undefined) {
+	if(window.spiderSlaveHelpmate === true && window[key] === undefined && window.spiderSlaveApiActionListWSS[key] !== undefined) {
 		(async()=>{
 			try {
                 var wsInfo = window.spiderSlaveApiActionListWSS[key];
