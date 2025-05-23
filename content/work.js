@@ -620,7 +620,11 @@ chrome.runtime.onMessage.addListener(
 								window.workCreateFlag = request.info.workCreateFlag;
 								window.spiderSlaveFlag = request.info.spiderSlaveFlag;
 								window.spiderSlaveHelpmateApi = request.info.spiderSlaveHelpmateApi;
-								window.MDspiderRandom = randomStr();
+								if(request.info.windowId) {
+									window.MDspiderRandom = window.workCreateFlag+request.info.windowId;
+								}else{
+									window.MDspiderRandom = window.workCreateFlag+randomStr();
+								}
 								window.document.title = window.document.title+'&MDspiderRandom='+window.MDspiderRandom;
 								var func_go = function() {
 									//for wtop,wdefualt
@@ -645,16 +649,10 @@ chrome.runtime.onMessage.addListener(
 									}else if(request.info.param && request.info.param.method) {
 										switch(request.info.param.method) {
 											case 'click':
-												xhrPost(window.spiderSlaveHelpmateApi,{
+												wsPostForWork({
 													id:4,
-													method:"Robot.MoveSmooth",
-													params:[[pos[0],pos[1]]]
-												}).then(function(response){
-													return xhrPost(window.spiderSlaveHelpmateApi,{
-														id:4,
-														method:"Robot.Click",
-														params:[['left',false]]
-													})
+													method:"Robot.MoveClick",
+													params:[pos[0],pos[1],'left',false]
 												}).then(function(response){
 													blobToBase64(response,function(base64){
 														window.spiderData[request.info.id] = base64;
@@ -663,33 +661,27 @@ chrome.runtime.onMessage.addListener(
 												});
 												break;
 											case 'input':
-												xhrPost(window.spiderSlaveHelpmateApi,{
+												wsPostForWork({
 													id:4,
-													method:"Robot.MoveSmooth",
-													params:[[pos[0],pos[1]]]
-												}).then(function(response){
-													return xhrPost(window.spiderSlaveHelpmateApi,{
-														id:4,
-														method:"Robot.Click",
-														params:[['left',false]]
-													})
+													method:"Robot.MoveClick",
+													params:[pos[0],pos[1],'left',false]
 												}).then(function(response){
 													//动态输入内容
 													if(request.info.param.text && request.info.param.text.indexOf("http") === 0) {
 														return xhrPost(request.info.param.text,{},function(resolve,reject,nowresponse){
-															xhrPost(window.spiderSlaveHelpmateApi,{
+															wsPostForWork({
 																id:4,
 																method:"Robot.TypeStr",
-																params:[[nowresponse.result.Data]]
+																params:[nowresponse.result.Data,1]
 															}).then(function(response){
 																resolve(response);
 															});
 														},'json',true)
 													}else{
-														return xhrPost(window.spiderSlaveHelpmateApi,{
+														return wsPostForWork({
 															id:4,
 															method:"Robot.TypeStr",
-															params:[[request.info.param.text?request.info.param.text:'']]
+															params:[request.info.param.text?request.info.param.text:'',1]
 														})
 													}
 												}).then(function(response){
@@ -700,22 +692,28 @@ chrome.runtime.onMessage.addListener(
 												});
 												break;
 											case 'select':
-												xhrPost(window.spiderSlaveHelpmateApi,{
+												wsPostForWork({
 													id:4,
-													method:"Robot.MoveSmooth",
-													params:[[pos[0],pos[1]]]
+													method:"Robot.MoveClick",
+													params:[pos[0],pos[1],'left',false]
 												}).then(function(response){
-													return xhrPost(window.spiderSlaveHelpmateApi,{
-														id:4,
-														method:"Robot.Click",
-														params:[['left',false]]
-													})
-												}).then(function(response){
-													return xhrPost(window.spiderSlaveHelpmateApi,{
+													return wsPostForWork({
 														id:4,
 														method:"Robot.KeyTap",
-														params:[['down',request.info.param.index?request.info.param.index:1]]
+														params:['down',request.info.param.index?request.info.param.index:1]
 													})
+												}).then(function(response){
+													blobToBase64(response,function(base64){
+														window.spiderData[request.info.id] = base64;
+														window.actionComplete = true;
+													}.bind(this));
+												});
+												break;
+											case 'KeyTap':
+												wsPostForWork({
+													id:4,
+													method:"Robot.KeyTap",
+													params:[request.info.param.text??"",1]
 												}).then(function(response){
 													blobToBase64(response,function(base64){
 														window.spiderData[request.info.id] = base64;
@@ -724,11 +722,12 @@ chrome.runtime.onMessage.addListener(
 												});
 												break;
 											case 'wtop':
-												xhrPost(window.spiderSlaveHelpmateApi,{
+												wsPostForWork({
 													id:4,
 													method:"Robot.WindowTop",
-													params:[[pos[0],pos[1]]]
+													params:[pos[0],pos[1]]
 												}).then(function(response){
+													console.log(response);
 													blobToBase64(response,function(base64){
 														window.spiderData[request.info.id] = base64;
 														window.actionComplete = true;
@@ -736,10 +735,10 @@ chrome.runtime.onMessage.addListener(
 												});
 												break;
 											case 'wdefault':
-												xhrPost(window.spiderSlaveHelpmateApi,{
+												wsPostForWork({
 													id:4,
 													method:"Robot.WindowDefault",
-													params:[[pos[0],pos[1]]]
+													params:[pos[0],pos[1]]
 												}).then(function(response){
 													blobToBase64(response,function(base64){
 														window.spiderData[request.info.id] = base64;

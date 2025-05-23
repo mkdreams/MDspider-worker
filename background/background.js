@@ -35,7 +35,6 @@ window.helpmateEvents = {
 window.baseInfo = {};
 setTimeout(function() {
 		initDeviceInfo(function(){
-
 			//init and create api tab
 			if(window.debug) {
 				console.warn("Debug模式：只打开浏览器并做初始化，不执行任务")
@@ -54,8 +53,6 @@ setTimeout(function() {
 			if(window.spiderSlaveOn === true && !window.debug) {
 				workPlay();
 			}
-
-			websocketKeep();
 		});
 },3000);
 
@@ -130,13 +127,13 @@ function initDeviceInfo(cb) {
 									resolve(true);
 								});
 							}else{
-								xhrPost(window.spiderSlaveHelpmateApi,{
+								wsPost({
 									id:4,
 									method:"Robot.Events",
-									params:[[window.workCreateFlag]]
+									params:[window.workCreateFlag]
 								},undefined,'json').then(function(data){
-									if (data.result.Data.indexOf("{") === 0) {
-										window.helpmateEvents = eval("["+data.result.Data+"]")[0];
+									if (data.Data.indexOf("{") === 0) {
+										window.helpmateEvents = eval("["+data.Data+"]")[0];
 										if(window.helpmateEvents['create'] === undefined) {
 											window.helpmateEvents['create'] = [];
 										}
@@ -216,64 +213,6 @@ function initDeviceInfo(cb) {
 			});
 		});
 	});
-}
-
-function websocketKeep() {
-	if(window.spiderSlaveHelpmate === true && window.spiderSlaveHelpmateWebsocket !== undefined && window.pullactionsws === undefined) {
-		window.pullactionsws = new WebSocket(window.spiderSlaveHelpmateWebsocket+'?sWorkCreateFlag='+window.workCreateFlag);
-		window.pullactionsws.onopen = function(evt) {
-			console.log('ws',"Connection open ...",window.spiderSlaveHelpmateWebsocket+'?sWorkCreateFlag='+window.workCreateFlag);
-		};
-		window.pullactionsws.onmessage = function(evt) {
-			datas = evt.data.split("\n");
-			datas.forEach(function (str) {
-				v = JSON.parse(str)
-				if(v["UUID"]) {
-					actionInfo = JSON.parse(v["Content"])
-					answers = false;
-					if(actionInfo['type']) {
-						switch(actionInfo['type']) {
-							case 1:
-								answers = true;
-								eval(actionInfo['action']+`(undefined,actionInfo['info'],function(base64) {
-									window.pullactionsws.send(JSON.stringify({"UUID":v["UUID"],"Content":deleteBase64Pre(base64)}));
-								});`);
-								break;
-						}
-					}
-					if(!answers) {
-						window.pullactionsws.send(JSON.stringify({"UUID":v["UUID"],"Content":false}));
-					}
-				}
-			});
-
-		};
-		window.pullactionsws.onclose = function(evt) {
-			console.log('ws',"Connection closed.");
-			window.pullactionsws = undefined;
-			//Try to reconnect once every five seconds
-			if(window.pullactionswsReconnectSetInterval !== undefined) {
-				clearInterval(window.pullactionswsReconnectSetInterval);
-				window.pullactionswsReconnectSetInterval = undefined;
-			}
-			window.pullactionswsReconnectSetInterval = setInterval(function(){
-				websocketKeep();
-			},5000);
-		};
-
-		window.pullactionsws.onerror = function(evt) {
-			console.log('ws',"Connection error.");
-			window.pullactionsws = undefined;
-			//Try to reconnect once every five seconds
-			if(window.pullactionswsReconnectSetInterval !== undefined) {
-				clearInterval(window.pullactionswsReconnectSetInterval);
-				window.pullactionswsReconnectSetInterval = undefined;
-			}
-			window.pullactionswsReconnectSetInterval = setInterval(function(){
-				websocketKeep();
-			},5000);
-		};
-	}
 }
 
 function loadConfig(cb) {
@@ -444,7 +383,6 @@ function workPlay(allCompeletedCb) {
 		}
 	}, window.spiderSlaveGetUrlsDelay);
 
-
 	//health check
 	if(window.spiderSlaveHelpmate === true) {
 		clearInterval(window.spiderSlaveHelpmateSetInterval);
@@ -457,6 +395,8 @@ function workPlay(allCompeletedCb) {
 			}
 		}, 60000);
 	}
+
+	websocketKeep("pullactionws");
 
 	backgroundConsole('已开始', 1);
 }
@@ -493,6 +433,49 @@ function pullActions() {
 			}
 		});
 	}
+}
+
+function parseAction(data) {
+	v = JSON.parse(data);
+	if (!v["type"]) {
+		v["type"] = 1;
+	}
+
+	if (v['id'] == 0) {
+		v['id'] = randomStr();
+	}else{
+		v['id'] = ""+v['id'];
+	}
+
+	if (v["param"]) {
+		for(var key in v["param"]) {
+			if (v["param"][key] === "") {
+				delete v["param"][key];
+			}
+		}
+	}
+
+	if (v["param"] && v["param"]["sync"] === "1") {
+		var p = new Promise(function(resolve,reject) {
+			v['parseActionPromiseResolve'] = resolve;
+		});
+	}else{
+		var p = new Promise(function(resolve,reject) {
+			resolve([v,'ok']);
+		});
+	}
+
+
+	if (!window.spiderSlaveUrls[v['id']] && !window.spiderSlaveDeletedUrls[v['id']]) {
+		console.log("parseAction",v);
+		window.spiderSlaveUrls[v['id']] = v;
+	}else{
+		var p = new Promise(function(resolve,reject) {
+			resolve([v,'Repeat req']);
+		});
+	}
+
+	return p;
 }
 
 // 5 min before
@@ -699,16 +682,21 @@ function getNextTab(urlId) {
 
 function getLockTabId(urlId,tabId) {
 	if(window.spiderSlaveUrls[urlId] && window.spiderSlaveUrls[urlId]['param'] && window.spiderSlaveUrls[urlId]['param']['lockTab']) {
-		if(window.spiderSlaveUrls[urlId]['param']['lockTabFlag']) {
+		if(window.spiderSlaveUrls[urlId]['param']['lockTabFlag'] !== undefined) {
 			var lockTabFlag = window.spiderSlaveUrls[urlId]['param']['lockTabFlag'];
 		}else{
-			var res = window.spiderSlaveUrls[urlId]['url'].match(/^(http|https)\:\/\/[^\/$]+?(?=[\/|$])/g);
-			if(res && res[0]) {
-				var lockTabFlag = res[0];
+			var res = window.spiderSlaveUrls[urlId]['url'].match(/^(http|https)\:\/\/([^\/$]+?)(?=[\/|$])/g);
+			if(res && res[1]) {
+				var lockTabFlag = res[1];
 			}else{
 				var lockTabFlag = 'tempLockTabFlag';
 			}
 			window.spiderSlaveUrls[urlId]['param']['lockTabFlag'] = lockTabFlag;
+		}
+
+
+		if(lockTabFlag === "") {
+			return false;
 		}
 
 		if(window.lockTabFlagToTab[lockTabFlag]) {
@@ -932,8 +920,15 @@ function getHml(tab, info, result) {
 				if(!info['results']) {
 					info['results'] = [];
 				}
-				info['doneCheckActionPromiseResolve']([info,((info.param && info.param.musave)?JSON.stringify(base64ToString(info['results'])):base64ToString(info['results'][info['results'].length-1]??''))]);
+				info['doneCheckActionPromiseResolve']([info,((info.param && info.param.musave)?JSON.stringify(base64ToString(info['results'])):base64ToString(info['results'][info['results'].length-1]??'')),tab]);
 				return;
+			}
+
+			if(info['parseActionPromiseResolve']) {
+				if(!info['results']) {
+					info['results'] = [];
+				}
+				info['parseActionPromiseResolve']([info,((info.param && info.param.musave)?JSON.stringify(base64ToString(info['results'])):base64ToString(info['results'][info['results'].length-1]??'')),tab]);
 			}
 
 			function maincb() {
@@ -1242,6 +1237,8 @@ function sendAction(tab, info, cb) {
 		delete info['pinfo'];
 	}
 
+	info.windowId = tab['windowId'];
+
 	if(info.type === 200) {
 		if(info.param && info.param.delay) {
 			setTimeout(function(){
@@ -1378,6 +1375,15 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
 			screenshot(sender.tab,req,(img)=>{
 				sendResponse(img);
 			})
+			
+			return true;
+			break;
+		//wsPostForWork
+		case 3:
+			wsPost(req.post,function(resolve,reject,details) {
+				sendResponse(details);
+				resolve(true);
+			},undefined,req.heades)
 			
 			return true;
 			break;

@@ -54,6 +54,69 @@ function getObjectLen(obj) {
     return Object.keys(obj).length;
 }
 
+function wsPost(post,cb,responseType,heades) {
+    websocketKeep("localrpcws");
+
+    return new Promise(function(resolve,reject) {
+        if (heades == undefined) {
+            heades = {};
+        }
+        if(window.MDspiderRandom !== undefined) {
+            heades['MDSPIDERRANDOM'] = window.MDspiderRandom;
+        }
+        if(window.workCreateFlag !== undefined) {
+            heades['WORKCREATEFLAG'] = window.workCreateFlag;
+        }
+        if(window.spiderSlaveActiveLastTime !== undefined) {
+            heades['SPIDERSLAVEACTIVELASTTIME'] = window.spiderSlaveActiveLastTime[1];
+        }
+        heades['SPIDERSLAVEFLAG'] = window.spiderSlaveFlag;
+
+        window.localrpcws.call("MDspiderRPC.xhrPost",[post,heades],{"timeout":120000}).then((details)=>{
+            if(cb) {
+                cb(resolve,reject,details.argsDict);
+            }else{
+                resolve(details.argsDict);
+            }
+        },(r)=>{
+            console.error(r);
+            resolve(false);
+        });
+    });
+}
+
+function wsPostForWork(post,cb,responseType) {
+    return new Promise(function(resolve,reject) {
+        var heades = {};
+        if(window.MDspiderRandom !== undefined) {
+            heades['MDSPIDERRANDOM'] = window.MDspiderRandom;
+        }
+        if(window.workCreateFlag !== undefined) {
+            heades['WORKCREATEFLAG'] = window.workCreateFlag;
+        }
+        if(window.spiderSlaveActiveLastTime !== undefined) {
+            heades['SPIDERSLAVEACTIVELASTTIME'] = window.spiderSlaveActiveLastTime[1];
+        }
+        heades['SPIDERSLAVEFLAG'] = window.spiderSlaveFlag;
+
+        chrome.runtime.sendMessage(chrome.runtime.id,{"type":3,"post":post,"heades":heades},{"includeTlsChannelId":false},function(details) {
+            if(cb) {
+                cb(resolve,reject,details.argsDict);
+            }else{
+                resolve(details.argsDict);
+            }
+        });
+    });
+}
+
+function timeoutPromise(time) {
+    return new Promise(function(resolve,reject) {
+        setTimeout(function() {
+            resolve(true);
+        },time)
+    });
+}
+
 function xhrPost(url,post,cb,responseType,helpmateProxy) {
     if(responseType === undefined) {
         responseType = 'blob';
@@ -102,7 +165,6 @@ function xhrPost(url,post,cb,responseType,helpmateProxy) {
                 xhr.send(post)
             }
         }else{
-            xhr.open('POST', window.spiderSlaveHelpmateApi)
             if(post instanceof Object) {
                 if(window.MDspiderRandom !== undefined) {
                     post['MDSPIDERRANDOM'] = window.MDspiderRandom;
@@ -121,10 +183,9 @@ function xhrPost(url,post,cb,responseType,helpmateProxy) {
             proxPost = {
                 id:4,
                 method:"Robot.Proxy",
-                params:[[url,postString]]
+                params:[url,postString]
             };
-            xhr.responseType = responseType
-            xhr.send(JSON.stringify(proxPost))
+            wsPost(proxPost,cb,responseType)
         }
 
 
@@ -295,6 +356,75 @@ function getQueryString(url,name) {
     var r = url.match(reg);
     if (r != null) return unescape(r[2]); return undefined;
 } 
+
+
+function websocketKeep(key) {
+	if(window.spiderSlaveHelpmate === true && window[key] === undefined && window.spiderSlaveApiActionListWSS[key] !== undefined) {
+		(async()=>{
+			try {
+                var wsInfo = window.spiderSlaveApiActionListWSS[key];
+				window[key] = new Wampy(wsInfo[0], { 
+                    realm: 'MDspiderRPC',
+                    authid: "default",
+                    authmethods: ['ticket'],
+                    onChallenge: (method, info) => {
+                        return 'ticket1234';
+                    }
+                });
+				//retry
+				window[key].setOptions(
+					{
+						maxRetries: 0,
+						onClose: function () {
+							console.log('ws',"Connection onClose.");
+							window[key] = undefined;
+							//Try to reconnect once every five seconds
+							if(window[key+"ReconnectSetInterval"] !== undefined) {
+								clearInterval(window[key+"ReconnectSetInterval"]);
+								window[key+"ReconnectSetInterval"] = undefined;
+							}
+							window[key+"ReconnectSetInterval"] = setInterval(function(){
+								websocketKeep(key);
+							},5000);
+						},
+						onError: function () {
+							console.log('ws',"Connection onError.");
+						},
+						onReconnect: function () {
+							console.log('ws Reached onReconnect');
+						},
+						onReconnectSuccess: function () {
+							console.log('ws Reached onReconnectSuccess');
+						},
+					}
+				);
+				await window[key].connect();
+				console.log('ws',"Connection open ...",wsInfo[0]);
+
+                if (wsInfo[1]) {
+                    var topic = wsInfo[1]+"."+window.spiderSlaveFlag
+                    window[key].subscribe(topic,
+                        async function(event) {
+                            info = JSON.parse(event['argsDict']['action']);
+                            var p = eval(wsInfo[2]+"(event['argsDict']['action'])");
+                            p.then((data)=>{
+                                textToBase64(data[1],function(base64){
+                                    window[key].call("MDspiderRPC.action.callback",{"topic":topic, "user":window.workCreateFlag, "sessionId": event['argsDict']['sessionId'],"sessionIds":event['argsDict']['sessionIds'],"id": info['id'],"data": deleteBase64Pre(base64)}, {"timeout":120000}).then((details)=>{
+                                    },(r)=>{
+                                        console.error(r);
+                                    });
+                                }.bind(this));
+                            });
+                        }
+                    )
+                }
+
+			} catch (error) {
+                console.error(error);
+			} 
+		})();
+	}
+}
 
 console.image = function (url) {
     const image = new Image();
