@@ -273,8 +273,8 @@ function pageRunJs(jsStr,cb,background) {
 							clearInterval(setInterval_pageRunJs);
 						}
 						cb(html);
-						tempDom[0].remove();
 					}
+					tempDom[0].remove();
 				}
 			}
 		}
