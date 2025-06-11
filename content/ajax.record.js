@@ -148,6 +148,10 @@ var ajaxRecordString = `
                         resolve(text);
                     }
                 });
+            }else if(self.responseType == 'json') {
+                var p = new Promise(function(resolve,reject) {
+                    resolve(self.response);
+                });
             }else{
                 var p = new Promise(function(resolve,reject) {
                     resolve('');
