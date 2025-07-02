@@ -196,10 +196,8 @@ function screenshot(tab, info, cb,screenshotCount) {
 
 	screenshotCount++;
 	new Promise(function(resolve,reject) {
-		chrome.windows.get(tab.windowId, function(win) {
-			chrome.windows.update(tab.windowId, { focused: true, width: width, height: height }, function () {
-				resolve(true);
-			});
+		chrome.windows.update(tab.windowId, { focused: true, width: width, height: height }, function () {
+			resolve(true);
 		});
 	}).then(function() {
 		return new Promise(function(resolve,reject) {
