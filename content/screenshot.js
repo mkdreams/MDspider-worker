@@ -123,24 +123,27 @@ function objTocssText(e) {
 function StyleChange(e, t) {
   ; (this.type = e), (this.data = t), this.exec()
 }
-function findScrollElement() {
+
+function findScrollElement () {
   var e = []
   if (
     document.scrollingElement.scrollHeight >
-    document.scrollingElement.offsetHeight + 5
-  )
+    document.scrollingElement.clientHeight + 5
+  ) {
     return document.scrollingElement
+  }
+
   for (
     var t,
-    n = document.createNodeIterator(
-      document.scrollingElement,
-      NodeFilter.SHOW_ELEMENT,
-      null,
-      !1
-    );
+      n = document.createNodeIterator(
+        document.scrollingElement,
+        NodeFilter.SHOW_ELEMENT,
+        null,
+        !1
+      );
     (t = n.nextNode());
 
-  )
+  ) {
     if (
       t.scrollHeight > t.offsetHeight + 5 &&
       50 < t.offsetHeight &&
@@ -150,7 +153,19 @@ function findScrollElement() {
       var o = window.getComputedStyle(t).overflowY
       'hidden' !== o && 'visible' !== o && e.push(t)
     }
+  }
+
+  var maxWidth = 0
+  var scrollElement = document.scrollingElement
+  for (var i = 0; i < e.length; i++) {
+    if (e[i].clientHeight > maxWidth) {
+      scrollElement = e[i]
+    }
+  }
+
+  return scrollElement
 }
+
 function handleAbsoluteHangings() {
   if (
     !/www.rest-ar.com/.test(window.location.href) &&
@@ -774,11 +789,12 @@ async function fullPageScreenShot(info) {
 }
 
 function scrollNext() {
-  var top = Math.ceil(document.scrollingElement.scrollTop);
+  var scrollingElement = findScrollElement();
+  var top = Math.ceil(scrollingElement.scrollTop);
 
-  document.scrollingElement.scrollTop = top + clientH;
+  scrollingElement.scrollTop = top + clientH;
 
-  if (Math.ceil(document.scrollingElement.scrollTop) == top) {
+  if (Math.ceil(scrollingElement.scrollTop) == top) {
     var r = {};
     r.y = (top % clientH) / clientH;
     return {
