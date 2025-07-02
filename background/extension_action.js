@@ -189,26 +189,46 @@ function screenshot(tab, info, cb,screenshotCount) {
 		height = info.param.height;
 	}
 
+	var init = false;
+	if(info && info.param && info.param.init) {
+		init = info.param.init;
+	}
+
 	screenshotCount++;
-	chrome.windows.update(tab.windowId, { focused: true, width: width, height: height }, function () {
-		chrome.tabs.update(tab.id, { active: true }, function () {
-			if (chrome.runtime.lastError) {
-				console.error(chrome.runtime.lastError);
-			}
-			chrome.tabs.captureVisibleTab(null, {
-				format: 'png'
-			}, function (data) {
-				//retry 3 times
-				if(!data && screenshotCount <= 3) {
-					setTimeout(()=>{
-						screenshot(tab, info, cb,screenshotCount);
-					},500);
-				}else{
-					cb(data);
-				}
+	new Promise(function(resolve,reject) {
+		chrome.windows.get(tab.windowId, function(win) {
+			chrome.windows.update(tab.windowId, { focused: true, width: width, height: height }, function () {
+				resolve(true);
 			});
-		})
-	})
+		});
+	}).then(function() {
+		return new Promise(function(resolve,reject) {
+			chrome.tabs.update(tab.id, { active: true }, function () {
+				resolve(true);
+			});
+		});
+	}).then(function(){
+		if(init === true) {
+			cb();
+			return;
+		}
+
+		if (chrome.runtime.lastError) {
+			console.error(chrome.runtime.lastError);
+		}
+		chrome.tabs.captureVisibleTab(null, {
+			format: 'png'
+		}, function (data) {
+			//retry 3 times
+			if(!data && screenshotCount <= 3) {
+				setTimeout(()=>{
+					screenshot(tab, info, cb,screenshotCount);
+				},500);
+			}else{
+				cb(data);
+			}
+		});
+	});
 }
 
 function updateConfig(tab, info, cb) {

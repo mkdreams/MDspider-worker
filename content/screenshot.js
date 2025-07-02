@@ -639,6 +639,25 @@ function getStyle(e, t) {
 }
 
 async function fullPageScreenShot(info) {
+  if(info && info.param && info.param.width) {
+    var width = info.param.width;
+  }else{
+    var width = 1920;
+  }
+
+  if(info && info.param && info.param.height) {
+    var height = info.param.height;
+  }else{
+    var height = 1080;
+  }
+
+  //初始化
+  await new Promise(function(resolve,reject) {
+      chrome.runtime.sendMessage({"type":2,"param":{"action":"screenshot","width":width,"height":height,'init':true}},(r)=>{
+        resolve(true);
+      })
+  });
+
   var tempDom = document.createElement('canvas');
   var tempCanvas = tempDom.getContext('2d');
   initEntireCapture();
@@ -706,7 +725,11 @@ async function fullPageScreenShot(info) {
               var image = new Image();
               image.src = r;
               image.onload = function(){
-                imgs[imgs.length-1] = image;
+                if(scrollInfo.isEnd === true) {
+                  imgs[imgs.length-1] = image;
+                }else{
+                  imgs.push(image);
+                }
                 resolve(true);
               }
             })
@@ -760,7 +783,9 @@ async function fullPageScreenShot(info) {
     var sw = imgs[i].width;
     var sh = imgs[i].height;
 
-    if(i === imgs.length-1) {
+    if(i === imgs.length-1 && scrollInfo.isEnd === true) {
+      console.log(scrollInfo.isEnd)
+
       var dx = 0;
       var dy = tempDom.height-sh;
       var dw = sw;
