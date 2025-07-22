@@ -258,6 +258,8 @@ function topRunJs(jsStr) {
 }
 
 function pageRunJs(jsStr,cb,background) {
+	console.log(jsStr,cb,background);
+
 	var domRandomId = "MDspider-help-dom-result-"+randomStr();
 
 	const config = { attributes: true};
@@ -368,7 +370,7 @@ function pageRunJs(jsStr,cb,background) {
 		if($("#MDtopRunjsListion").length > 0) {
 			$("#MDtopRunjsListion").attr("domid",domRandomId);
 		}else{
-			tempDom.click();
+			tempDom[0].click();
 		}
 	}
 
@@ -799,6 +801,7 @@ chrome.runtime.onMessage.addListener(
 								});
 								break;		
 							case 105:
+								console.log('fullPageScreenShot req',request);
 								window.actionComplete = false;
 								if(request.info.param && request.info.param.delay) {
 									var action = new Promise(function(resolve,reject) {

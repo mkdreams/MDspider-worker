@@ -62,15 +62,6 @@ function sendMessageToTabs(tab,sendInfoObj,callBack) {
 	});
 }
 
-chrome.webRequest.onHeadersReceived.addListener(details => {
-    for (var i = 0; i < details.responseHeaders.length; i++) {
-		if ('content-security-policy' === details.responseHeaders[i].name.toLowerCase() || 'content-security-policy-report-only' === details.responseHeaders[i].name.toLowerCase()) {
-			details.responseHeaders[i].value = '';
-		}
-	}
-    return {responseHeaders: details.responseHeaders};
-}, {urls: ['*://*/*']}, ['blocking', 'responseHeaders']);
-
 window.requestIdToUUID = {};
 chrome.webRequest.onBeforeSendHeaders.addListener(
 	function(details) {
@@ -98,19 +89,28 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
 );
 
 
-chrome.webRequest.onBeforeRequest.addListener(
-	function(details) {
-	  if (details.url.includes('UUID=')) {
-		uuidInfo = details.url.split(/(?:\?|\&)UUID\=/);
-		newUrl = uuidInfo[0];
-		window.requestIdToUUID[details.requestId] = uuidInfo[1];
-		return { redirectUrl: newUrl };
-	  }
-	},
-	{
-	  urls: ['<all_urls>'],
-	  types: ['main_frame', 'sub_frame', 'xmlhttprequest']
-	},
-	['blocking']
-  );
+// chrome.webRequest.onHeadersReceived.addListener(details => {
+//     for (var i = 0; i < details.responseHeaders.length; i++) {
+// 		if ('content-security-policy' === details.responseHeaders[i].name.toLowerCase() || 'content-security-policy-report-only' === details.responseHeaders[i].name.toLowerCase()) {
+// 			details.responseHeaders[i].value = '';
+// 		}
+// 	}
+//     return {responseHeaders: details.responseHeaders};
+// }, {urls: ['*://*/*']}, ['blocking', 'responseHeaders']);
+
+// chrome.webRequest.onBeforeRequest.addListener(
+// 	function(details) {
+// 	  if (details.url.includes('UUID=')) {
+// 		uuidInfo = details.url.split(/(?:\?|\&)UUID\=/);
+// 		newUrl = uuidInfo[0];
+// 		window.requestIdToUUID[details.requestId] = uuidInfo[1];
+// 		return { redirectUrl: newUrl };
+// 	  }
+// 	},
+// 	{
+// 	  urls: ['<all_urls>'],
+// 	  types: ['main_frame', 'sub_frame', 'xmlhttprequest']
+// 	},
+// 	['blocking']
+//   );
   

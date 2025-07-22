@@ -122,7 +122,89 @@ function xhrPost(url,post,cb,responseType,helpmateProxy) {
         responseType = 'blob';
     }
     return new Promise(function(resolve,reject) {
-        //window.workCreateFlag
+        if(helpmateProxy === undefined) {
+            const headers = new Headers();
+            // 处理自定义请求头
+            if (window.MDspiderRandom !== undefined) {
+                headers.append('MDSPIDERRANDOM', window.MDspiderRandom);
+            }
+            if (window.workCreateFlag !== undefined) {
+                headers.append('WORKCREATEFLAG', window.workCreateFlag);
+            }
+            if (window.spiderSlaveActiveLastTime !== undefined) {
+                headers.append('SPIDERSLAVEACTIVELASTTIME', window.spiderSlaveActiveLastTime[1]);
+            }
+            headers.append('SPIDERSLAVEFLAG', window.spiderSlaveFlag);
+
+            // 设置请求配置
+            const requestOptions = {
+                method: post === undefined ? 'GET' : 'POST',
+                headers: headers,
+                body: post && !(post instanceof FormData) ? (post instanceof Object ? JSON.stringify(post) : post) : post,
+                timeout: 120000  // fetch不原生支持timeout，需要额外实现
+            };
+
+            // 设置Content-Type
+            // if (post instanceof FormData) {
+            //     requestOptions.headers.delete("Content-Type"); // 浏览器会自动处理 FormData
+            // } else if (post && !(post instanceof FormData)) {
+            //     requestOptions.headers.set("Content-Type", "application/json");
+            // }
+
+            // 创建AbortController来实现超时
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), requestOptions.timeout);
+
+             fetch(url, {
+                ...requestOptions,
+                signal: controller.signal
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Request failed with status ${response.status}`);
+                }
+                return response[responseType === 'json' ? 'json' : 'text']();
+            })
+            .then(data => {
+                clearTimeout(timeoutId);
+                if (cb) {
+                    cb(resolve, reject, data);
+                } else {
+                    resolve(data);
+                }
+            })
+            .catch(error => {
+                clearTimeout(timeoutId);
+                resolve(false);
+            });
+        }else{
+             if(post instanceof Object) {
+                if(window.MDspiderRandom !== undefined) {
+                    post['MDSPIDERRANDOM'] = window.MDspiderRandom;
+                }
+                if(window.workCreateFlag !== undefined) {
+                    post['WORKCREATEFLAG'] = window.workCreateFlag;
+                }
+                post['SPIDERSLAVEFLAG'] = window.spiderSlaveFlag;
+                if(window.spiderSlaveActiveLastTime !== undefined) {
+                    post['SPIDERSLAVEACTIVELASTTIME'] = window.spiderSlaveActiveLastTime[1];
+                }
+                var postString = JSON.stringify(post);
+            }else{
+                var postString = post;
+            }
+            proxPost = {
+                id:4,
+                method:"Robot.Proxy",
+                params:[url,postString]
+            };
+            wsPost(proxPost,cb,responseType)
+        }
+         
+
+
+
+        /* //window.workCreateFlag
         var xhr = new XMLHttpRequest()
         xhr.onreadystatechange = function () {
             if (this.readyState == 4 && this.status == 200) {
@@ -186,7 +268,7 @@ function xhrPost(url,post,cb,responseType,helpmateProxy) {
                 params:[url,postString]
             };
             wsPost(proxPost,cb,responseType)
-        }
+        } */
 
 
     });

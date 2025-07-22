@@ -1,0 +1,24 @@
+[
+  {
+    "id": 1,
+    "enabled": true,
+    "url_filter": "*://*/*",
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "header": "content-security-policy",
+          "operation": "remove"
+        },
+        {
+          "header": "content-security-policy-report-only",
+          "operation": "remove"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "*://*/*",
+      "resourceTypes": ["main_frame", "sub_frame"]
+    }
+  }
+]

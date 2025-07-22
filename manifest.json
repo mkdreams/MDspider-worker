@@ -1,34 +1,42 @@
 {
-	"manifest_version": 2,
+	"manifest_version": 3,
 	"version": "1.0.0.1",
 	"name": "MDspider",
 	"short_name": "MDS",
 	"description": "Tool for data extraction from websites",
-	"permissions": ["<all_urls>", "contextMenus", "webRequest", "webRequestBlocking", "declarativeNetRequest", "tabs", "notifications", "system.display","system.memory", "storage", "unlimitedStorage", "downloads", "webNavigation", "cookies"],
+	"permissions": ["activeTab", "contextMenus", "webRequest", "webRequestAuthProvider", "declarativeNetRequest","declarativeNetRequestWithHostAccess","declarativeNetRequestFeedback", "tabs", "notifications", "system.display","system.memory", "storage", "unlimitedStorage", "downloads", "webNavigation", "cookies"],
+	"host_permissions": [
+		"*://*/*"
+	],
+	"declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "redirect",
+        "enabled": false,
+        "path": "rules/redirect.json"
+      },
+      {
+        "id": "removeCSP",
+        "enabled": false,
+        "path": "rules/removeCSP.json"
+      }
+    ]
+  },
 	"icons": {
 		"16": "popup/images/colin.png"
 	},
-	"browser_action": {
+	"action": {
 		"default_icon": {
 			"16": "popup/images/colin.png"
 		},
 		"default_title": "MDspider",
 		"default_popup": "popup/popup.html"
 	},
-	"content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
+	"content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
 	"background":{
-		"scripts":[
-	    	"common.js",
-	    	"config.js",
-			"common/jquery-2.0.3.js",
-			"common/pako.min.js",
-			"common/base64.min.js",
-	    	"common/function.js",
-	    	"common/cat_wampy.js",
-	    	"background/extension_action.js",
-	    	"background/background.js",
-	    	"background/run_time_api.js"
-    	]
+		"service_worker":"background/start.js"
 	},
 	"content_scripts": [
 		{
@@ -36,13 +44,13 @@
 			"js": [
 				"common.js",
 				"common/jquery-2.0.3.js",
-			    "common/base64.min.js",
-			    "common/function.js",
+				"common/base64.min.js",
+				"common/function.js",
 				"common/cat_wampy.js",
 				"content/js.cookie.min.js",
 				"content/html2canvas.min.js",
-			    "content/work.js",
-			    "content/screenshot.js",
+				"content/work.js",
+				"content/screenshot.js",
 				"content/ajax.record.js"
 			],
 			"all_frames": false,

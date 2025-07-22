@@ -639,6 +639,7 @@ function getStyle(e, t) {
 }
 
 async function fullPageScreenShot(info) {
+  console.log("fullPageScreenShot",info);
   if(info && info.param && info.param.width) {
     var width = info.param.width;
   }else{

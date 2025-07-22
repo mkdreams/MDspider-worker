@@ -1,0 +1,16 @@
+[
+  {
+    "id": 2,
+    "enabled": true,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+          "regexSubstitution": "\\1"
+      }
+    },
+    "condition": {
+      "regexFilter": "(.+?)(?:\\?|\\&)UUID\\=\\w+$",
+      "resourceTypes": ["main_frame", "sub_frame","xmlhttprequest"]
+    }
+  }
+]

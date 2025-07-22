@@ -845,11 +845,11 @@ function resultIsOk(tab, info, cb) {
 
 		sendMessageToTabs(tab, { 'actiontype': 1, 'info': info }, function (res) {
 			window.tabLocked[tab.id] = false;
+
 			if (res && res['actionComplete'] == true) {
 				clearInterval(window.setInterval_getHtml[tab.id]);
 				if(res['html'].indexOf("blob:") === 0){
 					xhrPost(res['html'],undefined,function(resolve,reject,response){
-						window.URL.revokeObjectURL(res['html']);
 						res['html'] = response;
 						cb(tab, info, res);
 					},'json');
@@ -1101,7 +1101,6 @@ function recaptcha(resolve,tab,info,res) {
 		"type":100,
 		"param": {
 			"skipRecaptcha":true,
-			"background":true,
 		}
 	};
         
@@ -1362,9 +1361,9 @@ function dealOneAction(tab, info, needJump) {
 }
 
 chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
-	var tabId = sender.tab.id;
 	switch (req.type) {
 		case 1:
+			var tabId = sender.tab.id;
 			if(window.spiderSlaveTabInfos['tabs'][tabId] && window.spiderSlaveTabInfos['tabs'][tabId]['contentReadyCb']) {
 				window.spiderSlaveTabInfos['tabs'][tabId]['contentReadyCb']();
 			}
@@ -1385,6 +1384,27 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
 				resolve(true);
 			},undefined,req.heades)
 			
+			return true;
+			break;
+		//pop
+		case 4:
+			if(req.data !== undefined) {
+				req.data = JSON.parse(req.data);
+			}
+			if(typeof window[req.name] === 'function') {
+				var p = window[req.name](...req.data);
+				if(isPromise(p)) {
+					p.then((data) => {
+						sendResponse(data);
+					});
+				}else{
+					sendResponse(p===undefined?'ok':p);
+				}
+			}else if(typeof window[req.name] === 'object') {
+				sendResponse(window[req.name][req.data[0]]);
+			}else{
+				sendResponse(window[req.name]);
+			}
 			return true;
 			break;
 		default:
@@ -1424,7 +1444,33 @@ function ajaxPost(request,cb,errorcb) {
 		formData.append(k, request.data[k]);
 	}
 
-	$.ajax({
+	fetch(request.url, {
+    method: 'POST',
+    headers: {
+        'BlobFields': BlobFields.join(',')
+    },
+		body: formData,
+	})
+	// .then(response => response.json())  // 假设返回是 JSON 格式，如果是其他格式可以调整
+	.then(data => {
+			if(typeof(data) == 'string') {
+				actionRecords(request.url +' :'+data.substr(0,50), 'BACKEND AJAX', 'POST DATA');
+			}else{
+				actionRecords(request.url +' :'+JSON.stringify(data).substr(0,50), 'BACKEND AJAX', 'POST DATA');
+			}
+
+			if(cb !== undefined) {
+				cb(data);
+			}
+	})
+	.catch(error => {
+			if(errorcb !== undefined) {
+				errorcb();
+			}
+	});
+
+
+	/* $.ajax({
 		url: request.url,
 		type: 'POST',
 		timeout: 60000,
@@ -1450,7 +1496,7 @@ function ajaxPost(request,cb,errorcb) {
 				errorcb();
 			}
 		}
-	});
+	}); */
 }
 
 function actionRecords(message, title, type) {
@@ -1478,11 +1524,19 @@ if(window.userName) {
 }else{
 	var contextMenusTitle = '记录用户为：“%s”';
 }
-chrome.contextMenus.create({
-	title: contextMenusTitle,
-	contexts: ['selection'],
-	onclick: function(params){
-		window.userName = params['selectionText'];
+
+chrome.runtime.onInstalled.addListener(() => {
+	chrome.contextMenus.create({
+    id: "saveUserName",  // Unique ID for the context menu item
+    title: contextMenusTitle,
+    contexts: ['selection']
+  });
+
+});
+
+chrome.contextMenus.onClicked.addListener((params) => {
+  if (params.menuItemId === "saveUserName" && params.selectionText) {
+    window.userName = params['selectionText'];
 		chrome.storage.local.set({'userName': window.userName});
-	}
+  }
 });

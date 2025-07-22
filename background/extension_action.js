@@ -31,6 +31,15 @@ function getCookies(tab, info, cb) {
 	});
 }
 
+// get cookies await
+async function getCookiesSync(url) {
+	return await new Promise(function(resolve,reject) {
+		getCookies(undefined,{'url':url},(base64)=>{
+			resolve(base64)
+		});
+	});
+}
+
 //delete cookies
 function clearCookies(tab, info, cb) {
 	var c = 0;
@@ -40,6 +49,8 @@ function clearCookies(tab, info, cb) {
 	}else{
 		console.warn("浏览器版本小于119，clearCookies可能存在不完整");
 	}
+
+	console.log("option",option);
 
 	chrome.cookies.getAll(option,function(cookies) {
 		cookies.forEach(function(cookie) {
@@ -62,6 +73,14 @@ function clearCookies(tab, info, cb) {
 
 		console.log("clearCookies "+info.url+" => "+c);
 		cb(c);
+	});
+}
+
+async function clearCookiesSync(tab, info) {
+	return await new Promise(function(resolve,reject) {
+		clearCookies(tab, info ,(c)=>{
+			resolve(c)
+		});
 	});
 }
 
@@ -107,7 +126,6 @@ function waiteComplete(tab, info, cb) {
 				"type":100,
 				"param": {
 					"delay":delay,
-					"background":true,
 					"skipRecaptcha":true,
 				}
 			};

@@ -1,45 +1,46 @@
-function restoreData(bg, form, $) {
+
+async function restoreData(form, $) {
 	form.val('workerStatus', {
-		"spiderSlaveOn": bg.spiderSlaveOn
+		"spiderSlaveOn": await getWindowValue('spiderSlaveOn')
 	});
 
 	form.val('workerConfig', {
-		"spiderSlaveFlag": bg.spiderSlaveFlag
-		, "spiderSlaveApi": bg.spiderSlaveApi
-		, "spiderSlaveApiActionList": bg.spiderSlaveApiActionList
-		, "spiderSlaveApiCb": bg.spiderSlaveApiCb
-		, "spiderSlaveWinCount": bg.spiderSlaveWinCount
-		, "spiderSlavePerWinTabCount": bg.spiderSlavePerWinTabCount
-		, "spiderSlaveActionCountChangeUser": bg.spiderSlaveActionCountChangeUser
-		, "spiderSlaveInitStatus": bg.spiderSlaveInitStatus
-		, "spiderSlaveGetUrlsDelay": bg.spiderSlaveGetUrlsDelay
-		, "spiderSlaveDelay": bg.spiderSlaveDelay
-		, "spiderSlaveOn": bg.spiderSlaveOn
+		"spiderSlaveFlag": await getWindowValue('spiderSlaveFlag')
+		, "spiderSlaveApi": await getWindowValue('spiderSlaveApi')
+		, "spiderSlaveApiActionList": await getWindowValue('spiderSlaveApiActionList')
+		, "spiderSlaveApiCb": await getWindowValue('spiderSlaveApiCb')
+		, "spiderSlaveWinCount": await getWindowValue('spiderSlaveWinCount')
+		, "spiderSlavePerWinTabCount": await getWindowValue('spiderSlavePerWinTabCount')
+		, "spiderSlaveActionCountChangeUser": await getWindowValue('spiderSlaveActionCountChangeUser')
+		, "spiderSlaveInitStatus": await getWindowValue('spiderSlaveInitStatus')
+		, "spiderSlaveGetUrlsDelay": await getWindowValue('spiderSlaveGetUrlsDelay')
+		, "spiderSlaveDelay": await getWindowValue('spiderSlaveDelay')
+		, "spiderSlaveOn": await getWindowValue('spiderSlaveOn')
 	});
 
 	form.val('proxyConfig', {
-		"spiderProxyChangePerReqCount": bg.spiderProxyChangePerReqCount
-		, "spiderProxyFetchApi": bg.spiderProxyFetchApi
+		"spiderProxyChangePerReqCount": await getWindowValue('spiderProxyChangePerReqCount')
+		, "spiderProxyFetchApi": await getWindowValue('spiderProxyFetchApi')
 	});
 
 	form.val('debugConfig', {
-		"debugType": bg.debugType
-		, "debugActions": bg.debugActions
+		"debugType": await getWindowValue('debugType')
+		, "debugActions": await getWindowValue('debugActions')
 	});
 
-	$('#userDataPath').html(bg.userDataPath);
-	$('#workCreateFlag').html(bg.workCreateFlag);
+	$('#userDataPath').html(await getWindowValue('userDataPath'));
+	$('#workCreateFlag').html(await getWindowValue('workCreateFlag'));
 
 	var now = new Date();
-	var Ymd = Math.ceil(now.getTime()/1000/bg.spiderSlavePerDayMaxRunTimesFrequencyRang);
-	$('#spiderSlaveStackRunActionCount').html(bg.spiderSlaveStackRunActionCount[Ymd]===undefined?0:bg.spiderSlaveStackRunActionCount[Ymd]);
-	$('#spiderSlaveActionCountChangeUser').html(bg.spiderSlaveActionCountChangeUser);
-	$('#spiderSlavePerDayMaxRunTimes').html(bg.spiderSlavePerDayMaxRunTimes);
-	$('#spiderSlavePerDayMaxRunTimesFrequencyRang').html(parseFloat((bg.spiderSlavePerDayMaxRunTimesFrequencyRang/3600).toFixed(2)));
-	$('#spiderSlaveUserName').html(bg.userName);
+	var Ymd = Math.ceil(now.getTime()/1000/await getWindowValue('spiderSlavePerDayMaxRunTimesFrequencyRang'));
+	$('#spiderSlaveStackRunActionCount').html(await getWindowValue('spiderSlaveStackRunActionCount',[Ymd])===null?0:await getWindowValue('spiderSlaveStackRunActionCount',[Ymd]));
+	$('#spiderSlaveActionCountChangeUser').html(await getWindowValue('spiderSlaveActionCountChangeUser'));
+	$('#spiderSlavePerDayMaxRunTimes').html(await getWindowValue('spiderSlavePerDayMaxRunTimes'));
+	$('#spiderSlavePerDayMaxRunTimesFrequencyRang').html(parseFloat((await getWindowValue('spiderSlavePerDayMaxRunTimesFrequencyRang')/3600).toFixed(2)));
+	$('#spiderSlaveUserName').html(await getWindowValue('userName'));
 }
 
-layui.use(['element', 'layer', 'form', 'jquery'], function () {
+layui.use(['element', 'layer', 'form', 'jquery'],function () {
 	var form = layui.form;
 	var $ = layui.$;
 
@@ -53,28 +54,27 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 		layer.msg('已复制: '+text);
 	}
 
-	var bg = chrome.extension.getBackgroundPage();
-	restoreData(bg, form, $);
+	restoreData(form, $);
 
 	form.on('switch(spiderSlaveOn)', function (data) {
-		chrome.storage.local.set({ 'spiderSlaveOn': data.elem.checked }, function () {
-			bg.loadConfig();
+		chrome.storage.local.set({ 'spiderSlaveOn': data.elem.checked }, async function () {
+			await getWindowValue('loadConfig');
 			if (data.elem.checked) {
-				bg.workPlay();
+				await getWindowValue('workPlay');
 			} else {
-				bg.workPause();
-				if(bg.spiderSlaveHelpmate === true) {
-					bg.moveKeepLiveUser()
+				await getWindowValue('workPause');
+				if(await getWindowValue('spiderSlaveHelpmate') === true) {
+					await getWindowValue('moveKeepLiveUser');
 				}
 			}
 		});
 
 	});
 
-	$("input[name=spiderSlaveApi]").on("input",function(e){
+	$("input[name=spiderSlaveApi]").on("input",async function(e){
 		form.val('workerConfig', {
-			"spiderSlaveApiActionList": bg.spiderSlaveApiActionList.replace(bg.spiderSlaveApi,$(this).val())
-			, "spiderSlaveApiCb": bg.spiderSlaveApiCb.replace(bg.spiderSlaveApi,$(this).val())
+			"spiderSlaveApiActionList": await getWindowValue('spiderSlaveApiActionList').replace(await getWindowValue('spiderSlaveApi'),$(this).val())
+			, "spiderSlaveApiCb": await getWindowValue('spiderSlaveApiCb').replace(await getWindowValue('spiderSlaveApi'),$(this).val())
 		});
 	});
 
@@ -123,12 +123,12 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 	});
 
 	//监听提交
-	form.on('submit(workerConfig)', function (data) {
+	form.on('submit(workerConfig)', async function (data) {
 		chrome.storage.local.set(data.field, function () {
 			layer.msg('储存成功');
 		});
 
-		bg.loadConfig();
+		await getWindowValue('loadConfig');
 		return false;
 	});
 
@@ -883,12 +883,18 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 	});
 
 	function loadTestActions(value){
-		if(eval('typeof(actionsTpl_'+value+') != "undefined"')) {
-			var actions = eval('actionsTpl_'+value);
+		if(typeof(window['actionsTpl_'+value]) != "undefined") {
+			var actions = window['actionsTpl_'+value];
 		}else{
 			actionsTpl_default[0]['type'] = parseInt(value);
 			var actions = actionsTpl_default;
 		}
+		// if(eval('typeof(actionsTpl_'+value+') != "undefined"')) {
+		// 	var actions = eval('actionsTpl_'+value);
+		// }else{
+		// 	actionsTpl_default[0]['type'] = parseInt(value);
+		// 	var actions = actionsTpl_default;
+		// }
 
 		var actionsString = '';
 		var index = 0;
@@ -909,27 +915,27 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 	}
 
 	form.on('submit(debugConfig)', function (data) {
-		chrome.storage.local.set(data.field, function () {
+		chrome.storage.local.set(data.field, async function () {
 			layer.msg('正在执行');
-			bg.loadConfig();
+			// await getWindowValue('loadConfig');
 
-			bg.debugRun(JSON.parse(data.field['debugActions']));
+			await getWindowValue('debugRun',[JSON.parse(data.field['debugActions'])]);
 		});
 		return false;
 	});
 
-	form.on('submit(debugConfigReset)', function (data) {
-		chrome.storage.local.set(data.field, function () {
+	form.on('submit(debugConfigReset)',function (data) {
+		chrome.storage.local.set(data.field, async function () {
 			layer.msg('已重置');
-			bg.loadConfig();
+			await getWindowValue('loadConfig');
 
-			bg.debugRunReset(JSON.parse(data.field['debugActions']));
+			await getWindowValue('debugRunReset',[JSON.parse(data.field['debugActions'])]);
 		});
 		return false;
 	});
 
 
-	function reloadCookie() {
+	async function reloadCookie() {
 		var url = $('form[lay-filter=cookies] input[name=url]').val();
 
 		if(url === '') {
@@ -938,14 +944,13 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 			return ;
 		}
 
-		bg.getCookies(undefined, {"url":url}, (base64)=>{
-			var cookiesJson = bg.base64ToString(base64)
-			$('.sync-cookies-box').show();
-			$('#sync-cookies').html(cookiesJson);
-		})
+		base64 = await getWindowValue('getCookiesSync',[url])
+		cookiesJson = await getWindowValue('base64ToString',[base64])
+		$('.sync-cookies-box').show();
+		$('#sync-cookies').html(cookiesJson);
 	}
 
-	form.on('submit(pullcookies)', function (data) {
+	/* form.on('submit(pullcookies)', function (data) {
 		workArr = data.field.work.split('@',2);
 		url = 'http://'+workArr[0]+':1236/slave/action';
 		var formData = new FormData();
@@ -993,18 +998,17 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 		});
 
 		return false;
-	});
+	}); */
 
 	form.on('submit(clearcookies)', function (data) {
 		layer.confirm('是否删除？', {
 			title: "操作提示",
 			icon: 0,
 			btn: ['确定', '取消']
-		}, function () {
-			bg.clearCookies(undefined, { "url": data.field.url }, (c) => {
-				layer.msg('删除' + c + '个cookie');
-				reloadCookie();
-			});
+		}, async function () {
+			c = await getWindowValue('clearCookiesSync',[undefined, { "url": data.field.url }]);
+			layer.msg('删除' + c + '个cookie');
+			reloadCookie();
 		});
 
 		return false;

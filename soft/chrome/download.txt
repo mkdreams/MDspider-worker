@@ -2,3 +2,6 @@ https://github.com/ungoogled-software/ungoogled-chromium-windows/releases/downlo
 
 windows server 2012:
 https://ungoogled-software.github.io/ungoogled-chromium-binaries/releases/windows/64bit/108.0.5359.125-1
+
+自托管扩展，并使用ExtensionInstallForceList强制安装扩展
+https://learn.microsoft.com/zh-cn/deployedge/microsoft-edge-manage-extensions-webstore
