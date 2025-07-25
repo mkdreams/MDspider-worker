@@ -65,6 +65,10 @@ function sendMessageToTabs(tab,sendInfoObj,callBack) {
 window.requestIdToUUID = {};
 chrome.webRequest.onBeforeSendHeaders.addListener(
 	function(details) {
+		if (details.url.includes('loadref')) {
+			console.log("details",details);
+	  }
+
 		if(window.requestIdToUUID[details.requestId] !== undefined) {
 			var uuid = window.requestIdToUUID[details.requestId];
 			delete window.requestIdToUUID[details.requestId];
@@ -98,19 +102,13 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
 //     return {responseHeaders: details.responseHeaders};
 // }, {urls: ['*://*/*']}, ['blocking', 'responseHeaders']);
 
-// chrome.webRequest.onBeforeRequest.addListener(
-// 	function(details) {
-// 	  if (details.url.includes('UUID=')) {
-// 		uuidInfo = details.url.split(/(?:\?|\&)UUID\=/);
-// 		newUrl = uuidInfo[0];
-// 		window.requestIdToUUID[details.requestId] = uuidInfo[1];
-// 		return { redirectUrl: newUrl };
-// 	  }
-// 	},
-// 	{
-// 	  urls: ['<all_urls>'],
-// 	  types: ['main_frame', 'sub_frame', 'xmlhttprequest']
-// 	},
-// 	['blocking']
-//   );
+
+chrome.declarativeNetRequest.onRuleMatchedDebug.addListener(function(details) {
+	var url = details.request.url;
+	var reg = new RegExp('(?:.+?)(?:\\?|\\&)UUID\\=(\\w+)$');
+	var match = url.match(reg);
+	if(match && match[1]) {
+		window.requestIdToUUID[details.request.requestId] = match[1];
+	}
+});
   

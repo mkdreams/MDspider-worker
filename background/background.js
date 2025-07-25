@@ -1389,7 +1389,21 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
 			if(window.spiderSlaveTabInfos['tabs'][tabId] && window.spiderSlaveTabInfos['tabs'][tabId]['contentReadyCb']) {
 				window.spiderSlaveTabInfos['tabs'][tabId]['contentReadyCb']();
 			}
-			sendResponse("ok");
+			// 使用 chrome.runtime.getURL 获取扩展内文件的完整URL
+			const fileUrl = chrome.runtime.getURL('common/jquery-2.0.3.js');
+			console.log("fileUrl",fileUrl);
+
+			// 然后使用fetch获取内容
+			fetch(fileUrl)
+				.then(response => response.text())
+				.then(content => {
+					sendResponse(content);
+				})
+				.catch(error => {
+					console.error('读取文件失败:', error);
+					sendResponse('');
+				});
+			return true;
 			break;
 		//screenshot
 		case 2:

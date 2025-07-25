@@ -11,9 +11,9 @@
 	"declarative_net_request": {
     "rule_resources": [
       {
-        "id": "redirect",
-        "enabled": false,
-        "path": "rules/redirect.json"
+        "id": "redirectForReqHeader",
+        "enabled": true,
+        "path": "rules/redirectForReqHeader.json"
       },
       {
         "id": "removeCSP",

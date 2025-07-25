@@ -117,11 +117,6 @@ var ajaxRecordString = `
             }
         }
 
-        if(arguments[1].indexOf('?') > -1) {
-            arguments[1] += '&UUID='+this.mdUUID;
-        }else{
-            arguments[1] += '?UUID='+this.mdUUID;
-        }
         this.OrgOpen(...arguments);
     };
 
