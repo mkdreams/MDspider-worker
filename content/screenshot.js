@@ -639,7 +639,6 @@ function getStyle(e, t) {
 }
 
 async function fullPageScreenShot(info) {
-  console.log("fullPageScreenShot",info);
   if(info && info.param && info.param.width) {
     var width = info.param.width;
   }else{
@@ -654,7 +653,7 @@ async function fullPageScreenShot(info) {
 
   //初始化
   await new Promise(function(resolve,reject) {
-      chrome.runtime.sendMessage({"type":2,"param":{"action":"screenshot","width":width,"height":height,'init':true}},(r)=>{
+      chrome.runtime.sendMessage({"type":2,"param":{"action":"screenshot","width":width,"height":height,'init':1}},(r)=>{
         resolve(true);
       })
   });
@@ -710,7 +709,14 @@ async function fullPageScreenShot(info) {
           sumHeightTemp +=  image.height;
           resolve(true);
           enableFixedPosition(false);
-        }
+        };
+
+        image.onerror = function(){
+          console.log("image.onerror",r);
+          sumHeightTemp +=  height;
+          resolve(true);
+          enableFixedPosition(false);
+        };
       })
     },scrollDelay);
   });
@@ -732,7 +738,12 @@ async function fullPageScreenShot(info) {
                   imgs.push(image);
                 }
                 resolve(true);
-              }
+              };
+
+              image.onerror = function(){
+                console.log("image.onerror",r);
+                resolve(true);
+              };
             })
           },scrollDelay);
       });
@@ -751,13 +762,24 @@ async function fullPageScreenShot(info) {
               sumHeightTemp +=  image.height;
               imgs.push(image);
               resolve(true);
-            }
+            };
+
+            image.onerror = function(){
+              console.log("image.onerror",r);
+              sumHeightTemp +=  height;
+              resolve(true);
+            };
           })
         },350);
       },150);
     });
-
   }
+
+  await new Promise(function(resolve,reject) {
+      chrome.runtime.sendMessage({"type":2,"param":{"action":"screenshot","width":width,"height":height,'init':2}},(r)=>{
+        resolve(true);
+      })
+  });
 
   //merge imgs
   var widthTemp = 0;

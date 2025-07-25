@@ -207,7 +207,7 @@ function screenshot(tab, info, cb,screenshotCount) {
 		height = info.param.height;
 	}
 
-	var init = false;
+	var init = 0;
 	if(info && info.param && info.param.init) {
 		init = info.param.init;
 	}
@@ -220,11 +220,24 @@ function screenshot(tab, info, cb,screenshotCount) {
 	}).then(function() {
 		return new Promise(function(resolve,reject) {
 			chrome.tabs.update(tab.id, { active: true }, function () {
-				resolve(true);
+				if(init === 1) {
+					chrome.debugger.attach({ tabId: tab.id }, '1.3').then(function(){
+						resolve(true);
+					});
+				}else{
+					resolve(true);
+				}
 			});
 		});
 	}).then(function(){
-		if(init === true) {
+		if(init === 1) {
+			cb();
+			return;
+		}
+
+		if(init === 2) {
+			chrome.debugger.detach({ tabId: tab.id });
+
 			cb();
 			return;
 		}
@@ -232,16 +245,37 @@ function screenshot(tab, info, cb,screenshotCount) {
 		if (chrome.runtime.lastError) {
 			console.error(chrome.runtime.lastError);
 		}
-		chrome.tabs.captureVisibleTab(null, {
-			format: 'png'
-		}, function (data) {
+
+		chrome.debugger.sendCommand(
+			{"tabId":tab.id},
+			"Page.captureScreenshot",
+			{"format": "png"},
+		).then((data)=>{
 			//retry 3 times
-			if(!data && screenshotCount <= 3) {
+			if(!data.data && screenshotCount <= 3) {
 				setTimeout(()=>{
 					screenshot(tab, info, cb,screenshotCount);
 				},500);
 			}else{
-				cb(data);
+				cb('data:image/png;base64,'+data.data);
+			}
+		}).catch((err) => {
+				console.log(err);
+				cb(err.toString());
+		});
+
+		chrome.debugger.sendCommand(
+			{"tabId":tab.id},
+			"Page.captureScreenshot",
+			{"format": "png"},
+		).then(data=>{
+			//retry 3 times
+			if(!data.data && screenshotCount <= 3) {
+				setTimeout(()=>{
+					screenshot(tab, info, cb,screenshotCount);
+				},500);
+			}else{
+				cb('data:image/png;base64,'+data.data);
 			}
 		});
 	});

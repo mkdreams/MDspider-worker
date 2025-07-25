@@ -133,12 +133,12 @@ layui.use(['element', 'layer', 'form', 'jquery'],function () {
 	});
 
 
-	var actionsTplF = {
+	window.actionsTplF = {
 		"code": 0,
 		"data": "--data--"
 	};
 
-	var actionsTpl_default = [
+	window.actionsTpl_default = [
 		{
 			"id": "debug",
 			"url": "https://www.baidu.com",
@@ -147,7 +147,7 @@ layui.use(['element', 'layer', 'form', 'jquery'],function () {
 		}
 	];
 
-	var actionsTpl_201 = [
+	window.actionsTpl_201 = [
 		{
 			"id": "debug",
 			"url": "https://www.baidu.com",
@@ -175,7 +175,7 @@ layui.use(['element', 'layer', 'form', 'jquery'],function () {
 		}
 	];
 
-	var actionsTpl_106 = [
+	window.actionsTpl_106 = [
 		{
 			"id": "debug",
 			"url": "https://www.facebook.com/cnanewstaiwan/posts/526184426206794",
@@ -203,7 +203,7 @@ layui.use(['element', 'layer', 'form', 'jquery'],function () {
 		}
 	];
 
-	var actionsTpl_107 = [
+	window.actionsTpl_107 = [
 		{
 			"id":"RANDOM0",
 			"url":"https://www.discuss.com.hk/viewthread.php?tid=31488423",
@@ -216,7 +216,7 @@ layui.use(['element', 'layer', 'form', 'jquery'],function () {
 		}
 	];
 
-	var actionsTpl_202 = [
+	window.actionsTpl_202 = [
 		{
 			"id": "debug",
 			"url": "https://www.baidu.com",
@@ -257,7 +257,7 @@ layui.use(['element', 'layer', 'form', 'jquery'],function () {
 		}
 	];
 
-	var actionsTpl_1 = [
+	window.actionsTpl_1 = [
 		{
 			"id": "debug",
 			"url": "https://gitee.com/colin_86/MDword",
@@ -270,7 +270,7 @@ layui.use(['element', 'layer', 'form', 'jquery'],function () {
 		}
 	];
 
-	var actionsTpl_100 = [
+	window.actionsTpl_100 = [
 		{
 			"id": "debug",
 			"url": "https://gitee.com/colin_86/MDword",
@@ -292,7 +292,7 @@ layui.use(['element', 'layer', 'form', 'jquery'],function () {
 			"code": 1
 		}
 	];
-	var actionsTpl_101 = [
+	window.actionsTpl_101 = [
 		{
 			"id": "debug",
 			"url": `return new Promise(function(resolve,reject) {setTimeout(function() {resolve(1);},5000);})`,
@@ -306,7 +306,7 @@ layui.use(['element', 'layer', 'form', 'jquery'],function () {
 	];
 
 	var fbName = 'cc103';
-	var actionsTpl_103 = [
+	window.actionsTpl_103 = [
 		{
 			"id": "1",
 			"url": "https://www.facebook.com/r.php?locale=zh_CN",
@@ -472,7 +472,7 @@ layui.use(['element', 'layer', 'form', 'jquery'],function () {
 		},
 	];
 
-	var actionsTpl_104 = [
+	window.actionsTpl_104 = [
 		{
 			"id": "1",
 			"url": "https://www.97caijing.com/article/119515",
@@ -499,7 +499,7 @@ layui.use(['element', 'layer', 'form', 'jquery'],function () {
 		},
 	];
 
-	var actionsTpl_105 = [
+	window.actionsTpl_105 = [
 		{
 			"id": "1",
 			"url": "https://www.97caijing.com/article/119515",
@@ -507,6 +507,7 @@ layui.use(['element', 'layer', 'form', 'jquery'],function () {
 			"param": {
 				'delay':3000
 				,'lockTab':1
+				,"lockTabFlag":"debug"
 				,'musave':1
 				,sub:[
 					{
@@ -530,7 +531,7 @@ layui.use(['element', 'layer', 'form', 'jquery'],function () {
 		},
 	];
 
-	var actionsTpl_102 = [
+	window.actionsTpl_102 = [
 		{
 			"id": "1",
 			"url": "https://news.baidu.com/",
@@ -559,7 +560,7 @@ layui.use(['element', 'layer', 'form', 'jquery'],function () {
 		}
 	];
 
-	var actionsTpl_501 = [
+	window.actionsTpl_501 = [
 		{
 			"id": "1",
 			"url": "https://www.facebook.com/?sk=favorites",
@@ -657,7 +658,7 @@ layui.use(['element', 'layer', 'form', 'jquery'],function () {
 			"code": 1
 		},
 	];
-	var actionsTpl_502 = [
+	window.actionsTpl_502 = [
 		{
 			"id": "1",
 			"url": "https://news.baidu.com/",
@@ -667,7 +668,7 @@ layui.use(['element', 'layer', 'form', 'jquery'],function () {
 		},
 	];
 
-	var actionsTpl_503 = [
+	window.actionsTpl_503 = [
 		{
 			"id": "random",
 			"url": "https://www.baidu.com",
@@ -733,7 +734,7 @@ layui.use(['element', 'layer', 'form', 'jquery'],function () {
 		},
 	];
 
-	var actionsTpl_504 = [
+	window.actionsTpl_504 = [
 		{
 			"id": "random",
 			"url": "https://lihkg.com",
@@ -759,7 +760,7 @@ layui.use(['element', 'layer', 'form', 'jquery'],function () {
 		}
 	];
 
-	var actionsTpl_505 = [
+	window.actionsTpl_505 = [
 		{
 			"id": "random",
 			"url": "https://lihkg.com1",
@@ -797,7 +798,7 @@ layui.use(['element', 'layer', 'form', 'jquery'],function () {
 		}
 	];
 
-	var actionsTpl_506 = [
+	window.actionsTpl_506 = [
 		{
 			"id": "1",
 			"url": "https://search.bilibili.com/video?keyword=%E6%9F%90%E8%99%8E&search_source=1",
@@ -810,7 +811,7 @@ layui.use(['element', 'layer', 'form', 'jquery'],function () {
 		},
 	];
 
-	var actionsTpl_507 = [
+	window.actionsTpl_507 = [
 		{
 			"id": "1",
 			"url": "https://www.google.com/",
@@ -883,6 +884,7 @@ layui.use(['element', 'layer', 'form', 'jquery'],function () {
 	});
 
 	function loadTestActions(value){
+		console.log('actionsTpl_'+value,typeof(window['actionsTpl_'+value]));
 		if(typeof(window['actionsTpl_'+value]) != "undefined") {
 			var actions = window['actionsTpl_'+value];
 		}else{
@@ -909,7 +911,7 @@ layui.use(['element', 'layer', 'form', 'jquery'],function () {
 		
 		form.val('debugConfig',
 			{
-				'debugActions':JSON.stringify(actionsTplF,null,4).replace('"--data--"',["[\r"+actionsString+"\r    ]"])
+				'debugActions':JSON.stringify(window.actionsTplF,null,4).replace('"--data--"',["[\r"+actionsString+"\r    ]"])
 			}
 		);
 	}

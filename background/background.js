@@ -937,6 +937,11 @@ function getHml(tab, info, result) {
 				if(info.param && info.param.reportUrl) {
 					url = info.param.reportUrl;
 				}
+
+				if(info.isDebugRun === true) {
+					console.warn(info['id'], "sResponse", info['results']);
+				}
+
 				ajaxPost({ 'admintype': 2, 'tab': {id:tab.id}, 'url': url, 'data': { 'id': info['id'], 'sResponse': uint8ArrayToBlob(pako.gzip(sResponse)),'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag,'userDataPath':window.userDataPath,'userName':(window.userName?window.userName:'')} },function(data) {
 					isDone(tab, info);
 					if(typeof(data) == 'string' && data[0] === '{') {
@@ -1241,10 +1246,10 @@ function sendAction(tab, info, cb) {
 	if(info.type === 200) {
 		if(info.param && info.param.delay) {
 			setTimeout(function(){
-				eval(info.action+'(tab, info, function(result){cb(result)});');
+				window[info.action](tab, info, function(result){cb(result)});
 			},info.param.delay);
 		}else{
-			eval(info.action+'(tab, info, function(result){cb(result)});');
+			window[info.action](tab, info, function(result){cb(result)});
 		}
 	}else{
 		sendMessageToTabs(tab, { 'actiontype': 2, 'info': info },function() {
@@ -1415,6 +1420,7 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
 function debugRun(debugActions) {
 	debugActions.data.forEach(function (v) {
 		if (!window.spiderSlaveUrls[v['id']]) {
+			v['isDebugRun'] = true;
 			window.spiderSlaveUrls[v['id']] = v;
 		}
 	});

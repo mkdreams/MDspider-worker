@@ -258,8 +258,6 @@ function topRunJs(jsStr) {
 }
 
 function pageRunJs(jsStr,cb,background) {
-	console.log(jsStr,cb,background);
-
 	var domRandomId = "MDspider-help-dom-result-"+randomStr();
 
 	const config = { attributes: true};
@@ -387,6 +385,20 @@ function pageRunJs(jsStr,cb,background) {
 			}
 		},200);
 	}
+}
+
+function getJqDomByStr(jsStr) {
+	var matches = jsStr.match(/\$\((?:\'|\")([^(]+?)(?:\'|\")\)(?:\[(\d+?)\])*/);
+
+	var r = undefined;
+	if (matches !== null) {
+		r = $(matches[1]);
+		if(matches[2] !== undefined) {
+			r = r[parseInt(matches[2])];
+		}
+	}
+
+	return r;
 }
 
 chrome.runtime.onMessage.addListener(
@@ -633,7 +645,7 @@ chrome.runtime.onMessage.addListener(
 									if(request.info.url === "") {
 										var pos = [0,0];
 									}else{
-										var evalInfo = eval(request.info.url);
+										var evalInfo = getJqDomByStr(request.info.url);
 										if(Array.isArray(evalInfo)) {
 											var pos = getRandomPos(domCenter(evalInfo[0]),request.info.spiderSlaveBaseInfo,evalInfo[1]);
 										}else{
@@ -766,7 +778,7 @@ chrome.runtime.onMessage.addListener(
 									var action = new Promise(function(resolve,reject) {
 										setTimeout(function(){
 											resolve(1);
-										},request.info.param.delay)
+										},request.info.param.delay);
 									});
 								}else{
 									var action = new Promise(function(resolve,reject) {
@@ -774,7 +786,7 @@ chrome.runtime.onMessage.addListener(
 									});
 								}
 								action.then(function() {
-									var doms = eval(request.info.url);
+									var doms = getJqDomByStr(request.info.url);
 									var promiseArr = [];
 									for(var domidx in doms) {
 										domTemp = doms[domidx];
@@ -782,6 +794,8 @@ chrome.runtime.onMessage.addListener(
 										if(isDOM) {
 											var p = new Promise(function(resolve,reject) {
 												html2canvas(domTemp).then(function(canvas) {
+													console.image(canvas.toDataURL('png'));
+
 													canvas.toBlob(function(blob) {
 														blobToBase64(blob,function(base64){
 															resolve(base64);
@@ -801,7 +815,6 @@ chrome.runtime.onMessage.addListener(
 								});
 								break;		
 							case 105:
-								console.log('fullPageScreenShot req',request);
 								window.actionComplete = false;
 								if(request.info.param && request.info.param.delay) {
 									var action = new Promise(function(resolve,reject) {
