@@ -29,6 +29,7 @@ function restoreData(bg, form, $) {
 
 	$('#userDataPath').html(bg.userDataPath);
 	$('#workCreateFlag').html(bg.workCreateFlag);
+	$('#spiderReqSlaveFlag').html(bg.spiderReqSlaveFlag);
 
 	var now = new Date();
 	var Ymd = Math.ceil(now.getTime()/1000/bg.spiderSlavePerDayMaxRunTimesFrequencyRang);
