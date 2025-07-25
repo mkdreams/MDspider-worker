@@ -1137,11 +1137,15 @@ function recaptcha(resolve,tab,info,res) {
 				console.log('check '+checkActionInfo['name']);
 				checked = true;
 				return new Promise(function(doneCheckActionPromiseResolve,reject) {
+					checkActionInfoSubTemp = checkActionInfo['sub'];
+					for(var subIdx in checkActionInfoSubTemp) {
+						checkActionInfoSubTemp[subIdx]['recaptchaPInfo'] = {"url":info.url};
+					}
 					var infoTemp = {
 						"doneCheckActionPromiseResolve": doneCheckActionPromiseResolve,
 						"param": {
 							"skipRecaptcha":true,
-							"sub":checkActionInfo['sub']
+							"sub":checkActionInfoSubTemp
 						}
 					};
 	
