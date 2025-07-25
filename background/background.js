@@ -92,6 +92,15 @@ function initDeviceInfo(cb) {
 										chrome.storage.local.set({'spiderSlaveFlag':window['spiderSlaveFlag']});
 									}
 
+									var spiderReqSlaveFlag = getQueryString(title,'reqSlaveFlag');
+									if(spiderReqSlaveFlag === undefined) {
+										spiderReqSlaveFlag = spiderSlaveFlag;
+									}
+									if(spiderReqSlaveFlag !== undefined) {
+										window['spiderReqSlaveFlag'] = spiderReqSlaveFlag;
+										chrome.storage.local.set({'spiderReqSlaveFlag':window['spiderReqSlaveFlag']});
+									}
+
 									var debug = getQueryString(title,'debug');
 									if(debug !== undefined && debug === "1") {
 										window['debug'] = true;
@@ -219,6 +228,10 @@ function loadConfig(cb) {
 	chrome.storage.local.get(null, function(result) {
 		for(var key in result) {
 			window[key] = result[key];
+		}
+
+		if(window['spiderReqSlaveFlag'] === undefined && window['spiderSlaveFlag'] !== undefined) {
+			window['spiderReqSlaveFlag'] = window['spiderSlaveFlag'];
 		}
 
 		cb && cb();
@@ -413,7 +426,7 @@ function pullActions() {
 	var timestamp = new Date().getTime();
 	if(timestamp - window.setInterval_getLinksCache_lastRunTime > window.spiderSlaveGetUrlsDelay && window.spiderSlaveInitStatus == 3) {
 		window.setInterval_getLinksCache_lastRunTime = timestamp;
-		ajaxPost({ 'admintype': 1, 'url': window.spiderSlaveApiActionList, 'data': { 'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function(data) {
+		ajaxPost({ 'admintype': 1, 'url': window.spiderSlaveApiActionList, 'data': { 'sFlag': window.spiderReqSlaveFlag,'workCreateFlag':window.workCreateFlag } },function(data) {
 			if (!(data.data instanceof Array)) {
 				return;
 			}
@@ -1128,11 +1141,15 @@ function recaptcha(resolve,tab,info,res) {
 				console.log('check '+checkActionInfo['name']);
 				checked = true;
 				return new Promise(function(doneCheckActionPromiseResolve,reject) {
+					checkActionInfoSubTemp = checkActionInfo['sub'];
+					for(var subIdx in checkActionInfoSubTemp) {
+						checkActionInfoSubTemp[subIdx]['recaptchaPInfo'] = {"url":info.url};
+					}
 					var infoTemp = {
 						"doneCheckActionPromiseResolve": doneCheckActionPromiseResolve,
 						"param": {
 							"skipRecaptcha":true,
-							"sub":checkActionInfo['sub']
+							"sub":checkActionInfoSubTemp
 						}
 					};
 	

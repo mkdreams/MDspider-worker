@@ -30,6 +30,7 @@ async function restoreData(form, $) {
 
 	$('#userDataPath').html(await getWindowValue('userDataPath'));
 	$('#workCreateFlag').html(await getWindowValue('workCreateFlag'));
+	$('#spiderReqSlaveFlag').html(await getWindowValue('spiderReqSlaveFlag'));
 
 	var now = new Date();
 	var Ymd = Math.ceil(now.getTime()/1000/await getWindowValue('spiderSlavePerDayMaxRunTimesFrequencyRang'));
