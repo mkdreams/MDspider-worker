@@ -2,10 +2,17 @@
   {
     "id": 1,
     "enabled": true,
-    "url_filter": "*://*/*",
     "action": {
       "type": "modifyHeaders",
       "responseHeaders": [
+        {
+          "header": "x-webkit-csp",
+          "operation": "remove"
+        },
+        {
+          "header": "x-content-security-policy",
+          "operation": "remove"
+        },
         {
           "header": "content-security-policy",
           "operation": "remove"
@@ -17,7 +24,7 @@
       ]
     },
     "condition": {
-      "urlFilter": "*://*/*",
+      "urlFilter": "|http*",
       "resourceTypes": ["main_frame", "sub_frame", "xmlhttprequest"]
     }
   }

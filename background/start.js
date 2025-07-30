@@ -7,17 +7,8 @@ importScripts(
   "/common/cat_wampy.js",
   "/background/extension_action.js",
   "/background/background.js",
-  "/background/run_time_api.js"
+  "/background/run_time_api.js",
+  "/background/content.js"
 );
-
-// async function checkAlarmState() {
-//   const alarm = await chrome.alarms.get("wake-alarm");
-
-//   if (!alarm) {
-//     await chrome.alarms.create("wake-alarm",{delayInMinutes: 0});
-//   }
-// }
-
-// checkAlarmState();
 
 console.log('Service Worker 启动');

@@ -93,16 +93,6 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
 );
 
 
-// chrome.webRequest.onHeadersReceived.addListener(details => {
-//     for (var i = 0; i < details.responseHeaders.length; i++) {
-// 		if ('content-security-policy' === details.responseHeaders[i].name.toLowerCase() || 'content-security-policy-report-only' === details.responseHeaders[i].name.toLowerCase()) {
-// 			details.responseHeaders[i].value = '';
-// 		}
-// 	}
-//     return {responseHeaders: details.responseHeaders};
-// }, {urls: ['*://*/*']}, ['blocking', 'responseHeaders']);
-
-
 chrome.declarativeNetRequest.onRuleMatchedDebug.addListener(function(details) {
 	var url = details.request.url;
 	var reg = new RegExp('(?:.+?)(?:\\?|\\&)UUID\\=(\\w+)$');
@@ -111,4 +101,3 @@ chrome.declarativeNetRequest.onRuleMatchedDebug.addListener(function(details) {
 		window.requestIdToUUID[details.request.requestId] = match[1];
 	}
 });
-  

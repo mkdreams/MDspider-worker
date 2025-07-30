@@ -4,21 +4,21 @@
 	"name": "MDspider",
 	"short_name": "MDS",
 	"description": "Tool for data extraction from websites",
-	"permissions": ["debugger","contextMenus", "webRequest", "webRequestAuthProvider", "declarativeNetRequest","declarativeNetRequestWithHostAccess","declarativeNetRequestFeedback", "tabs", "activeTab", "notifications", "system.display","system.memory", "storage", "unlimitedStorage", "downloads", "webNavigation", "cookies"],
+	"permissions": ["debugger","userScripts","contextMenus", "webRequest", "webRequestAuthProvider", "declarativeNetRequest","declarativeNetRequestWithHostAccess","declarativeNetRequestFeedback", "tabs", "activeTab", "notifications", "system.display","system.memory", "storage", "unlimitedStorage", "downloads", "webNavigation", "cookies"],
 	"host_permissions": [
 		"*://*/*"
 	],
 	"declarative_net_request": {
     "rule_resources": [
+			{
+				"id": "removeCSP",
+				"enabled": true,
+				"path": "rules/removeCSP.json"
+			},
       {
         "id": "redirectForReqHeader",
         "enabled": true,
         "path": "rules/redirectForReqHeader.json"
-      },
-      {
-        "id": "removeCSP",
-        "enabled": false,
-        "path": "rules/removeCSP.json"
       }
     ]
   },
@@ -32,29 +32,7 @@
 		"default_title": "MDspider",
 		"default_popup": "popup/popup.html"
 	},
-	"content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
-  },
 	"background":{
 		"service_worker":"background/start.js"
-	},
-	"content_scripts": [
-		{
-			"matches": ["*://*/*"],
-			"js": [
-				"common.js",
-				"common/jquery-2.0.3.js",
-				"common/base64.min.js",
-				"common/function.js",
-				"common/cat_wampy.js",
-				"content/js.cookie.min.js",
-				"content/html2canvas.min.js",
-				"content/work.js",
-				"content/screenshot.js",
-				"content/ajax.record.js"
-			],
-			"all_frames": false,
-			"run_at":"document_start"
-		}
-	]
+	}
 }
