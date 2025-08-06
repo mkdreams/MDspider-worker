@@ -819,6 +819,7 @@ chrome.runtime.onMessage.addListener(
 								});
 								break;		
 							default:
+								window.actionComplete = false;
 								window.location.href=request.info.url;
 								break;
 						}
