@@ -408,7 +408,7 @@ function workPlay(allCompeletedCb) {
 				var nowPingUserFeature = JSON.stringify(Object.keys(window.spiderSlaveUrls));
 				if(window.pingUserFeature !== nowPingUserFeature || getObjectLen(window.spiderSlaveUrls) === 0) {
 					window.pingUserFeature = nowPingUserFeature;
-					pingUser()
+					pingUser();
 				}
 			}
 
