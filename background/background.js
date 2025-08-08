@@ -826,6 +826,7 @@ function isDone(tab, info, isError) {
 
 			});
 		}else{
+			clearTimeout(window.setTimeout_checkIsDie[tab.id]);
 			window.spiderSlaveTabInfos['tabs'][tab.id]['runStatus'] = 0;
 			window.spiderSlaveUrls[info['id']]['runStartTime'] = undefined;
 		}
