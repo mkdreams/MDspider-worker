@@ -398,14 +398,20 @@ function workPlay(allCompeletedCb) {
 
 	//health check
 	if(window.spiderSlaveHelpmate === true) {
+		window.pingUserFeature = "";
 		clearInterval(window.spiderSlaveHelpmateSetInterval);
 		window.spiderSlaveHelpmateSetInterval = setInterval(function () {
 			var nowTime = parseInt(new Date().getTime()/1000);
 			if(window.spiderSlaveActiveLastTime[0] < nowTime - 300 || window.spiderSlaveActiveLastTime[1] < nowTime - 300) {
 				workPlay();
 			}else{
-				pingUser()
+				var nowPingUserFeature = JSON.stringify(Object.keys(window.spiderSlaveUrls));
+				if(window.pingUserFeature !== nowPingUserFeature || getObjectLen(window.spiderSlaveUrls) === 0) {
+					window.pingUserFeature = nowPingUserFeature;
+					pingUser()
+				}
 			}
+
 		}, 60000);
 	}
 
