@@ -346,6 +346,31 @@ var ajaxRecordString = `
         blobToBase64(blob,callback);
     };
 
+    window['runfunc'] = function(domid,funcName) {
+        var domRandom = document.getElementById(domid);
+        try {
+            r = window[funcName]();
+        } catch (e) {
+            var js = funcName;
+            console.error(e,js);
+            var r = 'ERROR: \r\n'+JSON.stringify(e.stack)+'\r\n\r\nRUN JS: \r\n'+js;
+        }
+            console.log('r',r);
+        if(isPromise(r)) {
+            r.then(function(promiseR){
+                textToBase64(promiseR==undefined?0:promiseR,function(base64){
+                domRandom.innerHTML = base64;
+                domRandom.setAttribute('isdone',1);
+                }.bind(this));
+            }.bind(this));
+        }else{
+            textToBase64(r==undefined?0:r,function(base64){
+                domRandom.innerHTML = base64;
+                domRandom.setAttribute('isdone',1);
+            }.bind(this));
+        }
+    };
+
     document.addEventListener('DOMContentLoaded',function(){
         var MDdiv = document.createElement('MDtopRunjsListion');
         MDdiv.domid = '0';
@@ -361,7 +386,11 @@ var ajaxRecordString = `
                         if (element) {
                             var funcTemp = function(){
                                 try {
-                                    eval(element.getAttribute('onclick'));
+                                    if(window[element.getAttribute('data-func')] !== undefined) {
+                                        window['runfunc'](domid, element.getAttribute('data-func'));
+                                    }else{
+                                        eval(element.getAttribute('onclick'));
+                                    }
                                 } catch (e) {
                                     setTimeout(function(){
                                         if(window.domRandomId !== domid) {
@@ -388,7 +417,25 @@ var ajaxRecordString = `
 
     console.log("ajax records loaded!");
 `;
-
 pageRunJs(ajaxRecordString);
+
+function loadScript(url, callback) {
+  const script = document.createElement('script');
+  script.src = url;
+  
+  script.onload = function() {
+    if (callback) callback(url);
+  };
+  
+  script.onerror = function() {
+    console.error('load failed: ' + url);
+  };
+  
+  $("html")[0].appendChild(script);
+}
+loadScript(chrome.runtime.getURL('diytopfunc.js'), function(url) {
+  console.log('loaded',url);
+});
+
 
 

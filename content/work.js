@@ -257,7 +257,7 @@ function topRunJs(jsStr) {
 	return p;
 }
 
-function pageRunJs(jsStr,cb,background) {
+function pageRunJs(jsStr,cb,background,runTopFunc) {
 	var domRandomId = "MDspider-help-dom-result-"+randomStr();
 
 	const config = { attributes: true};
@@ -282,47 +282,53 @@ function pageRunJs(jsStr,cb,background) {
 
 	if(background === undefined) {
 		try {
-			var tempDom = $("<div id=\""+domRandomId+"\" style=\"display:none;\" onclick=\""+
-			`window.domRandomId = &quot;`+domRandomId+`&quot;;
-			window.ajaxRecordDebug = `+window.ajaxRecordDebug+`;
-			function blobToBase64(blob, callback) {
-				var reader = new FileReader();
-				reader.readAsDataURL(blob);
-				reader.onload = function (e) {
-					callback(e.target.result);
-				}
-			 };
-			 function isPromise(obj) {
-				return !!obj && (typeof obj === &quot;object&quot; || typeof obj === &quot;function&quot;) && typeof obj.then === &quot;function&quot;;
-			 };
-			 var textToBase64 = function(text, callback) {
-				var blob = new Blob([text]);
-				blobToBase64(blob,callback);
-			};
+			if(runTopFunc !== undefined) {
+				var js = jsStr;
+				var tempDom = $("<div id=\""+domRandomId+"\" style=\"display:none;\" data-func=\""+js+"\"></div>");
+			}else{
+				var js = `window.domRandomId = &quot;`+domRandomId+`&quot;;
+				window.ajaxRecordDebug = `+window.ajaxRecordDebug+`;
+				function blobToBase64(blob, callback) {
+					var reader = new FileReader();
+					reader.readAsDataURL(blob);
+					reader.onload = function (e) {
+						callback(e.target.result);
+					}
+				};
+				function isPromise(obj) {
+					return !!obj && (typeof obj === &quot;object&quot; || typeof obj === &quot;function&quot;) && typeof obj.then === &quot;function&quot;;
+				};
+				var textToBase64 = function(text, callback) {
+					var blob = new Blob([text]);
+					blobToBase64(blob,callback);
+				};
 
-			try {
-				`+('var r = (function () {'
-				+jsStr.replace(/\\\\/g,"\\")//compatible with older versions
-				.replace(/'/g,"\'").replace(/[\r\n]/g,"") + '})();'
-				).replace(/"/g,'&quot;')+`
-			} catch (e) {
-				var js = `+('\''+jsStr.replace(/'/g,"\\'")+'\'').replace(/[\r\n]/g,"").replace(/"/g,'&quot;')+`;
-				console.error(e,js);
-				var r = &quot;ERROR: \r\n&quot;+JSON.stringify(e.stack)+&quot;\r\n\r\nRUN JS: \r\n&quot;+js;
-			}
-			if(isPromise(r)) {
-				r.then(function(promiseR){
-					textToBase64(promiseR==undefined?0:promiseR,function(base64){
+				try {
+					`+('var r = (function () {'
+					+jsStr.replace(/\\\\/g,"\\")//compatible with older versions
+					.replace(/'/g,"\'").replace(/[\r\n]/g,"") + '})();'
+					).replace(/"/g,'&quot;')+`
+				} catch (e) {
+					var js = `+('\''+jsStr.replace(/'/g,"\\'")+'\'').replace(/[\r\n]/g,"").replace(/"/g,'&quot;')+`;
+					console.error(e,js);
+					var r = &quot;ERROR: \r\n&quot;+JSON.stringify(e.stack)+&quot;\r\n\r\nRUN JS: \r\n&quot;+js;
+				}
+				if(isPromise(r)) {
+					r.then(function(promiseR){
+						textToBase64(promiseR==undefined?0:promiseR,function(base64){
+							this.innerHTML = base64;
+							this.setAttribute(&quot;isdone&quot;,1);
+						}.bind(this));
+					}.bind(this));
+				}else{
+					textToBase64(r==undefined?0:r,function(base64){
 						this.innerHTML = base64;
 						this.setAttribute(&quot;isdone&quot;,1);
 					}.bind(this));
-				}.bind(this));
-			}else{
-				textToBase64(r==undefined?0:r,function(base64){
-					this.innerHTML = base64;
-					this.setAttribute(&quot;isdone&quot;,1);
-				}.bind(this));
-			}`.replace(/[\r\n]/g,"")+"\"></div>");
+				}`.replace(/[\r\n]/g,"");
+				var tempDom = $("<div id=\""+domRandomId+"\" style=\"display:none;\" onclick=\""+js+"\"></div>");
+			}
+
 		} catch (e) {
 			//have error ,force background
 			background = true;
@@ -507,6 +513,7 @@ chrome.runtime.onMessage.addListener(
 						// 103:human action
 						// 104:screenshot html2canvas
 						// 105:screenshot captureVisibleTab
+						// 106:run top func
 						switch(request.info.type) {
 							case 2:
 							case 4:
@@ -551,6 +558,23 @@ chrome.runtime.onMessage.addListener(
 										window.spiderData[request.info.id] = base64;
 										window.actionComplete = true;
 									},background);
+								}
+								break;
+							case 106:
+								window.actionComplete = false;
+								var background = undefined;
+								if(request.info.param && request.info.param.delay) {
+									setTimeout(() => {
+										pageRunJs(request.info.url,function(base64) {
+											window.spiderData[request.info.id] = base64;
+											window.actionComplete = true;
+										},background,true);
+									}, request.info.param.delay);
+								}else{
+									pageRunJs(request.info.url, function(base64) {
+										window.spiderData[request.info.id] = base64;
+										window.actionComplete = true;
+									},background,true);
 								}
 								break;
 							case 102:
