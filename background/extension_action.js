@@ -103,7 +103,7 @@ function waiteComplete(tab, info, cb) {
 		while(true) {
 			var canBreak = false;
 			let doneCheckAction = {
-				"url":"return document.getElementsByTagName('html')[0].innerHTML;",
+				"url":"return '<'+window.location.href+'>'+document.getElementsByTagName('html')[0].innerHTML;",
 				"type":100,
 				"param": {
 					"delay":delay,

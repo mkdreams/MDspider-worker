@@ -1117,7 +1117,7 @@ function runActionComplete(tab,info,cb) {
 
 function recaptcha(resolve,tab,info,res) {
 	let doneCheckAction = {
-		"url":"return document.getElementsByTagName('html')[0].innerHTML;",
+		"url":"return '<'+window.location.href+'>'+document.getElementsByTagName('html')[0].innerHTML;",
 		"type":100,
 		"param": {
 			"skipRecaptcha":true,
