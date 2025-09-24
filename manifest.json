@@ -1,20 +1,37 @@
 {
-	"manifest_version": 3,
-	"version": "1.0.0.1",
-	"name": "MDspider",
-	"short_name": "MDS",
-	"description": "Tool for data extraction from websites",
-	"permissions": ["debugger","userScripts","contextMenus", "webRequest", "webRequestAuthProvider", "declarativeNetRequest","declarativeNetRequestWithHostAccess","declarativeNetRequestFeedback", "tabs", "activeTab", "notifications", "system.display","system.memory", "storage", "unlimitedStorage", "downloads", "webNavigation", "cookies"],
-	"host_permissions": [
-		"*://*/*"
-	],
-	"declarative_net_request": {
+  "manifest_version": 3,
+  "version": "1.0.0.1",
+  "name": "MDspider",
+  "short_name": "MDS",
+  "description": "Tool for data extraction from websites",
+  "permissions": [
+    "debugger",
+    "userScripts",
+    "contextMenus",
+    "webRequest",
+    "webRequestAuthProvider",
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess",
+    "declarativeNetRequestFeedback",
+    "tabs",
+    "activeTab",
+    "notifications",
+    "system.display",
+    "system.memory",
+    "storage",
+    "unlimitedStorage",
+    "downloads",
+    "webNavigation",
+    "cookies"
+  ],
+  "host_permissions": ["*://*/*"],
+  "declarative_net_request": {
     "rule_resources": [
-			{
-				"id": "removeCSP",
-				"enabled": true,
-				"path": "rules/removeCSP.json"
-			},
+      {
+        "id": "removeCSP",
+        "enabled": true,
+        "path": "rules/removeCSP.json"
+      },
       {
         "id": "redirectForReqHeader",
         "enabled": true,
@@ -22,20 +39,23 @@
       }
     ]
   },
-	"icons": {
-		"16": "popup/images/colin.png"
-	},
-	"action": {
-		"default_icon": {
-			"16": "popup/images/colin.png"
-		},
-		"default_title": "MDspider",
-		"default_popup": "popup/popup.html"
-	},
-	"background":{
-		"service_worker":"background/start.js"
-	},
-	"web_accessible_resources":[
-		"diytopfunc.js"
-	]
+  "icons": {
+    "16": "popup/images/colin.png"
+  },
+  "action": {
+    "default_icon": {
+      "16": "popup/images/colin.png"
+    },
+    "default_title": "MDspider",
+    "default_popup": "popup/popup.html"
+  },
+  "background": {
+    "service_worker": "background/start.js"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["diytopfunc.js"],
+      "matches": ["*://*/*"]
+    }
+  ]
 }

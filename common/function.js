@@ -523,3 +523,12 @@ console.image = function (url) {
     }
     image.src = url;
 }
+
+function convertBackticksToEscapedQuotes(str) {
+  var regex = /`([^`]*)`/g;
+  var result = str.replace(regex, (match, content) => {
+    var escapedContent = content.replace(/"/g, '\\"');
+    return `"${escapedContent}"`;
+  });
+  return result;
+}

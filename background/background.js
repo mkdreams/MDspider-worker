@@ -142,7 +142,7 @@ function initDeviceInfo(cb) {
 									params:[window.workCreateFlag]
 								},undefined,'json').then(function(data){
 									if (data.Data.indexOf("{") === 0) {
-										window.helpmateEvents = eval("["+data.Data+"]")[0];
+										window.helpmateEvents = JSON.parse(convertBackticksToEscapedQuotes(data.Data));
 										if(window.helpmateEvents['create'] === undefined) {
 											window.helpmateEvents['create'] = [];
 										}
