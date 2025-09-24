@@ -933,7 +933,12 @@ function getHml(tab, info, result) {
 				if(!info['results']) {
 					info['results'] = [];
 				}
-				info['doneCheckActionPromiseResolve']([info,((info.param && info.param.musave)?JSON.stringify(base64ToString(info['results'])):base64ToString(info['results'][info['results'].length-1]??'')),tab]);
+				info['doneCheckActionPromiseResolve']([
+					info,
+					((info.param && info.param.musave)?JSON.stringify(base64ToString(info['results'])):base64ToString(info['results'][info['results'].length-1]??'')),
+					tab,
+					((info.param && info.param.musave)?deleteBase64Pre(info['results']):deleteBase64Pre(info['results'][info['results'].length-1])),
+				]);
 				return;
 			}
 
@@ -1115,7 +1120,7 @@ function runActionComplete(tab,info,cb) {
 
 function recaptcha(resolve,tab,info,res) {
 	let doneCheckAction = {
-		"url":"return document.getElementsByTagName('html')[0].innerHTML;",
+		"url":"return '<'+window.location.href+'>'+document.getElementsByTagName('html')[0].innerHTML;",
 		"type":100,
 		"param": {
 			"skipRecaptcha":true,
@@ -1252,6 +1257,10 @@ function runSub(tab, info, cb, index) {
 };
 
 function sendAction(tab, info, cb) {
+	if(!info.id) {
+		info.id = randomStr();
+	}
+
 	//200 background action do not need send to tab run
 	if(info['pinfo']) {
 		info['saveas'] = info['pinfo']['saveas'];
@@ -1370,9 +1379,6 @@ function dealOneAction(tab, info, needJump) {
 
 	if(info.param && info.param.preeval) {
 		eval(info.param.preeval);
-	}
-	if(!info.id) {
-		info.id = randomStr();
 	}
 
 	if (!needJump) {//jump

@@ -34,5 +34,8 @@
 	},
 	"background":{
 		"service_worker":"background/start.js"
-	}
+	},
+	"web_accessible_resources":[
+		"diytopfunc.js"
+	]
 }

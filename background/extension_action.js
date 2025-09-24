@@ -121,14 +121,32 @@ function waiteComplete(tab, info, cb) {
 	(async ()=>{
 		while(true) {
 			var canBreak = false;
-			let doneCheckAction = {
-				"url":"return document.getElementsByTagName('html')[0].innerHTML;",
-				"type":100,
-				"param": {
-					"delay":delay,
-					"skipRecaptcha":true,
+			if(info && info.param && info.param.preAction) {
+				var doneCheckAction = info.param.preAction;
+				if(!doneCheckAction.param) {
+					doneCheckAction.param = {};
 				}
-			};
+				doneCheckAction.param["skipRecaptcha"] = true;
+
+				if(info.param.preAction && info.param.preAction.param && info.param.preAction.param.sub) {
+					info.param.preAction.param.sub.forEach((subAction)=>{
+						if(!subAction.param) {
+							subAction.param = {};
+						}
+						subAction.param["skipRecaptcha"] = true;
+					});
+				}
+			}else{
+				var doneCheckAction = {
+					"url":"return '<'+window.location.href+'>'+document.getElementsByTagName('html')[0].innerHTML;",
+					"type":100,
+					"param": {
+						"delay":delay,
+						"background":true,
+						"skipRecaptcha":true,
+					}
+				};
+			}
 
 			await new Promise(function(doneCheckActionPromiseResolve,reject) {
 				doneCheckAction['doneCheckActionPromiseResolve'] = doneCheckActionPromiseResolve;
