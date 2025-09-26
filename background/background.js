@@ -1508,17 +1508,32 @@ function ajaxPost(request,cb,errorcb) {
     },
 		body: formData,
 	})
-	// .then(response => response.json())  // 假设返回是 JSON 格式，如果是其他格式可以调整
-	.then(data => {
-			if(typeof(data) == 'string') {
-				actionRecords(request.url +' :'+data.substr(0,50), 'BACKEND AJAX', 'POST DATA');
-			}else{
-				actionRecords(request.url +' :'+JSON.stringify(data).substr(0,50), 'BACKEND AJAX', 'POST DATA');
-			}
+	.then(response => {
+		if (!response.ok) {
+			console.error(`HTTP error! status: ${response.status}`);
+		}
 
-			if(cb !== undefined) {
-				cb(data);
-			}
+		const contentType = response.headers.get('content-type');
+		if (contentType.includes('application/json')) {
+			return response.json();
+		} else if (contentType.includes('text/')) {
+			return response.text();
+		} else if (contentType.includes('image/') || contentType.includes('application/octet-stream')) {
+			return response.blob();
+		} else {
+			return response.text();
+		}
+	})
+	.then(data => {
+		if(typeof(data) == 'string') {
+			actionRecords(request.url +' :'+data.substr(0,50), 'BACKEND AJAX', 'POST DATA');
+		}else{
+			actionRecords(request.url +' :'+JSON.stringify(data).substr(0,50), 'BACKEND AJAX', 'POST DATA');
+		}
+
+		if(cb !== undefined) {
+			cb(data);
+		}
 	})
 	.catch(error => {
 			if(errorcb !== undefined) {
@@ -1597,3 +1612,37 @@ chrome.contextMenus.onClicked.addListener((params) => {
 		chrome.storage.local.set({'userName': window.userName});
   }
 });
+
+var Eval = {};
+async function myEval(jsStr,args,obj_this) {
+  var funcName = "_"+SparkMD5.hash(jsStr);
+  // var funcName = 'demoTemp';
+
+  if(Eval[funcName] === undefined) {
+    
+    if(window.spiderSlaveHelpmate !== true) {
+      console.warn("spiderSlaveHelpmate不为true，执行失败",jsStr);
+      return ;
+    }
+
+    console.log("myEval creatFunc",funcName);
+
+    await wsPost({
+			id:4,
+			method:"Robot.BuildFuncByJs",
+			params:[window.spiderSlaveFlag,funcName,jsStr]
+		},undefined,'json');
+    
+    await chrome.storage.local.set({'spiderSlaveUrls':window.spiderSlaveUrls});
+    await chrome.storage.local.set({'spiderSlaveTabInfos':window.spiderSlaveTabInfos});
+    chrome.runtime.reload();
+    return;
+  }else{
+    var r = Eval[funcName](args);
+    if (isPromise(r)) {
+      r = await r;
+    }
+    console.log("myEval result:",r,jsStr);
+    return r;
+  }
+}

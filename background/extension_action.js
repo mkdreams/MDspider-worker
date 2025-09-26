@@ -123,16 +123,18 @@ function waiteComplete(tab, info, cb) {
 			var canBreak = false;
 			if(info && info.param && info.param.preAction) {
 				var doneCheckAction = info.param.preAction;
+				delete doneCheckAction["results"];
 				if(!doneCheckAction.param) {
 					doneCheckAction.param = {};
 				}
 				doneCheckAction.param["skipRecaptcha"] = true;
 
-				if(info.param.preAction && info.param.preAction.param && info.param.preAction.param.sub) {
-					info.param.preAction.param.sub.forEach((subAction)=>{
+				if(doneCheckAction.param && doneCheckAction.param.sub) {
+					doneCheckAction.param.sub.forEach((subAction)=>{
 						if(!subAction.param) {
 							subAction.param = {};
 						}
+						delete subAction["results"];
 						subAction.param["skipRecaptcha"] = true;
 					});
 				}
