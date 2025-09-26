@@ -1,3 +1,6 @@
+//
+//Create file time: 2025-09-26 15:58:27
+//
 window['linkedin_sub_func1']= function() {
     var initResult = {};
     var ajaxArray = new Array();
@@ -19,3 +22,4 @@ window['linkedin_sub_func1']= function() {
 
     return JSON.stringify(initResult);
 };
+		
