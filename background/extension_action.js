@@ -159,7 +159,7 @@ function waiteComplete(tab, info, cb) {
 				});
 			}).then(function(data) {
 				var response = data[1];
-				if(info && info.param && info.param.match && !eval(info.param.match)) {
+				if(info && info.param && info.param.match && !myEval(info.param.match,{data,response})) {
 					canBreak = true;
 				}
 			});
@@ -167,7 +167,7 @@ function waiteComplete(tab, info, cb) {
 			if(--maxTimes <= 0 || canBreak) {
 				console.log(maxTimes,canBreak);
 				if(maxTimes <= 0 && info && info.param && info.param.timeOutCb) {
-					eval(info.param.timeOutCb);
+					myEval(info.param.timeOutCb,{data,response});
 				}
 				textToBase64('1',function(base64){
 					cb(base64);
@@ -300,7 +300,7 @@ function screenshot(tab, info, cb,screenshotCount) {
 }
 
 function updateConfig(tab, info, cb) {
-	configs = eval("("+info.url+")");
+	configs = JSON.parse(convertBackticksToEscapedQuotes(info.url));
 	for(var configName in configs) {
 		window[configName] = configs[configName];
 	}

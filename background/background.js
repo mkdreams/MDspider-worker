@@ -226,15 +226,45 @@ function initDeviceInfo(cb) {
 
 function loadConfig(cb) {
 	chrome.storage.local.get(null, function(result) {
+		var promiseArr = [];
+
 		for(var key in result) {
 			window[key] = result[key];
+
+			if(key === "spiderSlaveUrls") {
+				console.log("key",key,result[key]);
+				for (const urlId in window.spiderSlaveUrls) {
+						window.spiderSlaveUrls[urlId]['runStartTime'] = undefined;
+				}
+
+				chrome.storage.local.remove(key);
+			}
+
+			if(key === "spiderSlaveTabInfos") {
+				console.log("key",key,result[key]);
+				for (const tabId in window.spiderSlaveTabInfos['tabs']) {
+					var id = window.spiderSlaveTabInfos['tabs'][tabId]['id'];
+					var p = new Promise(function(resolve,reject) {
+						chrome.tabs.remove(id,function(){
+							resolve(1);
+						});
+					});
+					promiseArr.push(p);
+				}
+
+				window.spiderSlaveTabInfos = { 'allTabLocked': false, 'api': {}, 'tabs': {}, 'wins':{} };
+
+				chrome.storage.local.remove(key);
+			}
 		}
 
 		if(window['spiderReqSlaveFlag'] === undefined && window['spiderSlaveFlag'] !== undefined) {
 			window['spiderReqSlaveFlag'] = window['spiderSlaveFlag'];
 		}
 
-		cb && cb();
+		Promise.all(promiseArr).then((result) => {
+			cb && cb();
+		});
 	});
 }
 
@@ -963,11 +993,11 @@ function getHml(tab, info, result) {
 				ajaxPost({ 'admintype': 2, 'tab': {id:tab.id}, 'url': url, 'data': { 'id': info['id'], 'sResponse': uint8ArrayToBlob(pako.gzip(sResponse)),'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag,'userDataPath':window.userDataPath,'userName':(window.userName?window.userName:'')} },function(data) {
 					isDone(tab, info);
 					if(typeof(data) == 'string' && data[0] === '{') {
-						data = eval("("+data+")")
+						data = JSON.parse(convertBackticksToEscapedQuotes(data));
 					}
 					
 					if(data['cb'] != undefined) {
-						eval(data['cb']);
+						myEval(data['cb'],{});
 					}
 
 					if(data['data'] != undefined) {
@@ -1012,7 +1042,7 @@ function getHml(tab, info, result) {
 						p.then(function(data) {
 							var info = data[0];
 							var response = data[1];
-							eval(info['then']);
+							myEval(info['then'],{info,response});
 							doneForEach();
 						});
 					}else{
@@ -1142,7 +1172,7 @@ function recaptcha(resolve,tab,info,res) {
 		var checked = false;
 		for(var i in window.helpmateEvents['check']) {
 			var checkActionInfo = window.helpmateEvents['check'][i];
-			if(eval(checkActionInfo['match'])) {
+			if(myEval(checkActionInfo['match'],{data,response})) {
 				console.log('check '+checkActionInfo['name']);
 				checked = true;
 				return new Promise(function(doneCheckActionPromiseResolve,reject) {
@@ -1412,7 +1442,7 @@ function listen(req, sender, sendResponse) {
 		//pop
 		case 4:
 			if(req.data !== undefined) {
-				req.data = JSON.parse(req.data);
+				req.data = JSON.parse(convertBackticksToEscapedQuotes(req.data));
 			}
 			if(typeof window[req.name] === 'function') {
 				var p = window[req.name](...req.data);

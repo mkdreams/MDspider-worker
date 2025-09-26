@@ -417,23 +417,24 @@ var ajaxRecordString = `
 `;
 pageRunJs(ajaxRecordString);
 
-function loadScript(url, callback) {
-  const script = document.createElement('script');
-  script.src = url;
+// function loadScript(url, callback) {
+//   const script = document.createElement('script');
+//   script.src = url;
   
-  script.onload = function() {
-    if (callback) callback(url);
-  };
+//   script.onload = function() {
+//     if (callback) callback(url);
+//   };
   
-  script.onerror = function() {
-    console.error('load failed: ' + url);
-  };
+//   script.onerror = function() {
+//     console.error('load failed: ' + url);
+//   };
   
-  $("html")[0].appendChild(script);
-}
-loadScript(chrome.runtime.getURL('diytopfunc.js'), function(url) {
-  console.log('loaded',url);
-});
+//   $("html")[0].appendChild(script);
+// }
+
+// loadScript(chrome.runtime.getURL('diytopfunc.js'), function(url) {
+//   console.log('loaded',url);
+// });
 
 
 

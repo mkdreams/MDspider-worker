@@ -17,6 +17,7 @@ chrome.userScripts.register([{
 		{"file":"content/work.js"},
 		{"file":"content/screenshot.js"},
 		{"file":"content/ajax.record.js"},
+		{"file":"diytopfunc.js"},
 	],
 	allFrames: false,
 	runAt:"document_start"

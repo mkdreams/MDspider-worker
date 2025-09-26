@@ -1,6 +1,8 @@
 importScripts(
   "/common.js",
   "/config.js",
+  "/common/spark-md5.min.js",
+  "/eval.js",
   "/common/pako.min.js",
   "/common/base64.min.js",
   "/common/function.js",
@@ -10,5 +12,9 @@ importScripts(
   "/background/run_time_api.js",
   "/background/content.js"
 );
+
+// setTimeout(()=>{
+//   chrome.runtime.reload();
+// },10000);
 
 console.log('Service Worker 启动');
