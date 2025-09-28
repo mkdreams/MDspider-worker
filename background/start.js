@@ -13,8 +13,23 @@ importScripts(
   "/background/content.js"
 );
 
-// setTimeout(()=>{
-//   chrome.runtime.reload();
-// },10000);
+//eval.js 发生改变直接reload
+var evalMd5 = undefined;
+setInterval(()=>{
+  const url = chrome.runtime.getURL('eval.js') + '?t=' + Date.now();
+  fetch(url).then((response)=>{
+    return response.text()
+  }).then(async (content)=>{
+    var md5 = SparkMD5.hash(content);
+    if(evalMd5 === undefined) {
+      evalMd5 = md5;
+      return ;
+    }else if(evalMd5 != md5) {
+      await chrome.storage.local.set({'spiderSlaveUrls':window.spiderSlaveUrls});
+		  await chrome.storage.local.set({'spiderSlaveTabInfos':window.spiderSlaveTabInfos});
+      chrome.runtime.reload();
+    }
+  });
+},500);
 
 console.log('Service Worker 启动');

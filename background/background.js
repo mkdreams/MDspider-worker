@@ -1621,21 +1621,23 @@ async function myEval(jsStr,args,obj_this) {
   if(Eval[funcName] === undefined) {
     
     if(window.spiderSlaveHelpmate !== true) {
-      console.warn("spiderSlaveHelpmate不为true，执行失败",jsStr);
+      console.error("执行失败: ",jsStr);
+
+			console.warn("请添加下面代码至eval.js，保存后将自动执行 :========"+funcName+" start========");
+			console.log(`Eval.`+funcName+` = function(args){
+				return `+jsStr+`
+			};`);
+			console.warn("========"+funcName+" end========");
       return ;
     }
 
-    console.log("myEval creatFunc",funcName);
+    console.log("myEval auto creatFunc",funcName);
 
     await wsPost({
 			id:4,
 			method:"Robot.BuildFuncByJs",
 			params:[window.spiderSlaveFlag,funcName,jsStr]
 		},undefined,'json');
-    
-    await chrome.storage.local.set({'spiderSlaveUrls':window.spiderSlaveUrls});
-    await chrome.storage.local.set({'spiderSlaveTabInfos':window.spiderSlaveTabInfos});
-    chrome.runtime.reload();
     return;
   }else{
     var r = Eval[funcName](args);
