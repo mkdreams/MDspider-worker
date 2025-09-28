@@ -16,9 +16,10 @@ importScripts(
 //eval.js 发生改变直接reload
 var evalLastModified = undefined;
 setInterval(()=>{
-  const url = chrome.runtime.getURL('eval.js') + '?t=' + Date.now();
+  const url = chrome.runtime.getURL('eval.js');
   fetch(url,{
       method: 'HEAD',
+      cache: 'no-store'
   }).then((response)=>{
     return response.headers.get('last-modified')
   }).then(async (lastmodified)=>{
