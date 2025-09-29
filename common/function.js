@@ -488,7 +488,7 @@ function websocketKeep(key) {
                     window[key].subscribe(topic,
                         async function(event) {
                             info = JSON.parse(event['argsDict']['action']);
-                            var p = eval(wsInfo[2]+"(event['argsDict']['action'])");
+                            var p = window[wsInfo[2]](event['argsDict']['action']);
                             p.then((data)=>{
                                 textToBase64(data[1],function(base64){
                                     window[key].call("MDspiderRPC.action.callback",{"topic":topic, "user":window.workCreateFlag, "sessionId": event['argsDict']['sessionId'],"sessionIds":event['argsDict']['sessionIds'],"id": info['id'],"data": deleteBase64Pre(base64)}, {"timeout":120000}).then((details)=>{

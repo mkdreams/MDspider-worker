@@ -478,7 +478,7 @@ function pullActions() {
 	}
 }
 
-function parseAction(data) {
+window["parseAction"] = function(data) {
 	v = JSON.parse(data);
 	if (!v["type"]) {
 		v["type"] = 1;
