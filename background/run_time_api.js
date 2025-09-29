@@ -49,7 +49,6 @@ function sendBeforeClean(sendInfoObj) {
 				delete sub['results'];
 			}
 		});
-		delete sendInfoObjNew['info']['results'];
 	}
 
 	return sendInfoObjNew;

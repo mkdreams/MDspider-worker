@@ -1039,10 +1039,10 @@ function getHml(tab, info, result) {
 							});
 						});
 						
-						p.then(function(data) {
+						p.then(async function(data) {
 							var info = data[0];
 							var response = data[1];
-							myEval(info['then'],{info,response});
+							await myEval(info['then'],{info,response});
 							doneForEach();
 						});
 					}else{
@@ -1166,13 +1166,13 @@ function recaptcha(resolve,tab,info,res) {
 				},0)
 			});
 		});
-	}).then(function(data) {
+	}).then(async function(data) {
 		var response = data[1];
 
 		var checked = false;
 		for(var i in window.helpmateEvents['check']) {
 			var checkActionInfo = window.helpmateEvents['check'][i];
-			if(myEval(checkActionInfo['match'],{data,response})) {
+			if(await myEval(checkActionInfo['match'],{data,response})) {
 				console.log('check '+checkActionInfo['name']);
 				checked = true;
 				return new Promise(function(doneCheckActionPromiseResolve,reject) {
@@ -1258,7 +1258,7 @@ function runSub(tab, info, cb, index) {
 								if(info['saveas'] === undefined) {
 									info['saveas'] = {};
 								}
-								info['saveas'][subInfo.param.saveas] = subInfo[subInfo.param.saveas];
+								info['saveas'][subInfo.param.saveas] = result;
 							}
 
 							if(subInfo.param && subInfo.param.save) {
@@ -1298,7 +1298,8 @@ function sendAction(tab, info, cb) {
 	}
 
 	info.windowId = tab['windowId'];
-
+	//200 run 内置函数
+	//201 run js
 	if(info.type === 200) {
 		if(info.param && info.param.delay) {
 			setTimeout(function(){
@@ -1307,11 +1308,30 @@ function sendAction(tab, info, cb) {
 		}else{
 			window[info.action](tab, info, function(result){cb(result)});
 		}
+	}else if(info.type === 201) {
+		if(info.param && info.param.delay) {
+			setTimeout(function(){
+				runAction201(tab,info,cb);
+			},info.param.delay);
+		}else{
+			runAction201(tab,info,cb);
+		}
 	}else{
 		sendMessageToTabs(tab, { 'actiontype': 2, 'info': info },function() {
 			cb();
 		});
 	}
+}
+
+function runAction201(tab,info,cb) {
+	var r = myEval(info.url,{tab,info,cb});
+		if(isPromise(r)) {
+			r.then((result)=>{
+				cb(result);
+			});
+		}else{
+			cb(r);
+		}
 }
 
 function dealOneAction(tab, info, needJump) {

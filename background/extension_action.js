@@ -150,7 +150,7 @@ function waiteComplete(tab, info, cb) {
 				};
 			}
 
-			await new Promise(function(doneCheckActionPromiseResolve,reject) {
+			var data = await new Promise(function(doneCheckActionPromiseResolve,reject) {
 				doneCheckAction['doneCheckActionPromiseResolve'] = doneCheckActionPromiseResolve;
 				sendAction(tab, doneCheckAction, function(){
 					runActionComplete(tab, doneCheckAction, function(tab, infoTemp) {
@@ -159,17 +159,18 @@ function waiteComplete(tab, info, cb) {
 						},0)
 					});
 				});
-			}).then(function(data) {
-				var response = data[1];
-				if(info && info.param && info.param.match && !myEval(info.param.match,{data,response})) {
-					canBreak = true;
-				}
 			});
 
+			var response = data[1];
+			if(info && info.param && info.param.match && !await myEval(info.param.match,{data,response})) {
+				canBreak = true;
+				console.log("canBreak",canBreak);
+			}
+
+			console.log("maxTimes",maxTimes,canBreak);
 			if(--maxTimes <= 0 || canBreak) {
-				console.log(maxTimes,canBreak);
 				if(maxTimes <= 0 && info && info.param && info.param.timeOutCb) {
-					myEval(info.param.timeOutCb,{data,response});
+					await myEval(info.param.timeOutCb,{data,response});
 				}
 				textToBase64('1',function(base64){
 					cb(base64);

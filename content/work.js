@@ -257,7 +257,7 @@ function topRunJs(jsStr) {
 	return p;
 }
 
-function pageRunJs(jsStr,cb,background,runTopFunc) {
+function pageRunJs(jsStr,cb,background,runTopFunc,info) {
 	var domRandomId = "MDspider-help-dom-result-"+randomStr();
 
 	const config = { attributes: true};
@@ -565,13 +565,13 @@ chrome.runtime.onMessage.addListener(
 										pageRunJs(request.info.url,function(base64) {
 											window.spiderData[request.info.id] = base64;
 											window.actionComplete = true;
-										},background);
+										},background,undefined,request.info);
 									}, request.info.param.delay);
 								}else{
 									pageRunJs(request.info.url, function(base64) {
 										window.spiderData[request.info.id] = base64;
 										window.actionComplete = true;
-									},background);
+									},background,undefined,request.info);
 								}
 								break;
 							case 106:
