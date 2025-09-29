@@ -990,14 +990,14 @@ function getHml(tab, info, result) {
 					console.warn(info['id'], "sResponse", info['results']);
 				}
 
-				ajaxPost({ 'admintype': 2, 'tab': {id:tab.id}, 'url': url, 'data': { 'id': info['id'], 'sResponse': uint8ArrayToBlob(pako.gzip(sResponse)),'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag,'userDataPath':window.userDataPath,'userName':(window.userName?window.userName:'')} },function(data) {
+				ajaxPost({ 'admintype': 2, 'tab': {id:tab.id}, 'url': url, 'data': { 'id': info['id'], 'sResponse': uint8ArrayToBlob(pako.gzip(sResponse)),'sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag,'userDataPath':window.userDataPath,'userName':(window.userName?window.userName:'')} },async function(data) {
 					isDone(tab, info);
 					if(typeof(data) == 'string' && data[0] === '{') {
 						data = JSON.parse(convertBackticksToEscapedQuotes(data));
 					}
 					
 					if(data['cb'] != undefined) {
-						myEval(data['cb'],{});
+						await myEval(data['cb'],{});
 					}
 
 					if(data['data'] != undefined) {
@@ -1323,8 +1323,8 @@ function sendAction(tab, info, cb) {
 	}
 }
 
-function runAction201(tab,info,cb) {
-	var r = myEval(info.url,{tab,info,cb});
+async function runAction201(tab,info,cb) {
+	var r = await myEval(info.url,{tab,info,cb});
 		if(isPromise(r)) {
 			r.then((result)=>{
 				cb(result);
