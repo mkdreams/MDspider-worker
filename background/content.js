@@ -18,6 +18,7 @@ function initUserScript() {
 			{"file":"content/work.js"},
 			{"file":"content/screenshot.js"},
 			{"file":"content/ajax.record.js"},
+			{"file":"content/selector.js"},
 			{"file":"diytopfunc.js"},
 		],
 		allFrames: false,
