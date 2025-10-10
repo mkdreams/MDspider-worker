@@ -6,14 +6,14 @@ chrome.devtools.network.onRequestFinished.addListener(function (request) {
         request: request.request,
         content: content,
         response: request.response,
+        resourceType: request._resourceType,
       });
     });
   }
 });
 
-const port = chrome.runtime.connect({
+var port = chrome.runtime.connect({
   name: "devtools-" + chrome.devtools.inspectedWindow.tabId,
-  includeTlsChannelId: true,
 });
 port.onMessage.addListener(function (request) {
   if (request.devtype) {
