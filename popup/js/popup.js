@@ -216,6 +216,18 @@ layui.use(['element', 'layer', 'form', 'jquery'],function () {
 			"code":1
 		}
 	];
+	
+	window.actionsTpl_108 = [
+		{
+			"url":"https://gitee.com/colin_86/MDword",
+			"type":107,
+			"param":{
+				"lockTab":1,
+				"lockTabFlag":"debug"
+			},
+			"code":1
+		}
+	];
 
 	window.actionsTpl_202 = [
 		{

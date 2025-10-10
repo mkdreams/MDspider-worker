@@ -57,5 +57,6 @@
       "resources": ["diytopfunc.js"],
       "matches": ["*://*/*"]
     }
-  ]
+  ],
+  "devtools_page":"devtools/devtools.html"
 }

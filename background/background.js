@@ -661,9 +661,9 @@ function getNextTab(urlId) {
 			return [urlId,-2];
 		}
 
-		if(!window.spiderSlaveUrls[urlId] || [1].indexOf(window.spiderSlaveUrls[urlId]['type']) == -1) {
+		if(!window.spiderSlaveUrls[urlId] || [1,107].indexOf(window.spiderSlaveUrls[urlId]['type']) == -1) {
 			//get one a,or get cookies url
-			urlId = getUrlInfo([1]);
+			urlId = getUrlInfo([1,107]);
 		}
 
 		if (urlId == -1) {
@@ -1316,6 +1316,14 @@ function sendAction(tab, info, cb) {
 		}else{
 			runAction201(tab,info,cb);
 		}
+	}else if(info.type === 107) {
+		if(info.param && info.param.delay) {
+			setTimeout(function(){
+				runAction107(tab,info,cb);
+			},info.param.delay);
+		}else{
+			runAction107(tab,info,cb);
+		}
 	}else{
 		sendMessageToTabs(tab, { 'actiontype': 2, 'info': info },function() {
 			cb();
@@ -1332,6 +1340,28 @@ async function runAction201(tab,info,cb) {
 		}else{
 			cb(r);
 		}
+}
+
+function runAction107(tab,info,cb) {
+	var name = "devtools-"+tab.id;
+	var intervalId = setInterval(()=>{
+		var port = window.devtoolsIsReady[name];
+		if(port) {
+			port.onMessage.addListener(function(res) {
+				console.log("background port.onMessage",res);
+				textToBase64(JSON.stringify(res),function(base64){
+					cb(base64);
+				});
+			});
+			port.postMessage({ devtype: 1 });
+			setTimeout(()=>{
+				runActionComplete(tab,info,()=>{
+					port.postMessage({ devtype: 2 });
+				});
+			},500)
+			clearInterval(intervalId);
+		}
+	},500);
 }
 
 function dealOneAction(tab, info, needJump) {
@@ -1431,13 +1461,14 @@ function dealOneAction(tab, info, needJump) {
 		eval(info.param.preeval);
 	}
 
-	if (!needJump) {//jump
+	if (!needJump || info['type'] === 107) {//jump
 		sendAction(tab, info, actionDoneCb);
 	}else{
 		actionDoneCb();
 	}
 }
 
+window.devtoolsIsReady = {};
 function listen(req, sender, sendResponse) {
 	switch (req.type) {
 		case 1:
@@ -1487,6 +1518,11 @@ function listen(req, sender, sendResponse) {
 
 chrome.runtime.onMessage.addListener(listen)
 chrome.runtime.onUserScriptMessage.addListener(listen)
+chrome.runtime.onConnect.addListener(function(devToolsPort) {
+  if (devToolsPort.name.indexOf("devtools") === 0) {
+    window.devtoolsIsReady[devToolsPort.name] = devToolsPort;
+  }
+});
 
 function debugRun(debugActions) {
 	debugActions.data.forEach(function (v) {
