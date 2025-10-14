@@ -182,7 +182,6 @@ function getBetchSelectorByTexts(texts) {
 
   for(var field in texts) {
     var targetText = texts[field];
-    console.log(targetText);
     var deepestMatches = getElementByText(targetText);
     var selectors = [];
     deepestMatches.forEach(deepestMatche => {
@@ -196,10 +195,9 @@ function getBetchSelectorByTexts(texts) {
 }
 
 //test
-
-
-setTimeout(() => {
 /* 
+setTimeout(() => {
+
   //选择器测试
   var selectorTemps = [
     "#main-container > div > div > div.main-list_container > div.title_all > span.folder-title-style > span.mode_icon.list_mode.list_mode_checked",
@@ -225,7 +223,7 @@ setTimeout(() => {
     var findSelector = getElementSelector(deepestMatche);
     console.log(targetText,'=>',getElementPosition(deepestMatche),findSelector,deepestMatche);
   }); 
-  */
+  
 
   //https://www.oschina.net/news/375428
   var texts = {
@@ -246,3 +244,4 @@ setTimeout(() => {
 
   console.log(getBetchSelectorByTexts(texts))
 }, 5000);  
+*/
