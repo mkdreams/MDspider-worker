@@ -16,7 +16,7 @@ function getElementSelector(element) {
       );
       var selectorTag = selector;
       if (matchNodes.length > 1) {
-        if (element.className) {
+        if (element.className && typeof element.className === 'string') {
           var classes = element.className.trim().split(/\s+/);
           for (var i = 0; i < classes.length; i++) {
             if (classes[i]) {
@@ -45,63 +45,86 @@ function getElementSelector(element) {
   return path.join(" > ");
 }
 
-function checkContentIncludeText(textContent, texts) {
-  textContent = textContent.toLowerCase();
-
+function checkContentIncludeText(textContents, texts) {
   if(typeof texts === 'string') {
     texts = [texts];
   }
-
-  var allMatch = true;
-  var score = 0;
+  
+  var allMatch = false;
   var subMatchIndex = [];
-  var keyOne = 0;
-  texts.forEach(text => {
-    var textOrg = text;
-    var include = true;
-    if(isObject(textOrg)) {
-      if(textOrg['type'] && textOrg['type'] === '|') {
-        include = false;
-      }
+  var subMatchAttrNameScores = {};
+  Object.keys(textContents).forEach(attrName => {
+    var keyOne = 0;
 
-      if(textOrg['type'] && textOrg['type'] === 'maxlength') {
-        if(textContent.length > textOrg['text']) {
-          allMatch = false;
+    var subAllMatch = true;
+    var matchTextStr = '';
+    var textContent = textContents[attrName].toLowerCase();
+    var score = 0;
+    texts.forEach(text => {
+      var textOrg = text;
+      var include = true;
+      if(isObject(textOrg)) {
+        if(textOrg['type'] && textOrg['type'] === '|') {
+          include = false;
         }
-        return ;
+  
+        if(textOrg['type'] && textOrg['type'] === 'maxlength') {
+          if(textContent.length > textOrg['text']) {
+            allMatch = false;
+          }
+          return ;
+        }
+        text = textOrg['text'];
       }
-      text = textOrg['text'];
-    }
-
-    if(typeof text === 'string') {
-      text = [text];
-    }
-
-    var subMatch = false;
-    var keyTwo = 0;
-    text.forEach(subTextOrg => {
-      subText = subTextOrg.toLowerCase();
-      var idx = textContent.indexOf(subText);
-      if (idx > -1) {
-        subMatch = true;
-        subMatchIndex.push({text:subTextOrg,keys:[keyOne,keyTwo],index:idx,nodeText:"..."+textContent.substr(idx-20<0?0:idx-20,subTextOrg.length+40)+"..."});
+  
+      if(typeof text === 'string') {
+        text = [text];
       }
+  
+      var subMatch = false;
+      var keyTwo = 0;
+      text.forEach((subTextOrg) => {
+        subText = subTextOrg.toLowerCase();
+        var idx = textContent.indexOf(subText);
+        if (idx > -1) {
+          subMatch = true;
+          matchTextStr += subTextOrg;
+          subMatchIndex.push({
+            text: subTextOrg,
+            keys: [keyOne, keyTwo],
+            index: idx,
+            nodeText:
+              "..." +
+              textContent.substr(
+                idx - 20 < 0 ? 0 : idx - 20,
+                subTextOrg.length + 40
+              ) +
+              "...",
+          });
+        }
 
-      keyTwo++;
+        keyTwo++;
+      });
+
+
+      if(subMatch) {
+        score++;
+      }
+  
+      if(include === true && subMatch === false) {
+        subAllMatch = false;
+      }
+  
+      keyOne++;
     });
 
-    if(include === true && subMatch === false) {
-      allMatch = false;
+    if(subAllMatch === true) {
+      subMatchAttrNameScores[attrName] = matchTextStr.replace(/\s+/g, "").length/textContent.replace(/\s+/g, "").length*score;
+      allMatch = true;
     }
-
-    if(subMatch) {
-      score += 1;
-    }
-
-    keyOne++;
   });
   
-  return [allMatch,score,subMatchIndex];
+  return [allMatch,subMatchIndex,subMatchAttrNameScores];
 }
 
 function isArray(value) {
@@ -114,23 +137,23 @@ function isObject(value) {
 
 function getElementByText(text) {
   var allMatches = Array.from(document.querySelectorAll("*")).filter((el) => {
-    var checkInfo = checkContentIncludeText(el.textContent,text);
-    if(checkInfo[0]) {
+    var checkInfo = checkContentIncludeText(getElementContent(el), text);
+    if (checkInfo[0]) {
       el.checkInfo = checkInfo;
     }
     return checkInfo[0];
-  }
-  );
+  });
 
   var deepestMatches = allMatches.filter((el) => {
-    var hasMatchingChild = Array.from(el.querySelectorAll("*")).some((child) => {
-      var checkInfo = checkContentIncludeText(child.textContent,text);
-      if(checkInfo[0]) {
-        child.checkInfo = checkInfo;
-      }
+    var hasMatchingChild = Array.from(el.querySelectorAll("*")).some(
+      (child) => {
+        var checkInfo = checkContentIncludeText(getElementContent(child), text);
+        if (checkInfo[0]) {
+          child.checkInfo = checkInfo;
+        }
 
-      return checkInfo[0];
-    }
+        return checkInfo[0];
+      }
     );
     return !hasMatchingChild;
   });
@@ -140,6 +163,28 @@ function getElementByText(text) {
   });
 
   return deepestMatches;
+}
+
+function getElementContent(el,attrNames) {
+  var blankAttrs = [
+    // 'href',
+    // 'src'
+  ];
+  var contents = { textContent: el.textContent };
+
+  if (el.attributes && el.attributes.length > 0) {
+    for (var i = 0; i < el.attributes.length; i++) {
+      var attr = el.attributes[i];
+      if(blankAttrs.indexOf(attr.nodeName) > -1) {
+        continue;
+      }
+      if(attrNames === undefined || attrNames[attr.nodeName] !== undefined) {
+        contents[attr.nodeName] = attr.textContent;
+      }
+    }
+  }
+
+  return contents;
 }
 
 function getElementPosition(element) {
@@ -177,7 +222,10 @@ function getElementPosition(element) {
   };
 }
 
-function getBetchSelectorByTexts(texts) {
+function getBetchSelectorByTexts(texts,limit) {
+  if(limit === undefined) {
+    limit = 5;
+  }
   var r = {};
 
   for(var field in texts) {
@@ -186,12 +234,18 @@ function getBetchSelectorByTexts(texts) {
     var selectors = [];
     deepestMatches.forEach(deepestMatche => {
       var findSelector = getElementSelector(deepestMatche);
-      selectors.push([deepestMatche.textContent,findSelector,deepestMatche.checkInfo[1],deepestMatche.checkInfo[2],getElementPosition(deepestMatche)]);
+      selectors.push([getElementContent(deepestMatche,deepestMatche.checkInfo[2]),findSelector,deepestMatche.checkInfo[1],deepestMatche.checkInfo[2],getElementPosition(deepestMatche)]);
     });
-    r[field] = selectors;
+    r[field] = selectorsSort(selectors);
+    console.log(field,"=>",r[field]);
+    r[field] = r[field].slice(0, limit);
   }
 
   return r;
+}
+
+function selectorsSort(selectors) {
+  return selectors.sort((a, b) => Math.max(...Object.values(b[3])) - Math.max(...Object.values(a[3])));;
 }
 
 //test
@@ -245,3 +299,24 @@ setTimeout(() => {
   console.log(getBetchSelectorByTexts(texts))
 }, 5000);  
 */
+
+// setTimeout(() => {
+//   //https://www.oschina.net/news/375428
+//   var texts = {
+//     title: "宇树被诉侵害发明专利权一案一审宣判：不构成侵权",
+//     // date: "2025-09-30 14:04:26",
+//     date: [
+//       { type: "|", text: ["2025", "25"] },
+//       { type: "&", text: ["09", "9"] },
+//       { type: "&", text: ["30"] },
+//       { type: "maxlength", text: 100 },
+//     ],
+//     author: "白开水不加糖",
+//     content: [
+//       "宇树科技被杭州露韦美日化有限公司诉侵害发明专利权一案，已于本月 26 日宣判，宇树科技不构成侵权。原告败诉，法院已驳回原告全部诉讼请求。",
+//       "法院判决书中提到，露韦美公司主张被诉产品构成侵权，理由不能成立。鉴于露韦美公司主张的侵权行为不能成立，对其他争议焦点，本院不再予以评述。",
+//     ],
+//   };
+
+//   console.log(getBetchSelectorByTexts(texts));
+// }, 5000);  
