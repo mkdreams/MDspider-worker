@@ -48,10 +48,10 @@ function getElementSelector(element) {
 function standartName(name){
   var firstCharCode = name.charCodeAt(0);
   if(firstCharCode >= 48 && firstCharCode <= 57) {
-    return `\\31 `+name.substr(1);
-  }else{
-    return name;
+    name = `\\31 `+name.substr(1);
   }
+
+  return name.replace(/[\[\]\:\%\+\!\(\)\.\#]/g,match => `\\${match}`);
 }
 
 function checkContentIncludeText(textContents, texts) {
