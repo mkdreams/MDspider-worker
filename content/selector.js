@@ -7,7 +7,7 @@ function getElementSelector(element) {
     element = node;
     let selector = element.nodeName.toLowerCase();
     if (element.id) {
-      selector = `#${element.id}`;
+      selector = `#${standartName(element.id)}`;
       path.unshift(selector);
       break;
     } else {
@@ -20,7 +20,7 @@ function getElementSelector(element) {
           var classes = element.className.trim().split(/\s+/);
           for (var i = 0; i < classes.length; i++) {
             if (classes[i]) {
-              selector += "." + classes[i];
+              selector += "." + standartName(classes[i]);
             }
           }
         }
@@ -43,6 +43,15 @@ function getElementSelector(element) {
     node = element.parentNode;
   }
   return path.join(" > ");
+}
+
+function standartName(name){
+  var firstCharCode = name.charCodeAt(0);
+  if(firstCharCode >= 48 && firstCharCode <= 57) {
+    return `\\31 `+name.substr(1);
+  }else{
+    return name;
+  }
 }
 
 function checkContentIncludeText(textContents, texts) {
