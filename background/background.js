@@ -1347,12 +1347,14 @@ function runAction107(tab,info,cb) {
 	var intervalId = setInterval(()=>{
 		var port = window.devtoolsIsReady[name];
 		if(port) {
-			port.onMessage.addListener(function(res) {
+			var portonMessageHandle = function(res) {
 				console.log("background port.onMessage",res);
 				textToBase64(JSON.stringify(res),function(base64){
 					cb(base64);
+					port.onMessage.removeListener(portonMessageHandle);
 				});
-			});
+			};
+			port.onMessage.addListener(portonMessageHandle);
 			port.postMessage({ devtype: 1 });
 			setTimeout(()=>{
 				runActionComplete(tab,info,()=>{

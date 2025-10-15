@@ -34,7 +34,7 @@ function getElementSelector(element) {
         var sib = element;
         var nth = 1;
         while ((sib = sib.previousElementSibling)) {
-          if (sib.nodeName.toLowerCase() === selectorTag) nth++;
+          nth++;
         }
         selector = selectorTag+":nth-child(" + nth + ")";
       }
@@ -67,7 +67,7 @@ function checkContentIncludeText(textContents, texts) {
 
     var subAllMatch = true;
     var matchTextStr = '';
-    var textContent = textContents[attrName].toLowerCase();
+    var textContent = standardText(textContents[attrName]);
     var score = 0;
     texts.forEach(text => {
       var textOrg = text;
@@ -93,7 +93,7 @@ function checkContentIncludeText(textContents, texts) {
       var subMatch = false;
       var keyTwo = 0;
       text.forEach((subTextOrg) => {
-        subText = subTextOrg.toLowerCase();
+        subText = standardText(subTextOrg);
         var idx = textContent.indexOf(subText);
         if (idx > -1) {
           subMatch = true;
@@ -128,12 +128,16 @@ function checkContentIncludeText(textContents, texts) {
     });
 
     if(subAllMatch === true) {
-      subMatchAttrNameScores[attrName] = matchTextStr.replace(/\s+/g, "").length/textContent.replace(/\s+/g, "").length*score;
+      subMatchAttrNameScores[attrName] = ((matchTextStr.replace(/\s+/g, "").length/textContent.replace(/\s+/g, "").length*0.5)+0.5*score);
       allMatch = true;
     }
   });
   
   return [allMatch,subMatchIndex,subMatchAttrNameScores];
+}
+
+function standardText(text) {
+  return text.replace(/\s+/g, " ").toLowerCase();
 }
 
 function isArray(value) {
@@ -233,7 +237,7 @@ function getElementPosition(element) {
 
 function getBetchSelectorByTexts(texts,limit) {
   if(limit === undefined) {
-    limit = 5;
+    limit = 15;
   }
   var r = {};
 
@@ -324,6 +328,18 @@ setTimeout(() => {
 //     content: [
 //       "宇树科技被杭州露韦美日化有限公司诉侵害发明专利权一案，已于本月 26 日宣判，宇树科技不构成侵权。原告败诉，法院已驳回原告全部诉讼请求。",
 //       "法院判决书中提到，露韦美公司主张被诉产品构成侵权，理由不能成立。鉴于露韦美公司主张的侵权行为不能成立，对其他争议焦点，本院不再予以评述。",
+//     ],
+//   };
+
+//   console.log(getBetchSelectorByTexts(texts));
+// }, 5000);  
+
+// setTimeout(() => {
+//   //https://www.allkpop.com/article/2025/10/82major-wins-gold-in-mens-ssireum-at-idol-star-athletics-championships-defeating-ampersone-in-the-final
+//   var texts = {
+//     title: "82MAJOR wins gold in men’s Ssireum at ‘Idol Star Athletics Championships,’ defeating AMPERS&ONE in the final",
+//     content: [
+//       "82MAJOR claimed the gold medal in the men’s ssireum (traditional Korean wrestling) event at the '2025 Chuseok Special: Idol Star Athletics Championships' (ISAC).",
 //     ],
 //   };
 

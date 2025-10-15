@@ -1,13 +1,17 @@
 window.allSources = [];
+window.allSourcesUrls = {};
 chrome.devtools.network.onRequestFinished.addListener(function (request) {
   if (["document", "xhr", "fetch"].indexOf(request._resourceType) > -1) {
     request.getContent((content, encode) => {
-      window.allSources.push({
-        request: request.request,
-        content: content,
-        response: request.response,
-        resourceType: request._resourceType,
-      });
+      if(window.allSourcesUrls[request.request.url] === undefined) {
+        window.allSourcesUrls[request.request.url] = true;
+        window.allSources.push({
+          request: request.request,
+          content: content,
+          response: request.response,
+          resourceType: request._resourceType,
+        });
+      }
     });
   }
 });
@@ -21,11 +25,12 @@ port.onMessage.addListener(function (request) {
       //重新加载
       case 1:
         window.allSources = [];
+        window.allSourcesUrls = {};
         chrome.devtools.inspectedWindow.reload();
         break;
       //获取加载资源
       case 2:
-        port.postMessage(window.allSources);
+        port.postMessage(window.allSources.slice(0,100));
         break;
     }
   }
