@@ -1017,7 +1017,8 @@ function getHml(tab, info, result) {
 				function doneForEach() {
 					var doneCheckActionIndex = info['doneCheckActionIndex'] = info['doneCheckActionIndex']!==undefined?(info['doneCheckActionIndex']+1):0;
 					if(doneCheckActions.length > doneCheckActionIndex) {
-						var doneCheckAction = $.extend(true, {}, doneCheckActions[doneCheckActionIndex]);
+						// var doneCheckAction = $.extend(true, {}, doneCheckActions[doneCheckActionIndex]);
+						var doneCheckAction = JSON.parse(JSON.stringify(doneCheckActions[doneCheckActionIndex]));
 						
 						doneCheckAction['doneCheckActionIndex'] = doneCheckActionIndex;
 						doneCheckAction['isDoneCheckAction'] = true;

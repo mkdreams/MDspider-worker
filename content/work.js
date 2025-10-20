@@ -393,20 +393,6 @@ function pageRunJs(jsStr,cb,background,runTopFunc,info) {
 	}
 }
 
-function getJqDomByStr(jsStr) {
-	var matches = jsStr.match(/\$\((?:\'|\")([^(]+?)(?:\'|\")\)(?:\[(\d+?)\])*/);
-
-	var r = undefined;
-	if (matches !== null) {
-		r = $(matches[1]);
-		if(matches[2] !== undefined) {
-			r = r[parseInt(matches[2])];
-		}
-	}
-
-	return r;
-}
-
 chrome.runtime.onMessage.addListener(
 	function (request, sender, sendResponse) {
 		if(window.spiderData === undefined) {
@@ -669,7 +655,7 @@ chrome.runtime.onMessage.addListener(
 									if(request.info.url === "") {
 										var pos = [0,0];
 									}else{
-										var evalInfo = getJqDomByStr(request.info.url);
+										var evalInfo = eval(request.info.url);
 										if(Array.isArray(evalInfo)) {
 											var pos = getRandomPos(domCenter(evalInfo[0]),request.info.spiderSlaveBaseInfo,evalInfo[1]);
 										}else{
@@ -810,7 +796,7 @@ chrome.runtime.onMessage.addListener(
 									});
 								}
 								action.then(function() {
-									var doms = getJqDomByStr(request.info.url);
+									var doms = eval(request.info.url);
 									var promiseArr = [];
 									for(var domidx in doms) {
 										domTemp = doms[domidx];
