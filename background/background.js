@@ -1344,9 +1344,11 @@ async function runAction201(tab,info,cb) {
 
 function runAction107(tab,info,cb) {
 	var name = "devtools-"+tab.id;
-	var intervalId = setInterval(()=>{
+	var intervalId = setInterval(function() {
 		var port = window.devtoolsIsReady[name];
 		if(port) {
+			clearInterval(intervalId);
+			
 			var portonMessageHandle = function(res) {
 				console.log("background port.onMessage",res);
 				textToBase64(JSON.stringify(res),function(base64){
@@ -1355,13 +1357,29 @@ function runAction107(tab,info,cb) {
 				});
 			};
 			port.onMessage.addListener(portonMessageHandle);
-			port.postMessage({ devtype: 1 });
-			setTimeout(()=>{
-				runActionComplete(tab,info,()=>{
-					port.postMessage({ devtype: 2 });
+
+			new Promise(function(resolve,reject) {
+				chrome.tabs.get(tab.id).then((tabInfo)=>{
+					if(tabInfo.url !== info.url) {
+						chrome.tabs.update(tab.id,{"url":info.url}).then(()=>{
+							runActionComplete(tab,info,()=>{
+								resolve(true);
+							});
+						});
+					}else{
+						resolve(true);
+					}
 				});
-			},500)
-			clearInterval(intervalId);
+			}.bind(this)).then(()=>{
+				port.postMessage({ devtype: 1});
+				setTimeout(()=>{
+					runActionComplete(tab,info,()=>{
+						chrome.tabs.get(tab.id).then((tabInfo)=>{
+							port.postMessage({ devtype: 2,url: tabInfo.url});
+						});
+					});
+				},500)
+			});
 		}
 	},500);
 }
@@ -1460,7 +1478,7 @@ function dealOneAction(tab, info, needJump) {
 	window.tabUrlIds[tab.id] = info['id'];
 
 	if(info.param && info.param.preeval) {
-		eval(info.param.preeval);
+		myEval(info.param.preeval,{});
 	}
 
 	if (!needJump || info['type'] === 107) {//jump

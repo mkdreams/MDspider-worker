@@ -527,7 +527,8 @@ console.image = function (url) {
 function convertBackticksToEscapedQuotes(str) {
     var regex = /`([^`]*)`/g;
     var result = str.replace(regex, (match, content) => {
-        var escapedContent = content.replace(/"/g, '\\"').replace(/\r?\n/g, '\\r\\n');
+        var escapedContent = content.replace(/"/g, '\\"').replace(/\r?\n/g, '\\r\\n')
+        .replace(/\t/g, '  ');
         return `"${escapedContent}"`;
     });
 

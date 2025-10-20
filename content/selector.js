@@ -1,4 +1,4 @@
-function getElementSelector(element) {
+function getElementSelector(element,onlyTag = false) {
   if (!(element instanceof Element)) return;
   var path = [];
 
@@ -6,7 +6,7 @@ function getElementSelector(element) {
   while (node instanceof Element) {
     element = node;
     let selector = element.nodeName.toLowerCase();
-    if (element.id) {
+    if (element.id && onlyTag === false) {
       selector = `#${standartName(element.id)}`;
       path.unshift(selector);
       break;
@@ -15,7 +15,7 @@ function getElementSelector(element) {
         ":scope > " + selector
       );
       var selectorTag = selector;
-      if (matchNodes.length > 1) {
+      if (matchNodes.length > 1 && onlyTag === false) {
         if (element.className && typeof element.className === 'string') {
           var classes = element.className.trim().split(/\s+/);
           for (var i = 0; i < classes.length; i++) {
@@ -67,7 +67,7 @@ function checkContentIncludeText(textContents, texts) {
 
     var subAllMatch = true;
     var matchTextStr = '';
-    var textContent = standardText(textContents[attrName]);
+    var textContent = textContentOrg = standardText(textContents[attrName]);
     var score = 0;
     texts.forEach(text => {
       var textOrg = text;
@@ -92,7 +92,8 @@ function checkContentIncludeText(textContents, texts) {
   
       var subMatch = false;
       var keyTwo = 0;
-      text.forEach((subTextOrg) => {
+      for(var textIdx = 0;textIdx<text.length;textIdx++) {
+        var subTextOrg = text[textIdx];
         subText = standardText(subTextOrg);
         var idx = textContent.indexOf(subText);
         if (idx > -1) {
@@ -110,11 +111,13 @@ function checkContentIncludeText(textContents, texts) {
               ) +
               "...",
           });
+
+          textContent = textContent.substr(0,idx)+textContent.substr(idx+subText.length)
+          break;
         }
 
         keyTwo++;
-      });
-
+      }
 
       if(subMatch) {
         score++;
@@ -128,7 +131,7 @@ function checkContentIncludeText(textContents, texts) {
     });
 
     if(subAllMatch === true) {
-      subMatchAttrNameScores[attrName] = ((matchTextStr.replace(/\s+/g, "").length/textContent.replace(/\s+/g, "").length*0.5)+0.5*score);
+      subMatchAttrNameScores[attrName] = ((matchTextStr.replace(/\s+/g, "").length/textContentOrg.replace(/\s+/g, "").length*0.5)+0.5*score);
       allMatch = true;
     }
   });
@@ -245,20 +248,45 @@ function getBetchSelectorByTexts(texts,limit) {
     var targetText = texts[field];
     var deepestMatches = getElementByText(targetText);
     var selectors = [];
-    deepestMatches.forEach(deepestMatche => {
-      var findSelector = getElementSelector(deepestMatche);
-      selectors.push([getElementContent(deepestMatche,deepestMatche.checkInfo[2]),findSelector,deepestMatche.checkInfo[1],deepestMatche.checkInfo[2],getElementPosition(deepestMatche)]);
+    deepestMatches.forEach((deepestMatche) => {
+      var r = [
+        getElementContent(deepestMatche, deepestMatche.checkInfo[2]),
+        getElementSelector(deepestMatche),
+        deepestMatche.checkInfo[1],
+        deepestMatche.checkInfo[2],
+        getElementPosition(deepestMatche),
+        getElementSelector(deepestMatche,true),
+        deepestMatche
+      ];
+      caclCenterOffset(r);
+      selectors.push(r);
     });
     r[field] = selectorsSort(selectors);
     console.log(field,"=>",r[field]);
     r[field] = r[field].slice(0, limit);
+    if(r[field].length > 0) {
+      r[field][0][6].style["outline"] = "2px solid #ff9800";
+    }
   }
 
   return r;
 }
 
+function caclCenterOffset(a) {
+  var c = a[4]['documentWidth']/2;
+  var ac = (a[4]['leftTop'][0]+a[4]['rightBottom'][0])/2;
+  var aNodeOffset = Math.abs(c-ac)/c;
+  if(aNodeOffset > 1) {
+    aNodeOffset = 1;
+  }
+  aNodeOffset = 1-aNodeOffset;
+  a[4]['score'] = (Math.max(...Object.values(a[3]))*0.7+0.3*aNodeOffset);
+}
+
 function selectorsSort(selectors) {
-  return selectors.sort((a, b) => Math.max(...Object.values(b[3])) - Math.max(...Object.values(a[3])));;
+  return selectors.sort((a, b) => {
+    return b[4]['score'] - a[4]['score'];
+  });
 }
 
 //test
