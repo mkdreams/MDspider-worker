@@ -1,9 +1,17 @@
 window.allSources = [];
 window.allSourcesUrls = {};
 chrome.devtools.network.onRequestFinished.addListener(function (request) {
-  if (["document", "xhr", "fetch"].indexOf(request._resourceType) > -1 && request.response.content.mimeType.indexOf('image/') === -1 && request.response.content.mimeType.indexOf('text/css') === -1 && request.response.content.mimeType.indexOf('javascript') === -1) {
+  // console.log(request.request.url, request);
+  if (
+    ["document", "xhr", "fetch", "script"].indexOf(request._resourceType) >
+      -1 &&
+    request.response.content.mimeType.indexOf("image/") === -1 &&
+    request.response.content.mimeType.indexOf("text/css") === -1 &&
+    request.response.content.mimeType.indexOf("video/") === -1 &&
+    request.response.content.mimeType.indexOf("javascript") === -1
+  ) {
     request.getContent((content, encode) => {
-      if(window.allSourcesUrls[request.request.url] === undefined) {
+      if (window.allSourcesUrls[request.request.url] === undefined) {
         window.allSourcesUrls[request.request.url] = true;
         window.allSources.push({
           startedDateTime: request.startedDateTime,
@@ -35,21 +43,34 @@ port.onMessage.addListener(function (request) {
         var allSourcesTemp = [];
 
         var canInsert = false;
-        window.allSources.sort((a, b) => {
-          if (a.startedDateTime < b.startedDateTime) return -1;
-          if (a.startedDateTime > b.startedDateTime) return 1;
-          return 0;
-        }).slice(0,100).forEach(source => {
-          if(source.request.url === url) {
-            canInsert = true;
-          }
+        window.allSources
+          .sort((a, b) => {
+            if (a.startedDateTime < b.startedDateTime) return -1;
+            if (a.startedDateTime > b.startedDateTime) return 1;
+            return 0;
+          })
+          .slice(0, 100)
+          .forEach((source) => {
+            if (source.request.url === url) {
+              if (request.getBetchSelectorTexts) {
+                DOMParserHtml(source.content);
+                source.getBetchSelectorByTextsResult = getBetchSelectorByTexts(
+                  request.getBetchSelectorTexts
+                );
+                console.log(
+                  "getBetchSelectorByTextsResult",
+                  source.getBetchSelectorByTextsResult
+                );
+              }
+              canInsert = true;
+            }
 
-          if(canInsert === true) {
-            allSourcesTemp.push(source);
-          }
-        });
+            if (canInsert === true) {
+              allSourcesTemp.push(source);
+            }
+          });
 
-        port.postMessage(allSourcesTemp.slice(0,50));
+        port.postMessage(allSourcesTemp.slice(0, 50));
         break;
     }
   }

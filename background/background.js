@@ -1318,13 +1318,7 @@ function sendAction(tab, info, cb) {
 			runAction201(tab,info,cb);
 		}
 	}else if(info.type === 107) {
-		if(info.param && info.param.delay) {
-			setTimeout(function(){
-				runAction107(tab,info,cb);
-			},info.param.delay);
-		}else{
 			runAction107(tab,info,cb);
-		}
 	}else{
 		sendMessageToTabs(tab, { 'actiontype': 2, 'info': info },function() {
 			cb();
@@ -1373,13 +1367,21 @@ function runAction107(tab,info,cb) {
 				});
 			}.bind(this)).then(()=>{
 				port.postMessage({ devtype: 1});
+				var delay = 500;
+				if(info.param && info.param.delay) {
+					delay = info.param.delay;
+				}
 				setTimeout(()=>{
 					runActionComplete(tab,info,()=>{
 						chrome.tabs.get(tab.id).then((tabInfo)=>{
-							port.postMessage({ devtype: 2,url: tabInfo.url});
+							if(info.param && info.param.getBetchSelectorTextsBase64) {
+								port.postMessage({ devtype: 2,url: tabInfo.url, getBetchSelectorTexts:JSON.parse(base64ToString(info.param.getBetchSelectorTextsBase64))});
+							}else{
+								port.postMessage({ devtype: 2,url: tabInfo.url});
+							}
 						});
 					});
-				},500)
+				},delay)
 			});
 		}
 	},500);

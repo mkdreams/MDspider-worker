@@ -1,4 +1,4 @@
-function getElementSelector(element,onlyTag = false) {
+function getElementSelector(element, onlyTag = false) {
   if (!(element instanceof Element)) return;
   var path = [];
 
@@ -11,12 +11,26 @@ function getElementSelector(element,onlyTag = false) {
       path.unshift(selector);
       break;
     } else {
+      var selectorTag = selector;
+
+      if (selectorTag === "meta") {
+        if (element.name) {
+          selector += "[name=" + standartName(element.name) + "]";
+        } else if (element.attributes["property"]) {
+          console.log("property", element.attributes["property"]);
+          selector +=
+            "[property=" +
+            standartName(element.attributes["property"].value) +
+            "]";
+        }
+      }
+
       var matchNodes = element.parentNode.querySelectorAll(
         ":scope > " + selector
       );
-      var selectorTag = selector;
+
       if (matchNodes.length > 1 && onlyTag === false) {
-        if (element.className && typeof element.className === 'string') {
+        if (element.className && typeof element.className === "string") {
           var classes = element.className.trim().split(/\s+/);
           for (var i = 0; i < classes.length; i++) {
             if (classes[i]) {
@@ -36,7 +50,7 @@ function getElementSelector(element,onlyTag = false) {
         while ((sib = sib.previousElementSibling)) {
           nth++;
         }
-        selector = selectorTag+":nth-child(" + nth + ")";
+        selector = selectorTag + ":nth-child(" + nth + ")";
       }
     }
     path.unshift(selector);
@@ -45,54 +59,54 @@ function getElementSelector(element,onlyTag = false) {
   return path.join(" > ");
 }
 
-function standartName(name){
+function standartName(name) {
   var firstCharCode = name.charCodeAt(0);
-  if(firstCharCode >= 48 && firstCharCode <= 57) {
-    name = `\\31 `+name.substr(1);
+  if (firstCharCode >= 48 && firstCharCode <= 57) {
+    name = `\\31 ` + name.substr(1);
   }
 
-  return name.replace(/[\[\]\:\%\+\!\(\)\.\#]/g,match => `\\${match}`);
+  return name.replace(/[\[\]\:\%\+\!\(\)\.\#\|]/g, (match) => `\\${match}`);
 }
 
 function checkContentIncludeText(textContents, texts) {
-  if(typeof texts === 'string') {
+  if (typeof texts === "string") {
     texts = [texts];
   }
-  
+
   var allMatch = false;
   var subMatchIndex = [];
   var subMatchAttrNameScores = {};
-  Object.keys(textContents).forEach(attrName => {
+  Object.keys(textContents).forEach((attrName) => {
     var keyOne = 0;
 
     var subAllMatch = true;
-    var matchTextStr = '';
-    var textContent = textContentOrg = standardText(textContents[attrName]);
+    var matchTextStr = "";
+    var textContent = (textContentOrg = standardText(textContents[attrName]));
     var score = 0;
-    texts.forEach(text => {
+    texts.forEach((text) => {
       var textOrg = text;
       var include = true;
-      if(isObject(textOrg)) {
-        if(textOrg['type'] && textOrg['type'] === '|') {
+      if (isObject(textOrg)) {
+        if (textOrg["type"] && textOrg["type"] === "|") {
           include = false;
         }
-  
-        if(textOrg['type'] && textOrg['type'] === 'maxlength') {
-          if(textContent.length > textOrg['text']) {
+
+        if (textOrg["type"] && textOrg["type"] === "maxlength") {
+          if (textContent.length > textOrg["text"]) {
             allMatch = false;
           }
-          return ;
+          return;
         }
-        text = textOrg['text'];
+        text = textOrg["text"];
       }
-  
-      if(typeof text === 'string') {
+
+      if (typeof text === "string") {
         text = [text];
       }
-  
+
       var subMatch = false;
       var keyTwo = 0;
-      for(var textIdx = 0;textIdx<text.length;textIdx++) {
+      for (var textIdx = 0; textIdx < text.length; textIdx++) {
         var subTextOrg = text[textIdx];
         subText = standardText(subTextOrg);
         var idx = textContent.indexOf(subText);
@@ -112,31 +126,37 @@ function checkContentIncludeText(textContents, texts) {
               "...",
           });
 
-          textContent = textContent.substr(0,idx)+textContent.substr(idx+subText.length)
+          textContent =
+            textContent.substr(0, idx) +
+            textContent.substr(idx + subText.length);
           break;
         }
 
         keyTwo++;
       }
 
-      if(subMatch) {
+      if (subMatch) {
         score++;
       }
-  
-      if(include === true && subMatch === false) {
+
+      if (include === true && subMatch === false) {
         subAllMatch = false;
       }
-  
+
       keyOne++;
     });
 
-    if(subAllMatch === true) {
-      subMatchAttrNameScores[attrName] = ((matchTextStr.replace(/\s+/g, "").length/textContentOrg.replace(/\s+/g, "").length*0.5)+0.5*score);
+    if (subAllMatch === true) {
+      subMatchAttrNameScores[attrName] =
+        (matchTextStr.replace(/\s+/g, "").length /
+          textContentOrg.replace(/\s+/g, "").length) *
+          0.5 +
+        0.5 * score;
       allMatch = true;
     }
   });
-  
-  return [allMatch,subMatchIndex,subMatchAttrNameScores];
+
+  return [allMatch, subMatchIndex, subMatchAttrNameScores];
 }
 
 function standardText(text) {
@@ -144,16 +164,27 @@ function standardText(text) {
 }
 
 function isArray(value) {
-    return Object.prototype.toString.call(value) === '[object Array]';
+  return Object.prototype.toString.call(value) === "[object Array]";
 }
 
 function isObject(value) {
-  return value !== null && typeof value === 'object' && Object.prototype.toString.call(value) === '[object Object]';
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    Object.prototype.toString.call(value) === "[object Object]"
+  );
 }
 
 function getElementByText(text) {
-  var allMatches = Array.from(document.querySelectorAll("*")).filter((el) => {
-    var checkInfo = checkContentIncludeText(getElementContent(el), text);
+  var allMatches = Array.from(
+    window.parseHtmlDocument.querySelectorAll("*")
+  ).filter((el) => {
+    try {
+      var checkInfo = checkContentIncludeText(getElementContent(el), text);
+    } catch (error) {
+      console.warn(error);
+      return false;
+    }
     if (checkInfo[0]) {
       el.checkInfo = checkInfo;
     }
@@ -163,7 +194,15 @@ function getElementByText(text) {
   var deepestMatches = allMatches.filter((el) => {
     var hasMatchingChild = Array.from(el.querySelectorAll("*")).some(
       (child) => {
-        var checkInfo = checkContentIncludeText(getElementContent(child), text);
+        try {
+          var checkInfo = checkContentIncludeText(
+            getElementContent(child),
+            text
+          );
+        } catch (error) {
+          console.warn(error);
+          return false;
+        }
         if (checkInfo[0]) {
           child.checkInfo = checkInfo;
         }
@@ -181,7 +220,7 @@ function getElementByText(text) {
   return deepestMatches;
 }
 
-function getElementContent(el,attrNames) {
+function getElementContent(el, attrNames) {
   var blankAttrs = [
     // 'href',
     // 'src'
@@ -191,10 +230,10 @@ function getElementContent(el,attrNames) {
   if (el.attributes && el.attributes.length > 0) {
     for (var i = 0; i < el.attributes.length; i++) {
       var attr = el.attributes[i];
-      if(blankAttrs.indexOf(attr.nodeName) > -1) {
+      if (blankAttrs.indexOf(attr.nodeName) > -1) {
         continue;
       }
-      if(attrNames === undefined || attrNames[attr.nodeName] !== undefined) {
+      if (attrNames === undefined || attrNames[attr.nodeName] !== undefined) {
         contents[attr.nodeName] = attr.textContent;
       }
     }
@@ -207,21 +246,21 @@ function getElementPosition(element) {
   const rect = element.getBoundingClientRect();
 
   var documentWidth = Math.max(
-    document.body.scrollWidth,
-    document.documentElement.scrollWidth,
-    document.body.offsetWidth,
-    document.documentElement.offsetWidth,
-    document.body.clientWidth,
-    document.documentElement.clientWidth
+    window.parseHtmlDocument.body.scrollWidth,
+    window.parseHtmlDocument.documentElement.scrollWidth,
+    window.parseHtmlDocument.body.offsetWidth,
+    window.parseHtmlDocument.documentElement.offsetWidth,
+    window.parseHtmlDocument.body.clientWidth,
+    window.parseHtmlDocument.documentElement.clientWidth
   );
 
   var documentHeight = Math.max(
-    document.body.scrollHeight,
-    document.documentElement.scrollHeight,
-    document.body.offsetHeight,
-    document.documentElement.offsetHeight,
-    document.body.clientHeight,
-    document.documentElement.clientHeight
+    window.parseHtmlDocument.body.scrollHeight,
+    window.parseHtmlDocument.documentElement.scrollHeight,
+    window.parseHtmlDocument.body.offsetHeight,
+    window.parseHtmlDocument.documentElement.offsetHeight,
+    window.parseHtmlDocument.body.clientHeight,
+    window.parseHtmlDocument.documentElement.clientHeight
   );
 
   var scrollX = window.scrollX;
@@ -238,33 +277,41 @@ function getElementPosition(element) {
   };
 }
 
-function getBetchSelectorByTexts(texts,limit) {
-  if(limit === undefined) {
+function getBetchSelectorByTexts(texts, limit) {
+  if (window.parseHtmlDocument === undefined) {
+    window.parseHtmlDocument = document;
+  }
+  if (limit === undefined) {
     limit = 15;
   }
   var r = {};
 
-  for(var field in texts) {
+  for (var field in texts) {
     var targetText = texts[field];
     var deepestMatches = getElementByText(targetText);
     var selectors = [];
     deepestMatches.forEach((deepestMatche) => {
-      var r = [
-        getElementContent(deepestMatche, deepestMatche.checkInfo[2]),
-        getElementSelector(deepestMatche),
-        deepestMatche.checkInfo[1],
-        deepestMatche.checkInfo[2],
-        getElementPosition(deepestMatche),
-        getElementSelector(deepestMatche,true),
-        deepestMatche
-      ];
-      caclCenterOffset(r);
-      selectors.push(r);
+      try {
+        var rTemp = [
+          getElementContent(deepestMatche, deepestMatche.checkInfo[2]),
+          getElementSelector(deepestMatche),
+          deepestMatche.checkInfo[1],
+          deepestMatche.checkInfo[2],
+          getElementPosition(deepestMatche),
+          getElementSelector(deepestMatche, true),
+          deepestMatche,
+        ];
+        caclCenterOffset(rTemp);
+        selectors.push(rTemp);
+      } catch (error) {
+        console.warn(error);
+        return false;
+      }
     });
     r[field] = selectorsSort(selectors);
-    console.log(field,"=>",r[field]);
+    console.log(field, "=>", r[field]);
     r[field] = r[field].slice(0, limit);
-    if(r[field].length > 0) {
+    if (r[field].length > 0) {
       r[field][0][6].style["outline"] = "2px solid #ff9800";
     }
   }
@@ -273,20 +320,29 @@ function getBetchSelectorByTexts(texts,limit) {
 }
 
 function caclCenterOffset(a) {
-  var c = a[4]['documentWidth']/2;
-  var ac = (a[4]['leftTop'][0]+a[4]['rightBottom'][0])/2;
-  var aNodeOffset = Math.abs(c-ac)/c;
-  if(aNodeOffset > 1) {
+  var c = a[4]["documentWidth"] / 2;
+  if (!c) {
+    a[4]["score"] = Math.max(...Object.values(a[3]));
+    return;
+  }
+  var ac = (a[4]["leftTop"][0] + a[4]["rightBottom"][0]) / 2;
+  var aNodeOffset = Math.abs(c - ac) / c;
+  if (aNodeOffset > 1) {
     aNodeOffset = 1;
   }
-  aNodeOffset = 1-aNodeOffset;
-  a[4]['score'] = (Math.max(...Object.values(a[3]))*0.7+0.3*aNodeOffset);
+  aNodeOffset = 1 - aNodeOffset;
+  a[4]["score"] = Math.max(...Object.values(a[3])) * 0.7 + 0.3 * aNodeOffset;
 }
 
 function selectorsSort(selectors) {
   return selectors.sort((a, b) => {
-    return b[4]['score'] - a[4]['score'];
+    return b[4]["score"] - a[4]["score"];
   });
+}
+
+function DOMParserHtml(html) {
+  var parser = new DOMParser();
+  window.parseHtmlDocument = parser.parseFromString(html, "text/html");
 }
 
 //test
@@ -360,16 +416,13 @@ setTimeout(() => {
 //   };
 
 //   console.log(getBetchSelectorByTexts(texts));
-// }, 5000);  
+// }, 5000);
 
 // setTimeout(() => {
-//   //https://www.allkpop.com/article/2025/10/82major-wins-gold-in-mens-ssireum-at-idol-star-athletics-championships-defeating-ampersone-in-the-final
+//   //https://www.sanspo.com/article/20251007-CQMNJPZTSFEP5HSAMTB5MX6NQQ/?outputType=theme_fight
 //   var texts = {
-//     title: "82MAJOR wins gold in men’s Ssireum at ‘Idol Star Athletics Championships,’ defeating AMPERS&ONE in the final",
-//     content: [
-//       "82MAJOR claimed the gold medal in the men’s ssireum (traditional Korean wrestling) event at the '2025 Chuseok Special: Idol Star Athletics Championships' (ISAC).",
-//     ],
+//     title: "梅野源治、動画撮影スタッフの小原氏にブチ切れ「お前わかってんの？ お前なんだあれ？」"
 //   };
 
 //   console.log(getBetchSelectorByTexts(texts));
-// }, 5000);  
+// }, 5000);
