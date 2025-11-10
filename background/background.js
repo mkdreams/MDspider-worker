@@ -825,8 +825,13 @@ function isDone(tab, info, isError) {
 		}
 		window.spiderSlaveUrls[info['id']]['runCount']++;
 
-		//try 5 times
-		if(window.spiderSlaveUrls[info['id']]['runCount'] > 5) {
+		var maxErrorCount = 5;
+		if(info && info.param && info.param.maxErrorCount !== undefined) {
+			maxErrorCount = info.param.maxErrorCount;
+		}
+
+		//try times
+		if(window.spiderSlaveUrls[info['id']]['runCount'] > maxErrorCount) {
 			ajaxPost({ 'admintype': 2, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': 'ZmFsc2U=','sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function() {
 				var clearInfo = function(tab,info) {
 					if (window.spiderSlaveTabInfos['tabs'][tab.id]['doneResolve']) {
