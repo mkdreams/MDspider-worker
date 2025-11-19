@@ -232,18 +232,28 @@ function screenshot(tab, info, cb,screenshotCount) {
 		if (chrome.runtime.lastError) {
 			console.error(chrome.runtime.lastError);
 		}
-		chrome.tabs.captureVisibleTab(null, {
-			format: 'png'
-		}, function (data) {
-			//retry 3 times
-			if(!data && screenshotCount <= 3) {
+
+		try {
+			chrome.tabs.captureVisibleTab(null, {
+				format: 'png'
+			}, function (data) {
+				//retry 3 times
+				if(!data && screenshotCount <= 3) {
+					setTimeout(()=>{
+						screenshot(tab, info, cb,screenshotCount);
+					},500);
+				}else{
+					cb(data);
+				}
+			});
+		} catch (e) {
+			if(screenshotCount <= 3) {
 				setTimeout(()=>{
 					screenshot(tab, info, cb,screenshotCount);
-				},500);
-			}else{
-				cb(data);
+				},1000);
 			}
-		});
+			console.warn(e);
+		}
 	});
 }
 
