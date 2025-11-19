@@ -841,16 +841,16 @@ chrome.runtime.onMessage.addListener(
 										window.actionComplete = true;
 									}).catch(error=>{
 										//30s retry
-										setTimeout(()=>{
-											fullPageScreenShot(request.info).then((result)=>{
-												window.spiderData[request.info.id] = result;
-												window.actionComplete = true;
-											}).catch(error=>{
+										// setTimeout(()=>{
+										// 	fullPageScreenShot(request.info).then((result)=>{
+										// 		window.spiderData[request.info.id] = result;
+										// 		window.actionComplete = true;
+										// 	}).catch(error=>{
 												window.spiderData[request.info.id] = 'ZmFsc2U=';
 												window.actionComplete = true;
-												console.warn(error);
-											});
-										},30000);
+										// 		console.warn(error);
+										// 	});
+										// },30000);
 										console.warn(error);
 									});
 								});
