@@ -341,7 +341,7 @@ function specialSitesHacks() {
 }
 
 function initEntireCapture() {
-  prepareBodyForEntireCapture(),
+    prepareBodyForEntireCapture(),
     handleAbsoluteHangings(),
     disableTransitions(),
     specialSitesHacks(),

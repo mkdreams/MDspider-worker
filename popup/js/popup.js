@@ -125,6 +125,7 @@ layui.use(['element', 'layer', 'form', 'jquery'], function () {
 
 	//监听提交
 	form.on('submit(workerConfig)', function (data) {
+		data.field['spiderReqSlaveFlag'] = data.field['spiderSlaveFlag'];
 		chrome.storage.local.set(data.field, function () {
 			layer.msg('储存成功');
 		});
