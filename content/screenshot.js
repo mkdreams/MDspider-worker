@@ -641,7 +641,14 @@ function getStyle(e, t) {
   return parseInt(e.style.getPropertyValue(t));
 }
 
+var fullPageScreenShotLocker = false;
+
 async function fullPageScreenShot(info) {
+  if(fullPageScreenShotLocker === true) {
+    return false;
+  }
+
+  fullPageScreenShotLocker = true;
   if (info && info.param && info.param.width) {
     var width = info.param.width;
   } else {
@@ -843,6 +850,8 @@ async function fullPageScreenShot(info) {
     restorEntireCapture();
     fixedElements = [];
   }catch(e){}
+
+  fullPageScreenShotLocker = false;
 
   return tempDom.toDataURL("png");
 }
