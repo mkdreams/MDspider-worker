@@ -354,7 +354,6 @@ function initEntireCapture() {
     (html = doc.documentElement),
     (clientH = getClientH()),
     (clientW = html.clientWidth),
-    (document.scrollingElement.scrollLeft = 0),
     checkScrollBar(),
     (window.onresize = checkScrollBar);
     
@@ -362,6 +361,7 @@ function initEntireCapture() {
     initScrollTop = window.scrollingElement.scrollTop;
     initScrollLeft = window.scrollingElement.scrollLeft;
     window.scrollingElement.scrollTop = 0;
+    window.scrollingElement.scrollLeft = 0;
 }
 
 function restorEntireCapture() {
