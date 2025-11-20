@@ -352,14 +352,16 @@ function initEntireCapture() {
     (counter = 1),
     getDocumentNode(),
     (html = doc.documentElement),
-    (initScrollTop = document.scrollingElement.scrollTop),
-    (initScrollLeft = document.scrollingElement.scrollLeft),
     (clientH = getClientH()),
     (clientW = html.clientWidth),
-    (document.scrollingElement.scrollTop = 0),
     (document.scrollingElement.scrollLeft = 0),
     checkScrollBar(),
     (window.onresize = checkScrollBar);
+    
+    window.scrollingElement = findScrollElement();
+    initScrollTop = window.scrollingElement.scrollTop;
+    initScrollLeft = window.scrollingElement.scrollLeft;
+    window.scrollingElement.scrollTop = 0;
 }
 
 function restorEntireCapture() {
@@ -386,7 +388,6 @@ function initSelectedCapture() {
   }
   (wrapper = document.getElementById("mdspider_screenshot_wrapper")),
     updateWrapper(),
-    window.addEventListener("resize", windowResize, !1),
     document.body.addEventListener("keydown", selectedKeyDown, !1),
     wrapper.addEventListener("mousedown", wrapperMouseDown, !1);
 }
@@ -582,10 +583,9 @@ function bindCenter() {
     );
 }
 function removeSelected() {
-  window.removeEventListener("resize", windowResize),
-    document.body.removeEventListener("keydown", selectedKeyDown, !1),
-    wrapper.parentNode && wrapper.parentNode.removeChild(wrapper),
-    (isSelected = !1);
+  document.body.removeEventListener("keydown", selectedKeyDown, !1),
+  wrapper.parentNode && wrapper.parentNode.removeChild(wrapper),
+  (isSelected = !1);
 }
 function autoScroll(e) {
   var t = e.clientY,
@@ -641,14 +641,8 @@ function getStyle(e, t) {
   return parseInt(e.style.getPropertyValue(t));
 }
 
-var fullPageScreenShotLocker = false;
 
 async function fullPageScreenShot(info) {
-  if(fullPageScreenShotLocker === true) {
-    return false;
-  }
-
-  fullPageScreenShotLocker = true;
   if (info && info.param && info.param.width) {
     var width = info.param.width;
   } else {
@@ -845,24 +839,23 @@ async function fullPageScreenShot(info) {
   console.log("show screenshot");
   console.image(tempDom.toDataURL("png"));
 
-  document.scrollingElement.scrollTop = initScrollTop;
+  window.scrollingElement.scrollTop = initScrollTop;
+  window.scrollingElement.scrollLeft = initScrollLeft;
+
   try{
     restorEntireCapture();
     fixedElements = [];
   }catch(e){}
 
-  fullPageScreenShotLocker = false;
-
   return tempDom.toDataURL("png");
 }
 
 function scrollNext() {
-  var scrollingElement = findScrollElement();
-  var top = Math.ceil(scrollingElement.scrollTop);
+  var top = Math.ceil(window.scrollingElement.scrollTop);
 
-  scrollingElement.scrollTop = top + clientH;
+  window.scrollingElement.scrollTop = top + clientH;
 
-  if (Math.ceil(scrollingElement.scrollTop) == top) {
+  if (Math.ceil(window.scrollingElement.scrollTop) == top) {
     var r = {};
     r.y = (top % clientH) / clientH;
     return {
