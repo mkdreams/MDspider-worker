@@ -806,6 +806,7 @@ async function fullPageScreenShot(info) {
             image.src = r;
             image.onload = function () {
               imgs[0] = image;
+              sumHeightTemp = image.height;
               resolve(true);
             };
           }
