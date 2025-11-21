@@ -356,12 +356,12 @@ function initEntireCapture() {
     (clientW = html.clientWidth),
     checkScrollBar(),
     (window.onresize = checkScrollBar);
-    
-    window.scrollingElement = findScrollElement();
-    initScrollTop = window.scrollingElement.scrollTop;
-    initScrollLeft = window.scrollingElement.scrollLeft;
-    window.scrollingElement.scrollTop = 0;
-    window.scrollingElement.scrollLeft = 0;
+
+  window.scrollingElement = findScrollElement();
+  initScrollTop = window.scrollingElement.scrollTop;
+  initScrollLeft = window.scrollingElement.scrollLeft;
+  window.scrollingElement.scrollTop = 0;
+  window.scrollingElement.scrollLeft = 0;
 }
 
 function restorEntireCapture() {
@@ -584,8 +584,8 @@ function bindCenter() {
 }
 function removeSelected() {
   document.body.removeEventListener("keydown", selectedKeyDown, !1),
-  wrapper.parentNode && wrapper.parentNode.removeChild(wrapper),
-  (isSelected = !1);
+    wrapper.parentNode && wrapper.parentNode.removeChild(wrapper),
+    (isSelected = !1);
 }
 function autoScroll(e) {
   var t = e.clientY,
@@ -641,7 +641,6 @@ function getStyle(e, t) {
   return parseInt(e.style.getPropertyValue(t));
 }
 
-
 async function fullPageScreenShot(info) {
   if (info && info.param && info.param.width) {
     var width = info.param.width;
@@ -676,7 +675,6 @@ async function fullPageScreenShot(info) {
   var tempDom = document.createElement("canvas");
   var tempCanvas = tempDom.getContext("2d");
   initEntireCapture();
-  enableFixedPosition(false, 3);
 
   if (info && info.param && info.param.maxHeight) {
     var maxHeight = info.param.maxHeight;
@@ -716,6 +714,8 @@ async function fullPageScreenShot(info) {
   };
 
   await new Promise(function (resolve, reject) {
+    enableFixedPosition(false, 3);
+    enableFixedPosition(false, 2);
     setTimeout(() => {
       chrome.runtime.sendMessage(
         {
@@ -791,6 +791,29 @@ async function fullPageScreenShot(info) {
     });
   }
 
+  if (imgs.length === 1) {
+    await new Promise(function (resolve, reject) {
+      restoreFixedElements(1);
+      restoreFixedElements(3);
+      setTimeout(() => {
+        chrome.runtime.sendMessage(
+          {
+            type: 2,
+            param: { action: "screenshot", width: width, height: height },
+          },
+          (r) => {
+            var image = new Image();
+            image.src = r;
+            image.onload = function () {
+              imgs[0] = image;
+              resolve(true);
+            };
+          }
+        );
+      }, scrollDelay);
+    });
+  }
+
   //merge imgs
   var widthTemp = 0;
   var heightTemp = 0;
@@ -818,8 +841,6 @@ async function fullPageScreenShot(info) {
     var sh = imgs[i].height;
 
     if (i === imgs.length - 1 && scrollInfo.isEnd === true) {
-      console.log(scrollInfo.isEnd);
-
       var dx = 0;
       var dy = tempDom.height - sh;
       var dw = sw;
@@ -836,18 +857,401 @@ async function fullPageScreenShot(info) {
     sumDy += sh;
   }
 
-  console.log("show screenshot");
-  console.image(tempDom.toDataURL("png"));
-
   window.scrollingElement.scrollTop = initScrollTop;
   window.scrollingElement.scrollLeft = initScrollLeft;
 
-  try{
+  try {
     restorEntireCapture();
     fixedElements = [];
-  }catch(e){}
+  } catch (e) {}
 
-  return tempDom.toDataURL("png");
+  console.log("show screenshot");
+  var r = tempDom.toDataURL("png");
+  r = await cropUniformSidesAndCornersV2(r, 700, 15);
+  console.image(r);
+
+  return r;
+}
+
+async function cropUniformSidesAndCornersV2(dataURL, minKeepWidth, gap = 0) {
+  return new Promise((resolve) => {
+    var img = new Image();
+    img.crossOrigin = "Anonymous";
+    img.onload = function () {
+      var canvas = document.createElement("canvas");
+      var ctx = canvas.getContext("2d");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+
+      var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      var data = imageData.data;
+      var width = canvas.width;
+      var height = canvas.height;
+
+      // 获取像素颜色值
+      var getPixel = (x, y) => {
+        var idx = (y * width + x) * 4;
+        return [data[idx], data[idx + 1], data[idx + 2], data[idx + 3]];
+      };
+
+      // 像素比较函数（带容差）
+      var colorThreshold = 10;
+      var isEqualPixel = (a, b, threshold = colorThreshold) => {
+        return (
+          Math.abs(a[0] - b[0]) <= threshold &&
+          Math.abs(a[1] - b[1]) <= threshold &&
+          Math.abs(a[2] - b[2]) <= threshold &&
+          Math.abs(a[3] - b[3]) <= threshold
+        );
+      };
+
+      // 检测左右纯色边框（横向对比）
+      let left = 0;
+      let right = width - 1;
+
+      // 检测左侧边界
+      outerLeft: for (; left < width; left++) {
+        for (let y = 0; y < height; y++) {
+          // 横向对比：检查当前像素与前一个像素
+          if (left > 0) {
+            var current = getPixel(left, y);
+            var prev = getPixel(left - 1, y);
+            if (!isEqualPixel(current, prev)) {
+              break outerLeft;
+            }
+          }
+        }
+      }
+
+      // 检测右侧边界
+      outerRight: for (; right >= 0; right--) {
+        for (let y = 0; y < height; y++) {
+          // 横向对比：检查当前像素与后一个像素
+          if (right < width - 1) {
+            var current = getPixel(right, y);
+            var next = getPixel(right + 1, y);
+            if (!isEqualPixel(current, next)) {
+              break outerRight;
+            }
+          }
+        }
+      }
+
+      // 检测上下纯色边框（纵向对比）
+      let top = 0;
+      let bottom = height - 1;
+
+      // 检测顶部边界
+      outerTop: for (; top < height; top++) {
+        for (let x = 0; x < width; x++) {
+          // 纵向对比：检查当前像素与上一个像素
+          if (top > 0) {
+            var current = getPixel(x, top);
+            var prev = getPixel(x, top - 1);
+            if (!isEqualPixel(current, prev)) break outerTop;
+          }
+        }
+      }
+
+      // 检测底部边界
+      outerBottom: for (; bottom >= 0; bottom--) {
+        for (let x = 0; x < width; x++) {
+          // 纵向对比：检查当前像素与后一个像素
+          if (bottom < height - 1) {
+            var current = getPixel(x, bottom);
+            var next = getPixel(x, bottom + 1);
+            if (!isEqualPixel(current, next)) break outerBottom;
+          }
+        }
+      }
+
+      // 应用gap（扩展边界）
+      left = Math.max(left - gap, 0);
+      right = Math.min(right + gap, width - 1);
+      top = Math.max(top - gap, 0);
+      bottom = Math.min(bottom + gap, height - 1);
+
+      // 计算最终裁剪区域
+      var newWidth = right - left + 1;
+      var newHeight = bottom - top + 1;
+
+      // 安全检查
+      if (
+        newWidth <= 0 ||
+        newHeight <= 0 ||
+        (newWidth < minKeepWidth && newHeight < minKeepWidth)
+      ) {
+        resolve(dataURL);
+        return;
+      }
+
+      // 创建新画布并裁剪
+      var newCanvas = document.createElement("canvas");
+      var newCtx = newCanvas.getContext("2d");
+      newCanvas.width = newWidth;
+      newCanvas.height = newHeight;
+      newCtx.drawImage(
+        canvas,
+        left,
+        top,
+        newWidth,
+        newHeight,
+        0,
+        0,
+        newWidth,
+        newHeight
+      );
+
+      resolve(newCanvas.toDataURL("png"));
+    };
+    img.src = dataURL;
+  });
+}
+
+async function cropUniformSidesAndCorners(dataURL, minKeepWidth, gap = 0) {
+  return new Promise((resolve) => {
+    var img = new Image();
+    img.crossOrigin = "Anonymous";
+    img.onload = function () {
+      var canvas = document.createElement("canvas");
+      var ctx = canvas.getContext("2d");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+
+      var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      var data = imageData.data;
+      var width = canvas.width;
+      var height = canvas.height;
+
+      // 获取像素颜色值
+      var getPixel = (x, y) => {
+        var idx = (y * width + x) * 4;
+        return [data[idx], data[idx + 1], data[idx + 2], data[idx + 3]];
+      };
+
+      // 检测是否为纯色列
+      var isUniformColumn = (x) => {
+        var firstPixel = getPixel(x, 0);
+        for (let y = 1; y < height; y++) {
+          if (!isEqualPixel(getPixel(x, y), firstPixel)) return false;
+        }
+        return true;
+      };
+
+      // 检测是否为纯色行
+      var isUniformRow = (y) => {
+        var firstPixel = getPixel(0, y);
+        for (let x = 1; x < width; x++) {
+          if (!isEqualPixel(getPixel(x, y), firstPixel)) return false;
+        }
+        return true;
+      };
+
+      // 像素比较函数
+      var colorThreshold = 10;
+      var isEqualPixel = (a, b, threshold = colorThreshold) => {
+        return (
+          Math.abs(a[0] - b[0]) <= threshold &&
+          Math.abs(a[1] - b[1]) <= threshold &&
+          Math.abs(a[2] - b[2]) <= threshold &&
+          Math.abs(a[3] - b[3]) <= threshold
+        );
+      };
+
+      // 计算左右边界
+      let left = 0,
+        right = width - 1;
+      let leftUniformCount = 0,
+        rightUniformCount = 0;
+
+      // 检测左侧纯色列
+      while (left < width && isUniformColumn(left)) {
+        leftUniformCount++;
+        left++;
+      }
+      // 检测右侧纯色列
+      while (right >= 0 && isUniformColumn(right)) {
+        rightUniformCount++;
+        right--;
+      }
+
+      // 应用左右gap
+      left = Math.max(left - gap, 0);
+      right = Math.min(right + gap, width - 1);
+
+      // 计算上下边界
+      let top = 0,
+        bottom = height - 1;
+      let topUniformCount = 0,
+        bottomUniformCount = 0;
+
+      // 检测顶部纯色行
+      while (top < height && isUniformRow(top)) {
+        topUniformCount++;
+        top++;
+      }
+      // 检测底部纯色行
+      while (bottom >= 0 && isUniformRow(bottom)) {
+        bottomUniformCount++;
+        bottom--;
+      }
+
+      // 应用上下gap
+      top = Math.max(top - gap, 0);
+      bottom = Math.min(bottom + gap, height - 1);
+
+      // 计算最终裁剪区域
+      var newWidth = right - left + 1;
+      var newHeight = bottom - top + 1;
+
+      // 安全检查
+      if (newWidth <= 0 || newHeight <= 0) {
+        resolve(dataURL);
+        return;
+      }
+
+      // 创建新画布
+      var newCanvas = document.createElement("canvas");
+      var newCtx = newCanvas.getContext("2d");
+      newCanvas.width = newWidth;
+      newCanvas.height = newHeight;
+
+      // 绘制裁剪区域
+      newCtx.drawImage(
+        canvas,
+        left,
+        top,
+        newWidth,
+        newHeight, // 源区域
+        0,
+        0,
+        newWidth,
+        newHeight // 目标区域
+      );
+
+      resolve(newCanvas.toDataURL("png"));
+    };
+    img.src = dataURL;
+  });
+}
+
+async function cropUniformSides(dataURL, minKeepWidth, gap) {
+  return new Promise((resolve) => {
+    var img = new Image();
+    img.crossOrigin = "Anonymous"; // 防止跨域问题，如果图片来自不同源需要服务端支持CORS
+    img.onload = function () {
+      var canvas = document.createElement("canvas");
+      var ctx = canvas.getContext("2d");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+
+      var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      var data = imageData.data; // Uint8ClampedArray [r,g,b,a, ...]
+
+      var width = canvas.width;
+      var height = canvas.height;
+
+      // 工具：获取某个坐标(x,y)的像素颜色值（rgba数组）
+      var getPixel = (x, y) => {
+        var idx = (y * width + x) * 4;
+        return [data[idx], data[idx + 1], data[idx + 2], data[idx + 3]];
+      };
+
+      // 检测左侧从 x=0 开始，找到第一个不是纯色的列
+      let left = 0;
+      let leftEnd = Math.min(width - 1, 0);
+      for (; leftEnd < width; leftEnd++) {
+        var firstPixel = getPixel(leftEnd, 0); // 取该列第0行的像素作为参考
+        let isUniform = true;
+        // 检查这一列所有行的像素是否都和 firstPixel 相同
+        outer: for (let y = 0; y < height; y++) {
+          var pixel = getPixel(leftEnd, y);
+          if (
+            pixel[0] !== firstPixel[0] ||
+            pixel[1] !== firstPixel[1] ||
+            pixel[2] !== firstPixel[2] ||
+            pixel[3] !== firstPixel[3]
+          ) {
+            isUniform = false;
+            break outer;
+          }
+        }
+        if (!isUniform) {
+          left = leftEnd;
+          break;
+        }
+      }
+      // 如果全部都是纯色，left 就是 minKeepWidth 或者 0，但至少保留 minKeepWidth
+      // left = Math.min(Math.max(left, minKeepWidth), width - 1);
+
+      // 检测右侧：从右往左，找到第一个不是纯色的列
+      let right = width - 1;
+      let rightStart = Math.max(width - 1, 0);
+      for (; rightStart >= 0; rightStart--) {
+        var firstPixel = getPixel(rightStart, 0);
+        let isUniform = true;
+        for (let y = 0; y < height; y++) {
+          var pixel = getPixel(rightStart, y);
+          if (
+            pixel[0] !== firstPixel[0] ||
+            pixel[1] !== firstPixel[1] ||
+            pixel[2] !== firstPixel[2] ||
+            pixel[3] !== firstPixel[3]
+          ) {
+            isUniform = false;
+            break;
+          }
+        }
+        if (!isUniform) {
+          right = rightStart;
+          break;
+        }
+      }
+
+      // 确保 left <= right
+      left = Math.min(left, right);
+      right = Math.max(left, right);
+      if (left - gap > 0) {
+        left = left - gap;
+      }
+
+      if (right + gap <= width) {
+        right = right + gap;
+      }
+
+      var newWidth = right - left + 1;
+      if (newWidth <= minKeepWidth) {
+        resolve(dataURL);
+        return;
+      }
+
+      // 创建新 canvas 存储裁剪结果
+      var newCanvas = document.createElement("canvas");
+      var newCtx = newCanvas.getContext("2d");
+      newCanvas.width = newWidth;
+      newCanvas.height = height;
+
+      // 将原图 [left, 0] -> [left + newWidth - 1, height-1] 绘制到新画布
+      newCtx.drawImage(
+        canvas,
+        left,
+        0,
+        newWidth,
+        height, // 源图像裁剪区域
+        0,
+        0,
+        newWidth,
+        height // 目标画布绘制区域
+      );
+
+      var croppedDataURL = newCanvas.toDataURL("png");
+      resolve(croppedDataURL);
+    };
+    img.src = dataURL;
+  });
 }
 
 function scrollNext() {
@@ -943,7 +1347,9 @@ function enableFixedPosition(e, type) {
 
           var top = l.getPropertyValue("top");
           var typeTemp = 1; //1: top 2: center 3: bottom
-          if (l.getPropertyValue("bottom") == "auto" && top != "auto") {
+          if (isElementInViewportCenter(i)) {
+            typeTemp = 2;
+          } else if (l.getPropertyValue("bottom") == "auto" && top != "auto") {
             var typeTemp = 1;
           } else if (parseInt(top) > (clientH * 2) / 3) {
             typeTemp = 3;
@@ -981,6 +1387,40 @@ function enableFixedPosition(e, type) {
       }
     }
 }
+
+/**
+ * 判断一个 DOM 元素是否位于视口的中间区域
+ * @param {HTMLElement} element - 要判断的 DOM 元素
+ * @param {Object} [options] - 可选配置
+ * @param {number} [options.centerThreshold=0.1] - 中间区域占整个视口的比例（0~1），例如 0.1 表示中间 10% 的区域
+ * @returns {boolean} - 是否在视口中央区域
+ */
+function isElementInViewportCenter(element, options = {}) {
+  var { centerThreshold = 0.1 } = options; // 修正默认阈值为0.1
+
+  var rect = element.getBoundingClientRect();
+  var viewportWidth = window.innerWidth;
+  var viewportHeight = window.innerHeight;
+
+  // 元素的中心点坐标
+  var centerX = rect.left + rect.width / 2;
+  var centerY = rect.top + rect.height / 2;
+
+  // 计算中间区域的边界（基于阈值比例）
+  var centerXMin = viewportWidth * (0.5 - centerThreshold / 2);
+  var centerXMax = viewportWidth * (0.5 + centerThreshold / 2);
+  var centerYMin = viewportHeight * (0.5 - centerThreshold / 2);
+  var centerYMax = viewportHeight * (0.5 + centerThreshold / 2);
+
+  // 判断元素中心是否落在中间区域内
+  return (
+    centerX >= centerXMin &&
+    centerX <= centerXMax &&
+    centerY >= centerYMin &&
+    centerY <= centerYMax
+  );
+}
+
 function restoreFixedElements(type) {
   if (fixedElements) {
     for (var e = 0, t = fixedElements.length; e < t; e++) {
