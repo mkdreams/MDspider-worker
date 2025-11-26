@@ -18,10 +18,10 @@ window.spiderSlaveStackRunActionCount = {};
 window.spiderSlaveLockTabTimeout = 180000;
 window.spiderSlavePerDayMaxRunTimes = 0;
 
-//[ws,topic,cb,cb topic]
+/* //[ws,topic,cb,cb topic]
 window.spiderSlaveApiActionListWSS["pullactionws"] = [
     'ws://127.0.0.1:1235',
     'MDspiderRPC.action.parseAction',
     'parseAction',
     'MDspiderRPC.action.callback'
-];
+]; */
