@@ -76,31 +76,14 @@ function addCss(e, t) {
 function removeCss(e) {
   document.getElementById(e) && document.getElementById(e).remove();
 }
-function prepareBodyForEntireCapture() {
+function hideScrollbar() {
   entireCaptureStyleChange.push(
     new StyleChange("addStyle", {
       id: "aws-entire-capture",
       css: "html::-webkit-scroll-bar,body::-webkit-scrollbar{width: 0 !important; height: 0 !important}",
     })
   );
-  var e = { position: "relative" };
-  "scroll" === window.getComputedStyle(document.body).overflowY &&
-    (e.overflowY = "visible"),
-    entireCaptureStyleChange.push(
-      new StyleChange("changeCssText", {
-        element: document.documentElement,
-        cssObj: { scrollBehavior: "auto" },
-      })
-    ),
-    (/coursera.org/.test(window.location.host) &&
-      0 < $(".rc-QuizAttemptHeader").length &&
-      0 <
-        $(".rc-QuizAttemptHeader").parents(".c-open-single-page-attempt")
-          .length) ||
-      /www.frozenright.com/.test(window.location.host) ||
-      entireCaptureStyleChange.push(
-        new StyleChange("changeCssText", { element: document.body, cssObj: e })
-      );
+
 }
 function restoreStyleForEntireCapture() {
   removeCss("aws-entire-capture"),
@@ -343,19 +326,18 @@ function specialSitesHacks() {
 }
 
 function initEntireCapture() {
-  prepareBodyForEntireCapture(),
-    handleAbsoluteHangings(),
-    disableTransitions(),
-    specialSitesHacks(),
-    fixPosition(hostname),
-    restoreFixedElements(),
-    (counter = 1),
-    getDocumentNode(),
-    (html = doc.documentElement),
-    (clientH = getClientH()),
-    (clientW = html.clientWidth),
-    checkScrollBar(),
-    (window.onresize = checkScrollBar);
+  handleAbsoluteHangings(),
+  disableTransitions(),
+  specialSitesHacks(),
+  fixPosition(hostname),
+  restoreFixedElements(),
+  (counter = 1),
+  getDocumentNode(),
+  (html = doc.documentElement),
+  (clientH = getClientH()),
+  (clientW = html.clientWidth),
+  checkScrollBar(),
+  (window.onresize = checkScrollBar);
 
   window.scrollingElement = findScrollElement();
   initScrollTop = window.scrollingElement.scrollTop;
@@ -642,6 +624,8 @@ function getStyle(e, t) {
 }
 
 async function fullPageScreenShot(info) {
+  hideScrollbar()
+  
   if (info && info.param && info.param.width) {
     var width = info.param.width;
   } else {
@@ -975,6 +959,13 @@ async function cropUniformSidesAndCorners(dataURL, minKeepWidth, gap = 0) {
       right = Math.min(right + gap, width - 1);
       top = Math.max(top - gap, 0);
       bottom = Math.min(bottom + gap, height - 1);
+
+      // 裁剪左右时，使左右裁剪一样大，使用裁剪宽度小的那个作为裁剪宽度
+      var leftCropWidth = left;
+      var rightCropWidth = width - 1 - right;
+      var cropWidth = Math.min(leftCropWidth, rightCropWidth);
+      left = cropWidth;
+      right = width - 1 - cropWidth;
 
       // 计算最终裁剪区域
       var newWidth = right - left + 1;
