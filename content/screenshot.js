@@ -16,6 +16,7 @@ var doc,
   bodyCssText = "",
   entireCaptureStyleChange = [],
   entireStopped = false,
+  isFullPageScreenshotRunning = false,
   menu = {
     visible: { enable: "false", key: "V" },
     selected: { enable: "false", key: "S" },
@@ -623,179 +624,93 @@ function getStyle(e, t) {
 }
 
 async function fullPageScreenShot(info) {
-  hideScrollbar();
-
-  if (info && info.param && info.param.width) {
-    var width = info.param.width;
-  } else {
-    var width = 1920;
+  // 避免并发执行
+  if (isFullPageScreenshotRunning) {
+    console.warn("fullPageScreenShot is already running, skipping...");
+    return false;
   }
+  isFullPageScreenshotRunning = true;
 
-  if (info && info.param && info.param.height) {
-    var height = info.param.height;
-  } else {
-    var height = 1080;
-  }
+  try {
+    hideScrollbar();
 
-  //初始化
-  await new Promise(function (resolve, reject) {
-    chrome.runtime.sendMessage(
-      {
-        type: 2,
-        param: {
-          action: "screenshot",
-          width: width,
-          height: height,
-          init: true,
-        },
-      },
-      (r) => {
-        resolve(true);
-      }
-    );
-  });
-
-  var tempDom = document.createElement("canvas");
-  var tempCanvas = tempDom.getContext("2d");
-  initEntireCapture();
-
-  if (info && info.param && info.param.maxHeight) {
-    var maxHeight = info.param.maxHeight;
-  } else {
-    var maxHeight = 10000;
-  }
-
-  if (info && info.param && info.param.smartMaxHeight) {
-    var maxHeightTemp =
-      document.scrollingElement.scrollHeight + info.param.smartMaxHeight;
-    if (maxHeightTemp < maxHeight) {
-      maxHeight = maxHeightTemp;
+    if (info && info.param && info.param.width) {
+      var width = info.param.width;
+    } else {
+      var width = 1920;
     }
-  }
 
-  if (info && info.param && info.param.width) {
-    var width = info.param.width;
-  } else {
-    var width = 1920;
-  }
+    if (info && info.param && info.param.height) {
+      var height = info.param.height;
+    } else {
+      var height = 1080;
+    }
 
-  if (info && info.param && info.param.height) {
-    var height = info.param.height;
-  } else {
-    var height = 1080;
-  }
-
-  if (info && info.param && info.param.scrollDelay) {
-    var scrollDelay = info.param.scrollDelay;
-  } else {
-    var scrollDelay = 500;
-  }
-
-  var sumHeightTemp = 0;
-  var imgs = [];
-  scrollInfo = {
-    ratio: { x: 1, y: 1 },
-    clientH: clientH,
-    isEnd: false,
-  };
-
-  await new Promise(function (resolve, reject) {
-    enableFixedPosition(false, 3);
-    enableFixedPosition(false, 2);
-    setTimeout(() => {
+    //初始化
+    await new Promise(function (resolve, reject) {
       chrome.runtime.sendMessage(
         {
           type: 2,
-          param: { action: "screenshot", width: width, height: height },
+          param: {
+            action: "screenshot",
+            width: width,
+            height: height,
+            init: true,
+          },
         },
         (r) => {
-          var image = new Image();
-          image.src = r;
-          image.onload = function () {
-            imgs.push(image);
-            sumHeightTemp += image.height;
-            resolve(true);
-            enableFixedPosition(false);
-          };
+          resolve(true);
         }
       );
-    }, scrollDelay);
-  });
-
-  while (true) {
-    scrollInfo = scrollNext();
-
-    //检测到失败重试
-    if (scrollInfo === false) {
-      window.lastRecordScrollTop = undefined;
-      window.scrollingElement.scrollTop = 0;
-      try {
-        restorEntireCapture();
-        fixedElements = [];
-      } catch (e) {}
-
-      console.warn("scroll change try again fullPageScreenShot!");
-
-      return await fullPageScreenShot(info);
-    }
-
-    if (scrollInfo.isEnd === true || sumHeightTemp > maxHeight) {
-      restoreFixedElements(3);
-
-      await new Promise(function (resolve, reject) {
-        setTimeout(() => {
-          chrome.runtime.sendMessage(
-            {
-              type: 2,
-              param: { action: "screenshot", width: width, height: height },
-            },
-            (r) => {
-              var image = new Image();
-              image.src = r;
-              image.onload = function () {
-                if (scrollInfo.isEnd === true) {
-                  imgs[imgs.length - 1] = image;
-                } else {
-                  imgs.push(image);
-                }
-                resolve(true);
-              };
-            }
-          );
-        }, scrollDelay);
-      });
-
-      break;
-    }
-
-    await new Promise(function (resolve, reject) {
-      setTimeout(() => {
-        enableFixedPosition(false);
-        setTimeout(() => {
-          chrome.runtime.sendMessage(
-            {
-              type: 2,
-              param: { action: "screenshot", width: width, height: height },
-            },
-            (r) => {
-              var image = new Image();
-              image.src = r;
-              image.onload = function () {
-                sumHeightTemp += image.height;
-                imgs.push(image);
-                resolve(true);
-              };
-            }
-          );
-        }, 350);
-      }, 150);
     });
-  }
 
-  if (imgs.length === 1) {
+    var tempDom = document.createElement("canvas");
+    var tempCanvas = tempDom.getContext("2d");
+    initEntireCapture();
+
+    if (info && info.param && info.param.maxHeight) {
+      var maxHeight = info.param.maxHeight;
+    } else {
+      var maxHeight = 10000;
+    }
+
+    if (info && info.param && info.param.smartMaxHeight) {
+      var maxHeightTemp =
+        document.scrollingElement.scrollHeight + info.param.smartMaxHeight;
+      if (maxHeightTemp < maxHeight) {
+        maxHeight = maxHeightTemp;
+      }
+    }
+
+    if (info && info.param && info.param.width) {
+      var width = info.param.width;
+    } else {
+      var width = 1920;
+    }
+
+    if (info && info.param && info.param.height) {
+      var height = info.param.height;
+    } else {
+      var height = 1080;
+    }
+
+    if (info && info.param && info.param.scrollDelay) {
+      var scrollDelay = info.param.scrollDelay;
+    } else {
+      var scrollDelay = 500;
+    }
+
+    var sumHeightTemp = 0;
+    var imgs = [];
+    scrollInfo = {
+      ratio: { x: 1, y: 1 },
+      clientH: clientH,
+      isEnd: false,
+    };
+
     await new Promise(function (resolve, reject) {
-      restoreFixedElements(1);
-      restoreFixedElements(3);
+      enableFixedPosition(false, 3);
+      enableFixedPosition(false, 2);
       setTimeout(() => {
         chrome.runtime.sendMessage(
           {
@@ -806,73 +721,173 @@ async function fullPageScreenShot(info) {
             var image = new Image();
             image.src = r;
             image.onload = function () {
-              imgs[0] = image;
-              sumHeightTemp = image.height;
+              imgs.push(image);
+              sumHeightTemp += image.height;
               resolve(true);
+              enableFixedPosition(false);
             };
           }
         );
       }, scrollDelay);
     });
-  }
 
-  //merge imgs
-  var widthTemp = 0;
-  var heightTemp = 0;
-  for (var i = 0; i < imgs.length; i++) {
-    if (imgs[i].width > widthTemp) {
-      widthTemp = imgs[i].width;
+    while (true) {
+      scrollInfo = scrollNext();
+
+      //检测到失败重试
+      if (scrollInfo === false) {
+        window.lastRecordScrollTop = undefined;
+        window.scrollingElement.scrollTop = 0;
+        try {
+          restorEntireCapture();
+          fixedElements = [];
+        } catch (e) {}
+
+        console.warn("scroll change try again fullPageScreenShot!");
+
+        isFullPageScreenshotRunning = false;
+
+        return await fullPageScreenShot(info);
+      }
+
+      if (scrollInfo.isEnd === true || sumHeightTemp > maxHeight) {
+        restoreFixedElements(3);
+
+        await new Promise(function (resolve, reject) {
+          setTimeout(() => {
+            chrome.runtime.sendMessage(
+              {
+                type: 2,
+                param: { action: "screenshot", width: width, height: height },
+              },
+              (r) => {
+                var image = new Image();
+                image.src = r;
+                image.onload = function () {
+                  if (scrollInfo.isEnd === true) {
+                    imgs[imgs.length - 1] = image;
+                  } else {
+                    imgs.push(image);
+                  }
+                  resolve(true);
+                };
+              }
+            );
+          }, scrollDelay);
+        });
+
+        break;
+      }
+
+      await new Promise(function (resolve, reject) {
+        setTimeout(() => {
+          enableFixedPosition(false);
+          setTimeout(() => {
+            chrome.runtime.sendMessage(
+              {
+                type: 2,
+                param: { action: "screenshot", width: width, height: height },
+              },
+              (r) => {
+                var image = new Image();
+                image.src = r;
+                image.onload = function () {
+                  sumHeightTemp += image.height;
+                  imgs.push(image);
+                  resolve(true);
+                };
+              }
+            );
+          }, 350);
+        }, 150);
+      });
     }
 
-    heightTemp += imgs[i].height;
-  }
+    if (imgs.length === 1) {
+      await new Promise(function (resolve, reject) {
+        restoreFixedElements(1);
+        restoreFixedElements(3);
+        setTimeout(() => {
+          chrome.runtime.sendMessage(
+            {
+              type: 2,
+              param: { action: "screenshot", width: width, height: height },
+            },
+            (r) => {
+              var image = new Image();
+              image.src = r;
+              image.onload = function () {
+                imgs[0] = image;
+                sumHeightTemp = image.height;
+                resolve(true);
+              };
+            }
+          );
+        }, scrollDelay);
+      });
+    }
 
-  tempDom.width = widthTemp;
-  if (scrollInfo.ratio.y === 0) {
-    tempDom.height = imgs.length * scrollInfo.clientH;
-  } else {
-    tempDom.height =
-      (imgs.length - 1 + scrollInfo.ratio.y) * scrollInfo.clientH;
-  }
+    //merge imgs
+    var widthTemp = 0;
+    var heightTemp = 0;
+    for (var i = 0; i < imgs.length; i++) {
+      if (imgs[i].width > widthTemp) {
+        widthTemp = imgs[i].width;
+      }
 
-  var sumDy = 0;
-  for (var i = 0; i < imgs.length; i++) {
-    var sx = 0;
-    var sy = 0;
-    var sw = imgs[i].width;
-    var sh = imgs[i].height;
+      heightTemp += imgs[i].height;
+    }
 
-    if (i === imgs.length - 1 && scrollInfo.isEnd === true) {
-      var dx = 0;
-      var dy = tempDom.height - sh;
-      var dw = sw;
-      var dh = sh;
+    tempDom.width = widthTemp;
+    if (scrollInfo.ratio.y === 0) {
+      tempDom.height = imgs.length * scrollInfo.clientH;
     } else {
-      var dx = 0;
-      var dy = sumDy;
-      var dw = sw;
-      var dh = sh;
+      tempDom.height =
+        (imgs.length - 1 + scrollInfo.ratio.y) * scrollInfo.clientH;
     }
 
-    tempCanvas.drawImage(imgs[i], sx, sy, sw, sh, dx, dy, dw, dh);
+    var sumDy = 0;
+    for (var i = 0; i < imgs.length; i++) {
+      var sx = 0;
+      var sy = 0;
+      var sw = imgs[i].width;
+      var sh = imgs[i].height;
 
-    sumDy += sh;
+      if (i === imgs.length - 1 && scrollInfo.isEnd === true) {
+        var dx = 0;
+        var dy = tempDom.height - sh;
+        var dw = sw;
+        var dh = sh;
+      } else {
+        var dx = 0;
+        var dy = sumDy;
+        var dw = sw;
+        var dh = sh;
+      }
+
+      tempCanvas.drawImage(imgs[i], sx, sy, sw, sh, dx, dy, dw, dh);
+
+      sumDy += sh;
+    }
+
+    window.scrollingElement.scrollTop = initScrollTop;
+    window.scrollingElement.scrollLeft = initScrollLeft;
+
+    try {
+      restorEntireCapture();
+      fixedElements = [];
+    } catch (e) {}
+
+    console.log("show screenshot");
+    var r = tempDom.toDataURL("png");
+    r = await cropUniformSidesAndCorners(r, 700, 15);
+    console.image(r);
+
+    return r;
+  } finally {
+    // 无论如何都要重置状态
+    isFullPageScreenshotRunning = false;
   }
-
-  window.scrollingElement.scrollTop = initScrollTop;
-  window.scrollingElement.scrollLeft = initScrollLeft;
-
-  try {
-    restorEntireCapture();
-    fixedElements = [];
-  } catch (e) {}
-
-  console.log("show screenshot");
-  var r = tempDom.toDataURL("png");
-  r = await cropUniformSidesAndCorners(r, 700, 15);
-  console.image(r);
-
-  return r;
 }
 
 async function cropUniformSidesAndCorners(dataURL, minKeepWidth, gap = 0) {
