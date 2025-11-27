@@ -755,24 +755,26 @@ async function fullPageScreenShot(info) {
 
         await new Promise(function (resolve, reject) {
           setTimeout(() => {
-            chrome.runtime.sendMessage(
-              {
-                type: 2,
-                param: { action: "screenshot", width: width, height: height },
-              },
-              (r) => {
-                var image = new Image();
-                image.src = r;
-                image.onload = function () {
-                  if (scrollInfo.isEnd === true) {
-                    imgs[imgs.length - 1] = image;
-                  } else {
-                    imgs.push(image);
-                  }
-                  resolve(true);
-                };
-              }
-            );
+            setTimeout(() => {
+              chrome.runtime.sendMessage(
+                {
+                  type: 2,
+                  param: { action: "screenshot", width: width, height: height },
+                },
+                (r) => {
+                  var image = new Image();
+                  image.src = r;
+                  image.onload = function () {
+                    if (scrollInfo.isEnd === true) {
+                      imgs[imgs.length - 1] = image;
+                    } else {
+                      imgs.push(image);
+                    }
+                    resolve(true);
+                  };
+                }
+              );
+            }, 1000);
           }, scrollDelay);
         });
 
@@ -798,8 +800,8 @@ async function fullPageScreenShot(info) {
                 };
               }
             );
-          }, 350);
-        }, 150);
+          }, 1000);
+        }, scrollDelay);
       });
     }
 
