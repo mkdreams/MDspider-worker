@@ -83,7 +83,6 @@ function hideScrollbar() {
       css: "html::-webkit-scroll-bar,body::-webkit-scrollbar{width: 0 !important; height: 0 !important}",
     })
   );
-
 }
 function restoreStyleForEntireCapture() {
   removeCss("aws-entire-capture"),
@@ -327,17 +326,17 @@ function specialSitesHacks() {
 
 function initEntireCapture() {
   handleAbsoluteHangings(),
-  disableTransitions(),
-  specialSitesHacks(),
-  fixPosition(hostname),
-  restoreFixedElements(),
-  (counter = 1),
-  getDocumentNode(),
-  (html = doc.documentElement),
-  (clientH = getClientH()),
-  (clientW = html.clientWidth),
-  checkScrollBar(),
-  (window.onresize = checkScrollBar);
+    disableTransitions(),
+    specialSitesHacks(),
+    fixPosition(hostname),
+    restoreFixedElements(),
+    (counter = 1),
+    getDocumentNode(),
+    (html = doc.documentElement),
+    (clientH = getClientH()),
+    (clientW = html.clientWidth),
+    checkScrollBar(),
+    (window.onresize = checkScrollBar);
 
   window.scrollingElement = findScrollElement();
   initScrollTop = window.scrollingElement.scrollTop;
@@ -624,8 +623,8 @@ function getStyle(e, t) {
 }
 
 async function fullPageScreenShot(info) {
-  hideScrollbar()
-  
+  hideScrollbar();
+
   if (info && info.param && info.param.width) {
     var width = info.param.width;
   } else {
@@ -669,7 +668,7 @@ async function fullPageScreenShot(info) {
   if (info && info.param && info.param.smartMaxHeight) {
     var maxHeightTemp =
       document.scrollingElement.scrollHeight + info.param.smartMaxHeight;
-    if(maxHeightTemp < maxHeight) {
+    if (maxHeightTemp < maxHeight) {
       maxHeight = maxHeightTemp;
     }
   }
@@ -725,6 +724,21 @@ async function fullPageScreenShot(info) {
 
   while (true) {
     scrollInfo = scrollNext();
+
+    //检测到失败重试
+    if (scrollInfo === false) {
+      window.lastRecordScrollTop = undefined;
+      window.scrollingElement.scrollTop = 0;
+      try {
+        restorEntireCapture();
+        fixedElements = [];
+      } catch (e) {}
+
+      console.warn("scroll change try again fullPageScreenShot!");
+
+      return await fullPageScreenShot(info);
+    }
+
     if (scrollInfo.isEnd === true || sumHeightTemp > maxHeight) {
       restoreFixedElements(3);
 
@@ -1004,10 +1018,21 @@ async function cropUniformSidesAndCorners(dataURL, minKeepWidth, gap = 0) {
   });
 }
 
+window.lastRecordScrollTop = undefined;
+
 function scrollNext() {
   var top = Math.ceil(window.scrollingElement.scrollTop);
 
+  //滚动条被改动过
+  if (
+    window.lastRecordScrollTop !== undefined &&
+    window.scrollingElement.scrollTop != window.lastRecordScrollTop
+  ) {
+    return false;
+  }
+
   window.scrollingElement.scrollTop = top + clientH;
+  window.lastRecordScrollTop = window.scrollingElement.scrollTop;
 
   if (Math.ceil(window.scrollingElement.scrollTop) == top) {
     var r = {};
