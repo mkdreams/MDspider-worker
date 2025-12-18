@@ -623,6 +623,7 @@ function getStyle(e, t) {
   return parseInt(e.style.getPropertyValue(t));
 }
 
+var isFullPageScreenshotResetCount = 0;
 async function fullPageScreenShot(info) {
   // 避免并发执行
   if (isFullPageScreenshotRunning) {
@@ -1043,13 +1044,16 @@ function scrollNext() {
   //滚动条被改动过
   if (
     window.lastRecordScrollTop !== undefined &&
-    window.scrollingElement.scrollTop != window.lastRecordScrollTop
+    window.scrollingElement.scrollTop != window.lastRecordScrollTop && isFullPageScreenshotResetCount < 5
   ) {
+    isFullPageScreenshotResetCount++;
     return false;
   }
 
   window.scrollingElement.scrollTop = top + clientH;
-  window.lastRecordScrollTop = window.scrollingElement.scrollTop;
+  setTimeout(function(){
+    window.lastRecordScrollTop = window.scrollingElement.scrollTop;
+  },100);
 
   if (Math.ceil(window.scrollingElement.scrollTop) == top) {
     var r = {};
