@@ -840,6 +840,16 @@ function isDone(tab, info, isError) {
 			clearTimeout(window.setTimeout_checkIsDie[tab.id]);
 			window.spiderSlaveTabInfos['tabs'][tab.id]['runStatus'] = 0;
 			window.spiderSlaveUrls[info['id']]['runStartTime'] = undefined;
+			if(getObjectLen(window.spiderSlaveTabInfos['wins']) > 1) {
+					chrome.tabs.remove(tab.id,function() {});
+			}else{
+				chrome.tabs.query({windowId:tab.windowId},function(tabs) {
+					if(tabs && tabs.length > 1) {
+						chrome.tabs.remove(tab.id,function() {
+						});
+					}
+				});
+			}
 		}
 
 	}
