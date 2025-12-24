@@ -623,6 +623,44 @@ function getStyle(e, t) {
   return parseInt(e.style.getPropertyValue(t));
 }
 
+function plainHtml() {
+  var styleText = `
+    * {
+      background: none !important;
+      background-color: transparent !important;
+      color: #000 !important;
+    }
+    
+    *::before, *::after, *::placeholder, *::selection {
+      background: none !important;
+      background-color: transparent !important;
+    }
+      
+    img, picture, image, svg image, [style*="background-image"] {
+      opacity: 0 !important;
+      visibility: visible !important;
+    }
+    
+    * {
+      background-image: none !important;
+    }
+  `;
+  var style = document.createElement("style");
+  style.textContent = styleText;
+  document.head.insertBefore(style, document.head.firstChild);
+  
+  function setIframeStyles(iframe) {
+    try {
+      var iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+      var iframeStyle = iframeDoc.createElement("style");
+      iframeStyle.textContent = styleText;
+      iframeDoc.head.appendChild(iframeStyle);
+    } catch (e) {
+    }
+  }
+  document.querySelectorAll("iframe").forEach(setIframeStyles);
+}
+
 var isFullPageScreenshotResetCount = 0;
 async function fullPageScreenShot(info) {
   // 避免并发执行
@@ -633,6 +671,9 @@ async function fullPageScreenShot(info) {
   isFullPageScreenshotRunning = true;
 
   try {
+    if (info && info.param && info.param.plain) {
+      plainHtml();
+    }
     hideScrollbar();
 
     if (info && info.param && info.param.width) {
@@ -1044,16 +1085,17 @@ function scrollNext() {
   //滚动条被改动过
   if (
     window.lastRecordScrollTop !== undefined &&
-    window.scrollingElement.scrollTop != window.lastRecordScrollTop && isFullPageScreenshotResetCount < 5
+    window.scrollingElement.scrollTop != window.lastRecordScrollTop &&
+    isFullPageScreenshotResetCount < 5
   ) {
     isFullPageScreenshotResetCount++;
     return false;
   }
 
   window.scrollingElement.scrollTop = top + clientH;
-  setTimeout(function(){
+  setTimeout(function () {
     window.lastRecordScrollTop = window.scrollingElement.scrollTop;
-  },100);
+  }, 100);
 
   if (Math.ceil(window.scrollingElement.scrollTop) == top) {
     var r = {};
