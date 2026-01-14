@@ -2,10 +2,10 @@ function getElementSelector(element, onlyTag = false) {
   if (!(element instanceof Element)) return;
   var path = [];
 
-  let node = element;
+  var node = element;
   while (node instanceof Element) {
     element = node;
-    let selector = element.nodeName.toLowerCase();
+    var selector = element.nodeName.toLowerCase();
     if (element.id && onlyTag === false) {
       selector = `#${standartName(element.id)}`;
       path.unshift(selector);
@@ -109,7 +109,8 @@ function checkContentIncludeText(textContents, texts) {
       for (var textIdx = 0; textIdx < text.length; textIdx++) {
         var subTextOrg = text[textIdx];
         subText = standardText(subTextOrg);
-        var idx = textContent.indexOf(subText);
+        // var idx = textContent.indexOf(subText);
+        var idx = fuzzyIndexOf(textContent,subText);
         if (idx > -1) {
           subMatch = true;
           matchTextStr += subTextOrg;
@@ -157,6 +158,77 @@ function checkContentIncludeText(textContents, texts) {
   });
 
   return [allMatch, subMatchIndex, subMatchAttrNameScores];
+}
+
+function fuzzyIndexOf(textContent, subText) {
+  // 解析 subText
+  var pattern = subText;
+  var maxDiff = 0;
+
+  const diffMatch = subText.match(/(.+?)~(\d+)$/);
+  if (diffMatch) {
+    pattern = diffMatch[1];
+    maxDiff = parseInt(diffMatch[2], 10);
+  }
+
+  // 如果 pattern 为空字符串，返回 0（与 indexOf 行为一致）
+  if (pattern === '') {
+    return 0;
+  }
+
+  if (maxDiff === 0) {
+    return textContent.indexOf(pattern);
+  }
+
+  const textLen = textContent.length;
+  const patternLen = pattern.length;
+
+  // 如果 pattern 比 text 还长，且差异数不足以覆盖长度差
+  if (patternLen - maxDiff > textLen) {
+    return -1;
+  }
+
+  // 使用二维数组记录编辑距离
+  const dp = Array(2);
+  for (var i = 0; i < 2; i++) {
+    dp[i] = new Array(patternLen + 1).fill(0);
+  }
+
+  // 滑动窗口遍历所有可能的起始位置
+  for (var start = 0; start <= textLen; start++) {
+    // 重新初始化dp的第一行
+    for (var j = 0; j <= patternLen; j++) {
+      dp[0][j] = j;
+    }
+
+    // 比较从start位置开始的子串
+    // 最多比较到pattern长度+最大差异数
+    for (var i = 1; i <= textLen - start && i <= patternLen + maxDiff; i++) {
+      dp[i % 2][0] = i;
+
+      for (var j = 1; j <= patternLen; j++) {
+        if (start + i - 1 < textLen && 
+            textContent[start + i - 1] === pattern[j - 1]) {
+          dp[i % 2][j] = dp[(i - 1) % 2][j - 1];
+        } else {
+          dp[i % 2][j] = Math.min(
+            dp[(i - 1) % 2][j - 1] + 1,  // 替换
+            dp[(i - 1) % 2][j] + 1,      // 删除
+            dp[i % 2][j - 1] + 1         // 插入
+          );
+        }
+      }
+
+      // 如果已经匹配到足够长度，检查编辑距离
+      if (i >= patternLen - maxDiff && i <= patternLen + maxDiff) {
+        if (dp[i % 2][patternLen] <= maxDiff) {
+          return start;  // 返回匹配的起始位置
+        }
+      }
+    }
+  }
+
+  return -1;  // 没有找到匹配
 }
 
 function standardText(text) {
@@ -398,25 +470,14 @@ setTimeout(() => {
 */
 
 // setTimeout(() => {
-//   //https://www.oschina.net/news/375428
+//   //https://www.oschina.net/news/396495
 //   var texts = {
-//     title: "宇树被诉侵害发明专利权一案一审宣判：不构成侵权",
-//     // date: "2025-09-30 14:04:26",
-//     date: [
-//       { type: "|", text: ["2025", "25"] },
-//       { type: "&", text: ["09", "9"] },
-//       { type: "&", text: ["30"] },
-//       { type: "maxlength", text: 100 },
-//     ],
-//     author: "白开水不加糖",
-//     content: [
-//       "宇树科技被杭州露韦美日化有限公司诉侵害发明专利权一案，已于本月 26 日宣判，宇树科技不构成侵权。原告败诉，法院已驳回原告全部诉讼请求。",
-//       "法院判决书中提到，露韦美公司主张被诉产品构成侵权，理由不能成立。鉴于露韦美公司主张的侵权行为不能成立，对其他争议焦点，本院不再予以评述。",
-//     ],
+//     title: "摩尔线程联合智源研究院在 S5000 千123集群上完o全流程训练~4",
+//     fulltitle: "摩尔线程联合智源研究院在 S5000 千卡集群上完成全流程训练",
 //   };
 
 //   console.log(getBetchSelectorByTexts(texts));
-// }, 5000);
+// }, 3000);
 
 // setTimeout(() => {
 //   //https://www.sanspo.com/article/20251007-CQMNJPZTSFEP5HSAMTB5MX6NQQ/?outputType=theme_fight
