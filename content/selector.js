@@ -1,9 +1,9 @@
 function getElementSelector(element, onlyTag = false) {
-  if (!(element instanceof Element)) return;
+  if (!(element.nodeType === 1)) return;
   var path = [];
 
   var node = element;
-  while (node instanceof Element) {
+  while (node.nodeType === 1) {
     element = node;
     var selector = element.nodeName.toLowerCase();
     if (element.id && onlyTag === false) {
@@ -349,12 +349,15 @@ function getElementPosition(element) {
   };
 }
 
-function getBetchSelectorByTexts(texts, limit) {
+function getBetchSelectorByTexts(texts, limit, iFrameIdx) {
   if (window.parseHtmlDocument === undefined) {
     window.parseHtmlDocument = document;
   }
   if (limit === undefined) {
     limit = 15;
+  }
+  if (iFrameIdx === undefined) {
+    iFrameIdx = 0;
   }
   var r = {};
 
@@ -372,6 +375,7 @@ function getBetchSelectorByTexts(texts, limit) {
           getElementPosition(deepestMatche),
           getElementSelector(deepestMatche, true),
           deepestMatche,
+          iFrameIdx
         ];
         caclCenterOffset(rTemp);
         selectors.push(rTemp);
@@ -383,10 +387,40 @@ function getBetchSelectorByTexts(texts, limit) {
     r[field] = selectorsSort(selectors);
     console.log(field, "=>", r[field]);
     r[field] = r[field].slice(0, limit);
+    if(iFrameIdx === 0 && r[field].length === 0) {
+      r[field] = getBetchSelectorByTextsForEachIframe(field,targetText,limit)
+    }
+
     if (r[field].length > 0) {
       r[field][0][6].style["outline"] = "2px solid #ff9800";
     }
   }
+
+  return r;
+}
+
+function getBetchSelectorByTextsForEachIframe(field, text, limit) {
+  var r = [];
+  var iframes = document.getElementsByTagName('iframe');
+  Array.from(iframes).forEach((iframe, index) => {
+    if(r.length > 0) {
+      return ;
+    }
+    try {
+      console.log(field+': ','try iframe' + index);
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+      if (iframeDoc) {
+        window.parseHtmlDocument = iframeDoc;
+        var texts = {};
+        texts[field] = text;
+        var rTemp = getBetchSelectorByTexts(texts,limit,index+1)
+        r = rTemp[field]?rTemp[field]:[];
+      }
+    } catch (error) {
+      console.log(`Error accessing iframe document: ${error.message}`);
+    }
+  });
+  
 
   return r;
 }
@@ -483,6 +517,18 @@ setTimeout(() => {
 //   //https://www.sanspo.com/article/20251007-CQMNJPZTSFEP5HSAMTB5MX6NQQ/?outputType=theme_fight
 //   var texts = {
 //     title: "梅野源治、動画撮影スタッフの小原氏にブチ切れ「お前わかってんの？ お前なんだあれ？」"
+//   };
+
+//   console.log(getBetchSelectorByTexts(texts));
+// }, 5000);
+
+
+// setTimeout(() => {
+//   //https://sztqb.sznews.com/PC/layout/202510/08/node_A04.html?link=content_3388741.html ifram test
+//   var texts = { 
+//     "title": "向外走！中国户外经济热潮涌动",
+//     "publish": [{ "type": "|", "text": ["2025", "25"] }, { "type": "&", "text": ["10", "Oct", "October"] }, { "type": "&", "text": ["8", "Wed", "08", "Wednesday"] }, { "type": "maxlength", "text": 100 }],
+//     "content": ["的徒步路线到海滨城市的露营营地，从山林间的亲子野趣到池塘边的休闲垂钓，户外活动从“小众爱好”走向“大众生活”，激活消费市场、催生产业新赛道。越来", "将假期献给大自然", "国庆中秋假期，徒步、露营、骑行等成为很多消费者的旅行新选择。"] 
 //   };
 
 //   console.log(getBetchSelectorByTexts(texts));
