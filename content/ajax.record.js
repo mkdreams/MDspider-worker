@@ -1,4 +1,7 @@
 var ajaxRecordString = `
+    window.alert = function(text){
+        console.warn("alert", text);
+    };
     function randomStr() {
         return Number(Math.random().toString().substr(3,5) + Date.now()).toString(36);
     }
