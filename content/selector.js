@@ -160,75 +160,197 @@ function checkContentIncludeText(textContents, texts) {
   return [allMatch, subMatchIndex, subMatchAttrNameScores];
 }
 
+/**
+ * 优化后的模糊匹配函数
+ * 使用 Pigeonhole Principle (鸽巢原理) 结合 Levenshtein 距离
+ * 大幅减少不必要的 DP 计算，特别是在处理长文本时
+ */
+// 全局缓存用于加速模糊匹配
+var _fuzzyCache = {
+  subText: null,
+  pattern: null,
+  k: 0,
+  uniqueChars: null,
+  patternCounts: null,
+  dpBuffer: new Int32Array(4096)
+};
+
+/**
+ * 高性能模糊匹配函数
+ * 针对大误差 (k > 50) 和长文本进行了深度优化
+ */
 function fuzzyIndexOf(textContent, subText) {
-  // 解析 subText
-  var pattern = subText;
-  var maxDiff = 0;
+  // 1. 检查并更新模式缓存
+  if (_fuzzyCache.subText !== subText) {
+    var pattern = subText;
+    var k = 0;
+    var diffMatch = subText.match(/(.+?)~(\d+)$/);
+    if (diffMatch) {
+      pattern = diffMatch[1];
+      k = parseInt(diffMatch[2], 10);
+    }
 
-  const diffMatch = subText.match(/(.+?)~(\d+)$/);
-  if (diffMatch) {
-    pattern = diffMatch[1];
-    maxDiff = parseInt(diffMatch[2], 10);
+    var uniqueChars = new Map();
+    var charId = 0;
+    for (var i = 0; i < pattern.length; i++) {
+      var c = pattern[i];
+      if (!uniqueChars.has(c)) uniqueChars.set(c, charId++);
+    }
+
+    var patternCounts = new Int32Array(charId);
+    for (var i = 0; i < pattern.length; i++) {
+      patternCounts[uniqueChars.get(pattern[i])]++;
+    }
+
+    _fuzzyCache.subText = subText;
+    _fuzzyCache.pattern = pattern;
+    _fuzzyCache.k = k;
+    _fuzzyCache.uniqueChars = uniqueChars;
+    _fuzzyCache.patternCounts = patternCounts;
+
+    if (_fuzzyCache.dpBuffer.length < pattern.length + k + 1) {
+      _fuzzyCache.dpBuffer = new Int32Array(pattern.length + k + 1024);
+    }
   }
 
-  // 如果 pattern 为空字符串，返回 0（与 indexOf 行为一致）
-  if (pattern === '') {
-    return 0;
-  }
+  var pattern = _fuzzyCache.pattern;
+  var k = _fuzzyCache.k;
+  var n = textContent.length;
+  var m = pattern.length;
 
-  if (maxDiff === 0) {
-    return textContent.indexOf(pattern);
-  }
+  // 基础边界过滤
+  if (pattern === "") return 0;
+  if (k === 0) return textContent.indexOf(pattern);
+  if (m - k > n) return -1;
 
-  const textLen = textContent.length;
-  const patternLen = pattern.length;
+  var numParts = k + 1;
+  var partLen = Math.floor(m / numParts);
 
-  // 如果 pattern 比 text 还长，且差异数不足以覆盖长度差
-  if (patternLen - maxDiff > textLen) {
+  // 场景 A: 误差较小，使用 Pigeonhole 原理结合 indexOf 快速定位
+  if (partLen >= 2) {
+    var checkedStarts = new Set();
+    for (var i = 0; i < numParts; i++) {
+      var startIdx = i * partLen;
+      var endIdx = i === numParts - 1 ? m : (i + 1) * partLen;
+      var part = pattern.substring(startIdx, endIdx);
+
+      var pos = -1;
+      while ((pos = textContent.indexOf(part, pos + 1)) !== -1) {
+        var cStartMin = Math.max(0, pos - startIdx - k);
+        var cStartMax = Math.min(n - (m - k), pos - startIdx + k);
+
+        for (var s = cStartMin; s <= cStartMax; s++) {
+          if (checkedStarts.has(s)) continue;
+          checkedStarts.add(s);
+          if (verifyMatchBanded(textContent, pattern, s, k, _fuzzyCache.dpBuffer))
+            return s;
+        }
+      }
+    }
     return -1;
   }
 
-  // 使用二维数组记录编辑距离
-  const dp = Array(2);
-  for (var i = 0; i < 2; i++) {
-    dp[i] = new Array(patternLen + 1).fill(0);
-  }
+  // 场景 B: 误差极大 (k 很大)，Pigeonhole 失效，使用 Bag Filter (Counting Filter) 滑动窗口
+  // 这种方法只需 $O(n)$ 时间即可过滤掉 90% 以上的不可能匹配的位置
+  var uniqueChars = _fuzzyCache.uniqueChars;
+  var patternCounts = _fuzzyCache.patternCounts;
+  var charId = patternCounts.length;
+  var windowCounts = new Int32Array(charId);
+  var currentBagDist = m; // 初始差异为模式长度
 
-  // 滑动窗口遍历所有可能的起始位置
-  for (var start = 0; start <= textLen; start++) {
-    // 重新初始化dp的第一行
-    for (var j = 0; j <= patternLen; j++) {
-      dp[0][j] = j;
-    }
-
-    // 比较从start位置开始的子串
-    // 最多比较到pattern长度+最大差异数
-    for (var i = 1; i <= textLen - start && i <= patternLen + maxDiff; i++) {
-      dp[i % 2][0] = i;
-
-      for (var j = 1; j <= patternLen; j++) {
-        if (start + i - 1 < textLen && 
-            textContent[start + i - 1] === pattern[j - 1]) {
-          dp[i % 2][j] = dp[(i - 1) % 2][j - 1];
-        } else {
-          dp[i % 2][j] = Math.min(
-            dp[(i - 1) % 2][j - 1] + 1,  // 替换
-            dp[(i - 1) % 2][j] + 1,      // 删除
-            dp[i % 2][j - 1] + 1         // 插入
-          );
-        }
-      }
-
-      // 如果已经匹配到足够长度，检查编辑距离
-      if (i >= patternLen - maxDiff && i <= patternLen + maxDiff) {
-        if (dp[i % 2][patternLen] <= maxDiff) {
-          return start;  // 返回匹配的起始位置
-        }
-      }
+  // 初始化第一个窗口 (大小为 m)
+  var initialLen = Math.min(m, n);
+  for (var i = 0; i < initialLen; i++) {
+    var id = uniqueChars.get(textContent[i]);
+    if (id !== undefined) {
+      var oldDiff = Math.abs(patternCounts[id] - windowCounts[id]);
+      windowCounts[id]++;
+      currentBagDist += Math.abs(patternCounts[id] - windowCounts[id]) - oldDiff;
+    } else {
+      currentBagDist++;
     }
   }
 
-  return -1;  // 没有找到匹配
+  // 检查初始位置
+  if (currentBagDist <= 2 * k && verifyMatchBanded(textContent, pattern, 0, k, _fuzzyCache.dpBuffer))
+    return 0;
+
+  // 滑动窗口
+  for (var s = 1; s <= n - (m - k); s++) {
+    // 移除左侧字符
+    var cOut = textContent[s - 1];
+    var idOut = uniqueChars.get(cOut);
+    if (idOut !== undefined) {
+      var oldDiff = Math.abs(patternCounts[idOut] - windowCounts[idOut]);
+      windowCounts[idOut]--;
+      currentBagDist += Math.abs(patternCounts[idOut] - windowCounts[idOut]) - oldDiff;
+    } else {
+      currentBagDist--;
+    }
+
+    // 移入右侧字符 (维持窗口大小约为 m)
+    if (s + m - 1 < n) {
+      var cIn = textContent[s + m - 1];
+      var idIn = uniqueChars.get(cIn);
+      if (idIn !== undefined) {
+        var oldDiff = Math.abs(patternCounts[idIn] - windowCounts[idIn]);
+        windowCounts[idIn]++;
+        currentBagDist += Math.abs(patternCounts[idIn] - windowCounts[idIn]) - oldDiff;
+      } else {
+        currentBagDist++;
+      }
+    }
+
+    // 只有当字符组成足够接近时，才执行昂贵的 Levenshtein 验证
+    if (currentBagDist <= 2 * k) {
+      if (verifyMatchBanded(textContent, pattern, s, k, _fuzzyCache.dpBuffer))
+        return s;
+    }
+  }
+
+  return -1;
+}
+
+/**
+ * 验证在特定位置是否存在模糊匹配
+ * 使用空间优化的 Levenshtein 算法 + 早期剪枝
+ */
+function verifyMatchBanded(text, pattern, start, k, dp) {
+  var m = pattern.length;
+  var n = text.length;
+  // 匹配长度范围在 [m-k, m+k]
+  var maxI = Math.min(m + k, n - start);
+
+  // 初始化第一行
+  for (var j = 0; j <= m; j++) dp[j] = j;
+
+  for (var i = 1; i <= maxI; i++) {
+    var prev = dp[0];
+    dp[0] = i;
+    var charCode = text.charCodeAt(start + i - 1);
+    var minInRow = i;
+
+    for (var j = 1; j <= m; j++) {
+      var temp = dp[j];
+      var cost = charCode === pattern.charCodeAt(j - 1) ? 0 : 1;
+      var val = Math.min(
+        prev + cost,   // 替换
+        temp + 1,      // 删除
+        dp[j - 1] + 1  // 插入
+      );
+      dp[j] = val;
+      prev = temp;
+      if (val < minInRow) minInRow = val;
+    }
+
+    // 找到满足误差的匹配结束位置
+    if (i >= m - k && dp[m] <= k) return true;
+
+    // 早期剪枝：如果当前行最小值已经超过 k，且长度已超过模式，不可能匹配
+    if (minInRow > k && i >= m) return false;
+  }
+
+  return dp[m] <= k;
 }
 
 function standardText(text) {
