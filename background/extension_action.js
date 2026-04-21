@@ -15,20 +15,37 @@ function tabUpdate(tab, info, cb) {
 	});
 }
 
+function getDomain(url) {
+    try {
+        const urlObj = new URL(url);
+        return `${urlObj.protocol}//${urlObj.hostname}`;
+    } catch (e) {
+        console.error("Invalid URL:", e);
+        return "";
+    }
+}
+
 // get cookies
 function getCookies(tab, info, cb) {
-	var option = {"url":info.url};
-	if(isSupportPartitionKey()) {
-		option["partitionKey"] = {};
-	}else{
-		console.warn("浏览器版本小于119，getCookies可能存在不完整");
-	}
-
-	chrome.cookies.getAll(option,function(cookies) {
-		textToBase64(JSON.stringify(cookies),function(base64){
-			cb(base64);
+	chrome.tabs.get(tab.id, function (nowTab) {
+		if(info.url === "") {
+			var nowUrl = getDomain(tab.url);
+		}else{
+			var nowUrl = info.url;
+		}
+		var option = {"url":nowUrl};
+		if(isSupportPartitionKey()) {
+			option["partitionKey"] = {};
+		}else{
+			console.warn("浏览器版本小于119，getCookies可能存在不完整");
+		}
+	
+		chrome.cookies.getAll(option,function(cookies) {
+			textToBase64(JSON.stringify(cookies),function(base64){
+				cb(base64);
+			});
 		});
-	});
+	})
 }
 
 //delete cookies
