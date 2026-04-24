@@ -805,7 +805,9 @@ function oneActionRun() {
 
 
 function isDone(tab, info, isError) {
-	window.spiderSlaveTabInfos['tabs'][tab.id]['iActiveTime'] = new Date().getTime();
+	if(window.spiderSlaveTabInfos['tabs'][tab.id]) {
+		window.spiderSlaveTabInfos['tabs'][tab.id]['iActiveTime'] = new Date().getTime();
+	}
 
 	if(window.spiderSlaveUrls[info['id']] === undefined) {
 		return ;
