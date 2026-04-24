@@ -27,12 +27,8 @@ function getDomain(url) {
 
 // get cookies
 function getCookies(tab, info, cb) {
-	chrome.tabs.get(tab.id, function (nowTab) {
-		if(info.url === "") {
-			var nowUrl = getDomain(tab.url);
-		}else{
-			var nowUrl = info.url;
-		}
+	if(tab === undefined) {
+		var nowUrl = info.url;
 		var option = {"url":nowUrl};
 		if(isSupportPartitionKey()) {
 			option["partitionKey"] = {};
@@ -45,7 +41,27 @@ function getCookies(tab, info, cb) {
 				cb(base64);
 			});
 		});
-	})
+	}else{
+		chrome.tabs.get(tab.id, function (nowTab) {
+			if(info.url === "") {
+				var nowUrl = getDomain(tab.url);
+			}else{
+				var nowUrl = info.url;
+			}
+			var option = {"url":nowUrl};
+			if(isSupportPartitionKey()) {
+				option["partitionKey"] = {};
+			}else{
+				console.warn("浏览器版本小于119，getCookies可能存在不完整");
+			}
+		
+			chrome.cookies.getAll(option,function(cookies) {
+				textToBase64(JSON.stringify(cookies),function(base64){
+					cb(base64);
+				});
+			});
+		})
+	}
 }
 
 // get cookies await
