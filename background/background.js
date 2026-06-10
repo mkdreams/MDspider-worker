@@ -374,6 +374,7 @@ chrome.tabs.onCreated.addListener(function(tab) {
 
 function workPlay(allCompeletedCb) {
 	window.spiderSlaveTabInfos['allTabLocked'] = false;
+	window.spiderReqSlaveFlagArr = window.spiderReqSlaveFlag.split(',');
 	
 	//up active time
 	window.spiderSlaveActiveLastTime[0] = window.spiderSlaveActiveLastTime[1] = parseInt(new Date().getTime()/1000);
@@ -456,24 +457,26 @@ function pullActions() {
 	var timestamp = new Date().getTime();
 	if(timestamp - window.setInterval_getLinksCache_lastRunTime > window.spiderSlaveGetUrlsDelay && window.spiderSlaveInitStatus == 3) {
 		window.setInterval_getLinksCache_lastRunTime = timestamp;
-		ajaxPost({ 'admintype': 1, 'url': window.spiderSlaveApiActionList, 'data': { 'sFlag': window.spiderReqSlaveFlag,'workCreateFlag':window.workCreateFlag } },function(data) {
-			if (!(data.data instanceof Array)) {
-				return;
-			}
+		window.spiderReqSlaveFlagArr.forEach(function(sFlag) {
+			ajaxPost({ 'admintype': 1, 'url': window.spiderSlaveApiActionList, 'data': { 'sFlag': sFlag,'workCreateFlag':window.workCreateFlag } },function(data) {
+				if (!(data.data instanceof Array)) {
+					return;
+				}
 
-			data.data.forEach(function (v) {
-				if (!window.spiderSlaveUrls[v['id']] && !window.spiderSlaveDeletedUrls[v['id']]) {
-					window.spiderSlaveUrls[v['id']] = v;
+				data.data.forEach(function (v) {
+					if (!window.spiderSlaveUrls[v['id']] && !window.spiderSlaveDeletedUrls[v['id']]) {
+						window.spiderSlaveUrls[v['id']] = v;
+					}
+				});
+
+				//clean deleted urls,keep 30 s
+				var compareTime = new Date().getTime() - 30000;
+				for(var id in window.spiderSlaveDeletedUrls) {
+					if(window.spiderSlaveDeletedUrls[id] < compareTime) {
+						delete window.spiderSlaveDeletedUrls[id];
+					}
 				}
 			});
-
-			//clean deleted urls,keep 30 s
-			var compareTime = new Date().getTime() - 30000;
-			for(var id in window.spiderSlaveDeletedUrls) {
-				if(window.spiderSlaveDeletedUrls[id] < compareTime) {
-					delete window.spiderSlaveDeletedUrls[id];
-				}
-			}
 		});
 	}
 }
