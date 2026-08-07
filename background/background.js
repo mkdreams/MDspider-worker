@@ -1543,6 +1543,10 @@ function listen(req, sender, sendResponse) {
 			
 			return true;
 			break;
+		//MAIN world 获取扩展资源 URL
+		case 5:
+			sendResponse(chrome.runtime.getURL(req.path));
+			break;
 		//pop
 		case 4:
 			if(req.data !== undefined) {

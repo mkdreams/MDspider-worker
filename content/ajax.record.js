@@ -420,24 +420,31 @@ var ajaxRecordString = `
 `;
 pageRunJs(ajaxRecordString);
 
-// function loadScript(url, callback) {
-//   const script = document.createElement('script');
-//   script.src = url;
+function loadScript(url, callback) {
+  const script = document.createElement('script');
+  script.src = url;
   
-//   script.onload = function() {
-//     if (callback) callback(url);
-//   };
+  script.onload = function() {
+    if (callback) callback(url);
+  };
   
-//   script.onerror = function() {
-//     console.error('load failed: ' + url);
-//   };
+  script.onerror = function() {
+    console.error('load failed: ' + url);
+  };
   
-//   $("html")[0].appendChild(script);
-// }
+  $("html")[0].appendChild(script);
+}
 
-// loadScript(chrome.runtime.getURL('diytopfunc.js'), function(url) {
-//   console.log('loaded',url);
-// });
+//MAIN world 无法直接访问 chrome.runtime.getURL，通过消息向 background 获取扩展资源 URL
+chrome.runtime.sendMessage({'type':5,'path':'diytopfunc.js'}, function(res) {
+  if(res) {
+    loadScript(res, function(url) {
+      console.log('loaded',url);
+    });
+  }else{
+    console.error('get diytopfunc.js url failed');
+  }
+});
 
 
 
