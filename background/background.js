@@ -8,6 +8,7 @@ window.setTimeout_checkIsDie = {};
 window.tabUrlIds = {};
 window.baseWindow = undefined;
 window.lockTabFlagToTab = {};
+window.tabError = {};
 
 window.setInterval_getLinksCache_lastRunTime = new Date().getTime();
 
@@ -336,6 +337,10 @@ function autoCreateTab(url, cb, useBaseWindow, urlInfo) {
 }
 
 function removeTabCb(tabId) {
+	if(window.tabError[tabId]) {
+		delete window.tabError[tabId];
+	}
+
 	if(window.spiderSlaveTabInfos['tabs'][tabId]) {
 		clearTimeout(window.setTimeout_checkIsDie[window.spiderSlaveTabInfos['tabs'][tabId].id]);
 		clearInterval(window.setInterval_getHtml[window.spiderSlaveTabInfos['tabs'][tabId].id]);
@@ -867,14 +872,21 @@ function isDone(tab, info, isError) {
 			});
 		}else{
 			window.spiderSlaveTabInfos['tabs'][tab.id]['runStatus'] = 0;
-			window.spiderSlaveUrls[info['id']]['runStartTime'] = undefined;
+
+			//关闭完成后才释放任务，避免旧tab未关时任务被重复选中
+			var releaseTask = function() {
+				window.spiderSlaveUrls[info['id']]['runStartTime'] = undefined;
+			};
+
 			if(getObjectLen(window.spiderSlaveTabInfos['wins']) > 1) {
-					chrome.tabs.remove(tab.id,function() {});
+					chrome.tabs.remove(tab.id,releaseTask);
 			}else{
 				chrome.tabs.query({windowId:tab.windowId},function(tabs) {
 					if(tabs && tabs.length > 1) {
-						chrome.tabs.remove(tab.id,function() {
-						});
+						chrome.tabs.remove(tab.id,releaseTask);
+					}else{
+						//最后一个tab不能关闭，任务仍需释放，否则无法重试
+						releaseTask();
 					}
 				});
 			}
@@ -1360,7 +1372,15 @@ async function runAction201(tab,info,cb) {
 
 function runAction107(tab,info,cb) {
 	var name = "devtools-"+tab.id;
+
 	var intervalId = setInterval(function() {
+		if(window.tabError[tab.id] !== undefined) {
+			console.warn("runAction107[tab:"+tab.id+"]页面加载失败:",window.tabError[tab.id]);
+			clearInterval(intervalId);
+			isDone(tab, info, true);
+			return;
+		}
+
 		var port = window.devtoolsIsReady[name];
 		if(port) {
 			clearInterval(intervalId);
@@ -1374,36 +1394,25 @@ function runAction107(tab,info,cb) {
 			};
 			port.onMessage.addListener(portonMessageHandle);
 
-			new Promise(function(resolve,reject) {
+			// 先发初始化消息（含url），devtools面板会在初始化后自行导航到指定url
+			port.postMessage({ devtype: 1, url: info.url });
+
+			// 等待页面加载完成后获取资源
+			var delay = 500;
+			if(info.param && info.param.delay) {
+				delay = info.param.delay;
+			}
+			setTimeout(()=>{
 				chrome.tabs.get(tab.id).then((tabInfo)=>{
-					if(tabInfo.url !== info.url) {
-						chrome.tabs.update(tab.id,{"url":info.url}).then(()=>{
-							runActionComplete(tab,info,()=>{
-								resolve(true);
-							});
-						});
-					}else{
-						resolve(true);
-					}
-				});
-			}.bind(this)).then(()=>{
-				port.postMessage({ devtype: 1});
-				var delay = 500;
-				if(info.param && info.param.delay) {
-					delay = info.param.delay;
-				}
-				setTimeout(()=>{
 					runActionComplete(tab,info,()=>{
-						chrome.tabs.get(tab.id).then((tabInfo)=>{
-							if(info.param && info.param.getBetchSelectorTextsBase64) {
-								port.postMessage({ devtype: 2,url: tabInfo.url, getBetchSelectorTexts:JSON.parse(base64ToString(info.param.getBetchSelectorTextsBase64))});
-							}else{
-								port.postMessage({ devtype: 2,url: tabInfo.url});
-							}
-						});
+						if(info.param && info.param.getBetchSelectorTextsBase64) {
+							port.postMessage({ devtype: 2,url: tabInfo.url, getBetchSelectorTexts:JSON.parse(base64ToString(info.param.getBetchSelectorTextsBase64))});
+						}else{
+							port.postMessage({ devtype: 2,url: tabInfo.url});
+						}
 					});
-				},delay)
-			});
+				});
+			},delay)
 		}
 	},500);
 }
@@ -1559,6 +1568,18 @@ function listen(req, sender, sendResponse) {
 			break;
 	}
 }
+
+var tabErrorOccurredListener = function(details) {
+	if(details.frameId === 0) {
+		window.tabError[details.tabId] = details.error;
+	}
+};
+chrome.webNavigation.onErrorOccurred.addListener(tabErrorOccurredListener);
+chrome.webNavigation.onCompleted.addListener(function(details) {
+	if(details.frameId === 0) {
+		delete window.tabError[details.tabId];
+	}
+});
 
 chrome.runtime.onMessage.addListener(listen)
 chrome.runtime.onUserScriptMessage.addListener(listen)
