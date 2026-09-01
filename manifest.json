@@ -22,7 +22,8 @@
     "unlimitedStorage",
     "downloads",
     "webNavigation",
-    "cookies"
+    "cookies",
+    "history"
   ],
   "host_permissions": ["*://*/*"],
   "declarative_net_request": {

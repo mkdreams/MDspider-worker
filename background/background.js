@@ -263,6 +263,14 @@ function loadConfig(cb) {
 			window['spiderReqSlaveFlag'] = window['spiderSlaveFlag'];
 		}
 
+		//清理浏览记录
+		var p = new Promise(function(resolve,reject) {
+			chrome.history.deleteAll(function() {
+				resolve(1);
+			});
+		});
+		promiseArr.push(p);
+
 		Promise.all(promiseArr).then((result) => {
 			cb && cb();
 		});
