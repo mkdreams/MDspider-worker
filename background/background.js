@@ -269,8 +269,53 @@ function loadConfig(cb) {
 	});
 }
 
+function closeUnusedTabs(cb) {
+	var keepTabIds = {};
+
+	if(window.spiderSlaveTabInfos && window.spiderSlaveTabInfos['tabs']) {
+		for (var tabId in window.spiderSlaveTabInfos['tabs']) {
+			keepTabIds[tabId] = true;
+		}
+	}
+
+	chrome.tabs.query({}, function (tabs) {
+		var httpTabs = [], closeTabIds = [], hasNonHttpTab = false;
+
+		for (var i = 0; i < tabs.length; i++) {
+			var tab = tabs[i];
+			if (tab.url && tab.url.indexOf('http') === 0) {
+				httpTabs.push(tab);
+				if (!keepTabIds[tab.id]) {
+					closeTabIds.push(tab.id);
+				}
+			} else {
+				hasNonHttpTab = true;
+			}
+		}
+
+		//最少保留一个：所有 http tab 都无记录且没有其他非 http tab 时，保留一个不关
+		if (closeTabIds.length === httpTabs.length && httpTabs.length > 0 && !hasNonHttpTab) {
+			closeTabIds.pop();
+		}
+
+		if (closeTabIds.length > 0) {
+			chrome.tabs.remove(closeTabIds, function () {
+				cb && cb();
+			});
+		} else {
+			cb && cb();
+		}
+	});
+}
+
 function autoCreateTab(url, cb, useBaseWindow, urlInfo) {
 	function createOneTab(newWin, tabId) {
+		closeUnusedTabs(function () {
+			createOneTabInner(newWin, tabId);
+		});
+	}
+
+	function createOneTabInner(newWin, tabId) {
 		var tabOption = { 'url': url };
 		if (newWin) {
 			tabOption['windowId'] = newWin.id;
