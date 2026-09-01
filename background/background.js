@@ -234,7 +234,9 @@ function loadConfig(cb) {
 			window['spiderReqSlaveFlag'] = window['spiderSlaveFlag'];
 		}
 
-		cb && cb();
+		chrome.history.deleteAll(function() {
+			cb && cb();
+		});
 	});
 }
 
