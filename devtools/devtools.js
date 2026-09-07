@@ -69,16 +69,15 @@ function waitForRequestsComplete(timeout, cb) {
         if (running && Date.now() - startTime < timeout) {
           waitForRequestsCompleteTimer = setTimeout(check, 500);
         } else {
-          cb();
+          setTimeout(function() {
+            cb();
+          }, 500);
         }
       }
     );
   }
 
-  //注入hook（幂等），再开始轮询
-  chrome.devtools.inspectedWindow.eval(HOOK_CODE, function () {
-    check();
-  });
+  check();
 }
 
 chrome.devtools.network.onRequestFinished.addListener(function (request) {
@@ -130,7 +129,7 @@ port.onMessage.addListener(function (request) {
         waitForRequestsComplete(30000, function () {
           // 获取JS渲染后的HTML和当前url，替换document类型资源的原始内容
           chrome.devtools.inspectedWindow.eval(
-            'JSON.stringify({html: document.documentElement.outerHTML, url: location.href})',
+            'JSON.stringify({html: document.documentElement.outerHTML, url: location.href, characterSet: document.characterSet})',
             function (result, isException) {
               var currentUrl = url;
               if (!isException && result) {
@@ -146,6 +145,8 @@ port.onMessage.addListener(function (request) {
                     source.renderedContent = renderedHtml;
                     // 新增字段保存当前跳转后的url，不覆盖原始request.url
                     source.currentUrl = currentUrl;
+                    // 记录页面编码，如UTF-8、GBK等
+                    source.characterSet = data.characterSet;
                   }
                 });
               } else if (isException) {
