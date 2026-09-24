@@ -275,7 +275,10 @@ function screenshot(tab, info, cb,screenshotCount) {
 		return new Promise(function(resolve,reject) {
 			chrome.tabs.update(tab.id, { active: true }, function () {
 				if(init === 1) {
+					//已附加（例如被响应体改写的模块占用）时也继续，避免后续 sendCommand 之前的流程卡住
 					chrome.debugger.attach({ tabId: tab.id }, '1.3').then(function(){
+						resolve(true);
+					},function(){
 						resolve(true);
 					});
 				}else{
