@@ -9,6 +9,7 @@ window.tabUrlIds = {};
 window.baseWindow = undefined;
 window.lockTabFlagToTab = {};
 window.tabError = {};
+window.tabRemovedPending = {};
 
 window.setInterval_getLinksCache_lastRunTime = new Date().getTime();
 
@@ -390,6 +391,28 @@ function autoCreateTab(url, cb, useBaseWindow, urlInfo) {
 }
 
 function removeTabCb(tabId) {
+	//tab 创建过程中（allTabLocked）不执行移除逻辑，等创建流程结束后再补执行，避免清理完 tab 又被登记回 tabs
+	if(window.spiderSlaveTabInfos['allTabLocked'] === true) {
+		window.tabRemovedPending[tabId] = new Date().getTime();
+		return ;
+	}
+
+	removeTabCbInner(tabId);
+}
+
+//allTabLocked 释放后补执行挂起的移除
+function flushRemovedTabs() {
+	if(window.spiderSlaveTabInfos['allTabLocked'] === true) {
+		return ;
+	}
+
+	for (var tabId in window.tabRemovedPending) {
+		delete window.tabRemovedPending[tabId];
+		removeTabCbInner(tabId);
+	}
+}
+
+function removeTabCbInner(tabId) {
 	if(window.tabError[tabId]) {
 		delete window.tabError[tabId];
 	}
@@ -412,6 +435,9 @@ function removeTabCb(tabId) {
 	}
 
 	console.log('close tab!', tabId);
+	// if(window.tabError[tabId] === undefined) {
+	// 	window.tabError[tabId] = "tab closed";
+	// }
 }
 
 //stop content-security-policy
@@ -460,6 +486,7 @@ function workPlay(allCompeletedCb) {
 	window.setInterval_getHtmlRun = setInterval(function () {
 		window.actionRunTime++;
 		if(window.actionRunTime > 600 && window.spiderSlaveTabInfos['allTabLocked'] === false) {
+			// flushRemovedTabs();
 			tryCloseTab();
 			window.actionRunTime = 0;
 			window.spiderSlaveActiveLastTime[0] = parseInt(new Date().getTime()/1000);
@@ -743,11 +770,12 @@ function getNextTab(urlId) {
 			window.spiderSlaveTabInfos['tabs'][tab.id]['runStatus'] = 1;
 			window.spiderSlaveTabInfos['tabs'][tab.id]['iActiveTime'] = new Date().getTime();
 			window.spiderSlaveTabInfos['allTabLocked'] = false;
+			flushRemovedTabs();
 
 			//record lock tab info
 			getLockTabId(urlId,tab.id)
 
-			dealOneAction(window.spiderSlaveTabInfos['tabs'][tab.id], window.spiderSlaveUrls[urlId], true);
+			dealOneAction(tab, window.spiderSlaveUrls[urlId], true);
 		},false,window.spiderSlaveUrls[urlId]);
 
 		return [urlId,-2];
@@ -897,7 +925,7 @@ function isDone(tab, info, isError) {
 		if(window.spiderSlaveUrls[info['id']]['runCount'] > maxErrorCount) {
 			ajaxPost({ 'admintype': 2, 'tab': {id:tab.id}, 'url': window.spiderSlaveApiCb, 'data': { 'id': info['id'], 'sResponse': 'ZmFsc2U=','sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } },function() {
 				var clearInfo = function(tab,info) {
-					if (window.spiderSlaveTabInfos['tabs'][tab.id]['doneResolve']) {
+					if (window.spiderSlaveTabInfos['tabs'][tab.id] && window.spiderSlaveTabInfos['tabs'][tab.id]['doneResolve']) {
 						window.spiderSlaveTabInfos['tabs'][tab.id]['doneResolve'](true);
 					}
 					window.spiderSlaveDeletedUrls[info['id']] = new Date().getTime();
@@ -1427,9 +1455,17 @@ function runAction107(tab,info,cb) {
 	var name = "devtools-"+tab.id;
 
 	var intervalId = setInterval(function() {
+		if(window.spiderSlaveTabInfos['tabs'][tab.id] === undefined) {
+			console.warn("runAction107[tab:"+tab.id+"]tab不存在:",window.tabError[tab.id]);
+			clearInterval(intervalId);
+			window.spiderSlaveUrls[info['id']]['runCount'] = 6;
+			isDone(tab, info, true);
+			return;
+		}
 		if(window.tabError[tab.id] !== undefined) {
 			console.warn("runAction107[tab:"+tab.id+"]页面加载失败:",window.tabError[tab.id]);
 			clearInterval(intervalId);
+			window.spiderSlaveUrls[info['id']]['runCount'] = 6;
 			isDone(tab, info, true);
 			return;
 		}
