@@ -9,6 +9,7 @@ function isSupportPartitionKey() {
 function tabUpdate(tab, info, cb) {
 	//{active: true ,autoDiscardable: false } info.param.tabProperties
 	chrome.tabs.update(tab.id, info.param.tabProperties, function () {
+		logTabApiError('tabUpdate.update', tab.id);
 		textToBase64(true,function(base64){
 			cb && cb(base64);
 		});
@@ -43,6 +44,7 @@ function getCookies(tab, info, cb) {
 		});
 	}else{
 		chrome.tabs.get(tab.id, function (nowTab) {
+			logTabApiError('getCookies.get', tab.id);
 			if(info.url === "") {
 				var nowUrl = getDomain(tab.url);
 			}else{
@@ -274,6 +276,7 @@ function screenshot(tab, info, cb,screenshotCount) {
 	}).then(function() {
 		return new Promise(function(resolve,reject) {
 			chrome.tabs.update(tab.id, { active: true }, function () {
+				logTabApiError('screenshot.tabsUpdate', tab.id);
 				if(init === 1) {
 					//已附加（例如被响应体改写的模块占用）时也继续，避免后续 sendCommand 之前的流程卡住
 					chrome.debugger.attach({ tabId: tab.id }, '1.3').then(function(){

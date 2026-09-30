@@ -11,6 +11,14 @@ window.lockTabFlagToTab = {};
 window.tabError = {};
 window.tabRemovedPending = {};
 
+//定位 "Unchecked runtime.lastError"（例如 No tab with id: x）来源：在被调用的 chrome.tabs 回调开头加 logTabApiError('标记', tabId)
+//读取 lastError 后浏览器就不再打 Unchecked 警告，定位完成后把调用删掉即可
+function logTabApiError(site, tabId) {
+	if(chrome.runtime.lastError) {
+		console.warn("[tabApiError]", site, "tabId:"+tabId, "->", chrome.runtime.lastError.message);
+	}
+}
+
 window.setInterval_getLinksCache_lastRunTime = new Date().getTime();
 
 if(window.spiderSlavePerDayMaxRunTimesFrequencyRang === undefined) {
@@ -248,6 +256,7 @@ function loadConfig(cb) {
 					var id = window.spiderSlaveTabInfos['tabs'][tabId]['id'];
 					var p = new Promise(function(resolve,reject) {
 						chrome.tabs.remove(id,function(){
+							logTabApiError('resetTabs.remove', id);
 							resolve(1);
 						});
 					});
@@ -309,6 +318,7 @@ function closeUnusedTabs(cb) {
 
 		if (closeTabIds.length > 0) {
 			chrome.tabs.remove(closeTabIds, function () {
+				logTabApiError('closeUnusedTabs.remove', closeTabIds.join(','));
 				cb && cb();
 			});
 		} else {
@@ -332,6 +342,7 @@ function autoCreateTab(url, cb, useBaseWindow, urlInfo) {
 
 		if (tabId) {
 			chrome.tabs.get(tabId, function (tab) {
+				logTabApiError('createOneTabInner.get', tabId);
 				if(tab === undefined) {
 					window.spiderSlaveTabInfos['allTabLocked'] = false;
 					return ;
@@ -345,11 +356,13 @@ function autoCreateTab(url, cb, useBaseWindow, urlInfo) {
 				}
 				//chrome://discards/ 
 				chrome.tabs.update(tab.id, { autoDiscardable: false }, function () {
+					logTabApiError('createOneTabInner.update.get', tab.id);
 					cb && cb(tab);
 				});
 			});
 		} else {
 			chrome.tabs.create(tabOption, function (tab) {
+				logTabApiError('createOneTabInner.create', tabOption && tabOption.windowId);
 				if(tab === undefined) {
 					window.spiderSlaveTabInfos['allTabLocked'] = false;
 					return ;
@@ -364,6 +377,7 @@ function autoCreateTab(url, cb, useBaseWindow, urlInfo) {
 
 				//chrome://discards/ 
 				chrome.tabs.update(tab.id, { autoDiscardable: false }, function () {
+					logTabApiError('createOneTabInner.update.create', tab.id);
 					cb && cb(tab);
 				});
 			});
@@ -634,6 +648,7 @@ function tryCloseTab() {
 		(function(j){
 			var p = new Promise(function(resolve,reject) {
 				chrome.tabs.remove(window.spiderSlaveTabInfos['tabs'][j]['id'],function(){
+					logTabApiError('tryCloseTab.remove', j);
 					resolve(1);
 				});
 			});
@@ -937,12 +952,14 @@ function isDone(tab, info, isError) {
 				if(getObjectLen(window.spiderSlaveTabInfos['wins']) > 1) {
 					clearInfo(tab,info);
 					chrome.tabs.remove(tab.id,function() {
+						logTabApiError('clearInfo.remove.win>1', tab.id);
 					});
 				}else{
 					chrome.tabs.query({windowId:tab.windowId},function(tabs) {
 						if(tabs && tabs.length > 1) {
 							clearInfo(tab,info);
 							chrome.tabs.remove(tab.id,function() {
+								logTabApiError('clearInfo.remove.win>1.query', tab.id);
 							});
 						}else{
 							clearInfo(tab,info);
@@ -1242,6 +1259,7 @@ function runActionComplete(tab,info,cb) {
 
 			window.tabLocked[tab.id] = true;
 			chrome.tabs.get(tab.id, function (nowTab) {
+				logTabApiError('resultIsOkWaitComplete.get', tab.id);
 				window.tabLocked[tab.id] = false;
 
 				if(nowTab === undefined) {
