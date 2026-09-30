@@ -392,6 +392,7 @@ function autoCreateTab(url, cb, useBaseWindow, urlInfo) {
 
 function removeTabCb(tabId) {
 	//tab 创建过程中（allTabLocked）不执行移除逻辑，等创建流程结束后再补执行，避免清理完 tab 又被登记回 tabs
+	console.log('allTabLocked',window.spiderSlaveTabInfos['allTabLocked']);
 	if(window.spiderSlaveTabInfos['allTabLocked'] === true) {
 		window.tabRemovedPending[tabId] = new Date().getTime();
 		return ;
@@ -486,7 +487,6 @@ function workPlay(allCompeletedCb) {
 	window.setInterval_getHtmlRun = setInterval(function () {
 		window.actionRunTime++;
 		if(window.actionRunTime > 600 && window.spiderSlaveTabInfos['allTabLocked'] === false) {
-			// flushRemovedTabs();
 			tryCloseTab();
 			window.actionRunTime = 0;
 			window.spiderSlaveActiveLastTime[0] = parseInt(new Date().getTime()/1000);
@@ -952,19 +952,39 @@ function isDone(tab, info, isError) {
 
 			});
 		}else{
-			window.spiderSlaveTabInfos['tabs'][tab.id]['runStatus'] = 0;
+			if(window.spiderSlaveTabInfos['tabs'][tab.id]) {
+				window.spiderSlaveTabInfos['tabs'][tab.id]['runStatus'] = 0;
+			}
 
 			//关闭完成后才释放任务，避免旧tab未关时任务被重复选中
 			var releaseTask = function() {
-				window.spiderSlaveUrls[info['id']]['runStartTime'] = undefined;
+				if(window.spiderSlaveUrls[info['id']]) {
+					window.spiderSlaveUrls[info['id']]['runStartTime'] = undefined;
+				}
+			};
+
+			//关tab失败（tab已不存在、参数非法等）也要释放任务，否则任务会一直卡到超时才重试
+			var removeTabAndRelease = function() {
+				try {
+					chrome.tabs.remove(tab.id, function() {
+						if(chrome.runtime.lastError) {
+							console.warn("close tab error[tab:"+tab.id+"]:", chrome.runtime.lastError.message);
+						}
+
+						releaseTask();
+					});
+				}catch(e) {
+					console.warn("close tab error[tab:"+tab.id+"]:", e);
+					releaseTask();
+				}
 			};
 
 			if(getObjectLen(window.spiderSlaveTabInfos['wins']) > 1) {
-					chrome.tabs.remove(tab.id,releaseTask);
+					removeTabAndRelease();
 			}else{
 				chrome.tabs.query({windowId:tab.windowId},function(tabs) {
 					if(tabs && tabs.length > 1) {
-						chrome.tabs.remove(tab.id,releaseTask);
+						removeTabAndRelease();
 					}else{
 						//最后一个tab不能关闭，任务仍需释放，否则无法重试
 						releaseTask();
@@ -1475,15 +1495,13 @@ function runAction107(tab,info,cb) {
 			clearInterval(intervalId);
 			
 			var portonMessageHandle = function(res) {
-				console.log("background port.onMessage",res);
 				textToBase64(JSON.stringify(res),function(base64){
 					cb(base64);
 					port.onMessage.removeListener(portonMessageHandle);
 				});
 			};
+			
 			port.onMessage.addListener(portonMessageHandle);
-
-			// 先发初始化消息（含url），devtools面板会在初始化后自行导航到指定url
 			port.postMessage({ devtype: 1, url: info.url });
 
 			// 等待页面加载完成后获取资源
@@ -1500,6 +1518,8 @@ function runAction107(tab,info,cb) {
 							port.postMessage({ devtype: 2,url: tabInfo.url});
 						}
 					});
+				}).catch((e)=>{
+					isDone(tab, info, true);
 				});
 			},delay)
 		}
