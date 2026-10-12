@@ -1520,7 +1520,25 @@ function runAction107(tab,info,cb) {
 			};
 			
 			port.onMessage.addListener(portonMessageHandle);
-			port.postMessage({ devtype: 1, url: info.url });
+
+			//port 会随 tab/面板关闭而断开，此时 postMessage 同步抛 "Attempting to use a disconnected port object"
+			var postToPort = function(msg) {
+				try {
+					port.postMessage(msg);
+					return true;
+				}catch(e) {
+					console.warn("runAction107[tab:"+tab.id+"]devtools面板已断开:", e.message);
+					if(window.devtoolsIsReady[name] === port) {
+						delete window.devtoolsIsReady[name];
+					}
+					isDone(tab, info, true);
+					return false;
+				}
+			};
+
+			if(!postToPort({ devtype: 1, url: info.url })) {
+				return ;
+			}
 
 			// 等待页面加载完成后获取资源
 			var delay = 500;
@@ -1531,9 +1549,9 @@ function runAction107(tab,info,cb) {
 				chrome.tabs.get(tab.id).then((tabInfo)=>{
 					runActionComplete(tab,info,()=>{
 						if(info.param && info.param.getBetchSelectorTextsBase64) {
-							port.postMessage({ devtype: 2,url: tabInfo.url, getBetchSelectorTexts:JSON.parse(base64ToString(info.param.getBetchSelectorTextsBase64))});
+							postToPort({ devtype: 2,url: tabInfo.url, getBetchSelectorTexts:JSON.parse(base64ToString(info.param.getBetchSelectorTextsBase64))});
 						}else{
-							port.postMessage({ devtype: 2,url: tabInfo.url});
+							postToPort({ devtype: 2,url: tabInfo.url});
 						}
 					});
 				}).catch((e)=>{
@@ -1717,6 +1735,13 @@ chrome.runtime.onUserScriptMessage.addListener(listen)
 chrome.runtime.onConnect.addListener(function(devToolsPort) {
   if (devToolsPort.name.indexOf("devtools") === 0) {
     window.devtoolsIsReady[devToolsPort.name] = devToolsPort;
+
+    //面板/tab 关闭时端口会断开，清掉引用，避免后面继续对已断开的 port 发消息
+    devToolsPort.onDisconnect.addListener(function() {
+      if(window.devtoolsIsReady[devToolsPort.name] === devToolsPort) {
+        delete window.devtoolsIsReady[devToolsPort.name];
+      }
+    });
   }
 });
 
