@@ -1735,13 +1735,6 @@ chrome.runtime.onUserScriptMessage.addListener(listen)
 chrome.runtime.onConnect.addListener(function(devToolsPort) {
   if (devToolsPort.name.indexOf("devtools") === 0) {
     window.devtoolsIsReady[devToolsPort.name] = devToolsPort;
-
-    //面板/tab 关闭时端口会断开，清掉引用，避免后面继续对已断开的 port 发消息
-    devToolsPort.onDisconnect.addListener(function() {
-      if(window.devtoolsIsReady[devToolsPort.name] === devToolsPort) {
-        delete window.devtoolsIsReady[devToolsPort.name];
-      }
-    });
   }
 });
 
