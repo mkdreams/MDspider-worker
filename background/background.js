@@ -1489,77 +1489,664 @@ async function runAction201(tab,info,cb) {
 		}
 }
 
-function runAction107(tab,info,cb) {
-	var name = "devtools-"+tab.id;
+// ---------- action 107: 通过 CDP(Network/Runtime) 采集页面资源，替代原 DevTools 面板 ----------
+// 返回给 cb 的数组结构/过滤规则与 devtools/devtools.js 完全一致：
+// {startedDateTime, request(HAR), content, response(HAR), resourceType, renderedContent?, currentUrl?, characterSet?, getBetchSelectorByTextsResult?}
 
-	var intervalId = setInterval(function() {
-		if(window.spiderSlaveTabInfos['tabs'][tab.id] === undefined) {
-			console.warn("runAction107[tab:"+tab.id+"]tab不存在:",window.tabError[tab.id]);
-			clearInterval(intervalId);
-			window.spiderSlaveUrls[info['id']]['runCount'] = 6;
-			isDone(tab, info, true);
-			return;
-		}
-		if(window.tabError[tab.id] !== undefined) {
-			console.warn("runAction107[tab:"+tab.id+"]页面加载失败:",window.tabError[tab.id]);
-			clearInterval(intervalId);
-			window.spiderSlaveUrls[info['id']]['runCount'] = 6;
-			isDone(tab, info, true);
-			return;
-		}
+function cdp107LastError() {
+	return (chrome.runtime.lastError && chrome.runtime.lastError.message) || "";
+}
 
-		var port = window.devtoolsIsReady[name];
-		if(port) {
-			clearInterval(intervalId);
-			
-			var portonMessageHandle = function(res) {
-				textToBase64(JSON.stringify(res),function(base64){
-					cb(base64);
-					port.onMessage.removeListener(portonMessageHandle);
-				});
-			};
-			
-			port.onMessage.addListener(portonMessageHandle);
+function cdp107Send(tabId, method, params) {
+	return new Promise(function(resolve, reject) {
+		chrome.debugger.sendCommand({ 'tabId': tabId }, method, params || {}, function(result) {
+			var err = cdp107LastError();
+			if(err) {
+				reject(new Error(method + ": " + err));
+				return ;
+			}
+			resolve(result);
+		});
+	});
+}
 
-			//port 会随 tab/面板关闭而断开，此时 postMessage 同步抛 "Attempting to use a disconnected port object"
-			var postToPort = function(msg) {
-				try {
-					port.postMessage(msg);
-					return true;
-				}catch(e) {
-					console.warn("runAction107[tab:"+tab.id+"]devtools面板已断开:", e.message);
-					if(window.devtoolsIsReady[name] === port) {
-						delete window.devtoolsIsReady[name];
-					}
-					isDone(tab, info, true);
-					return false;
-				}
-			};
-
-			if(!postToPort({ devtype: 1, url: info.url })) {
+//返回 true 表示由本次流程 attach；false 表示复用扩展内其他流程（如 screenshot）已建立的会话
+function cdp107Attach(tabId) {
+	return new Promise(function(resolve, reject) {
+		chrome.debugger.attach({ 'tabId': tabId }, "1.3", function() {
+			var err = cdp107LastError();
+			if(!err) {
+				resolve(true);
 				return ;
 			}
 
-			// 等待页面加载完成后获取资源
-			var delay = 500;
-			if(info.param && info.param.delay) {
-				delay = info.param.delay;
-			}
-			setTimeout(()=>{
-				chrome.tabs.get(tab.id).then((tabInfo)=>{
-					runActionComplete(tab,info,()=>{
-						if(info.param && info.param.getBetchSelectorTextsBase64) {
-							postToPort({ devtype: 2,url: tabInfo.url, getBetchSelectorTexts:JSON.parse(base64ToString(info.param.getBetchSelectorTextsBase64))});
-						}else{
-							postToPort({ devtype: 2,url: tabInfo.url});
-						}
-					});
-				}).catch((e)=>{
-					isDone(tab, info, true);
+			//扩展内其他流程已附加时 attach 也会报这个错；用无害命令探测：
+			//能执行说明是我们自己的会话可以复用，否则是 DevTools/其他扩展占用
+			if(/Another debugger is already attached/i.test(err)) {
+				chrome.debugger.sendCommand({ 'tabId': tabId }, 'Runtime.evaluate', { 'expression': '1' }, function() {
+					var probeErr = cdp107LastError();
+					if(probeErr) {
+						reject(new Error(err + " (" + probeErr + ")"));
+					}else{
+						resolve(false);
+					}
 				});
-			},delay)
+				return ;
+			}
+
+			reject(new Error(err));
+		});
+	});
+}
+
+var cdp107SelectorSourcePromise = null;
+function cdp107GetSelectorSource() {
+	if(cdp107SelectorSourcePromise === null) {
+		cdp107SelectorSourcePromise = fetch(chrome.runtime.getURL('content/selector.js')).then(function(resp) {
+			return resp.text();
+		});
+	}
+	return cdp107SelectorSourcePromise;
+}
+
+function cdp107HeaderList(headers) {
+	var list = [];
+	for (var name in (headers || {})) {
+		list.push({ 'name': name, 'value': String(headers[name]) });
+	}
+	return list;
+}
+
+function cdp107HeaderValue(headers, name) {
+	for (var key in (headers || {})) {
+		if(key.toLowerCase() === name) {
+			return String(headers[key]);
 		}
-	},500);
+	}
+	return "";
+}
+
+function cdp107QueryString(url) {
+	var list = [];
+	var start = String(url).indexOf('?');
+	if(start === -1) {
+		return list;
+	}
+	var qs = String(url).substring(start + 1);
+	var hashIdx = qs.indexOf('#');
+	if(hashIdx > -1) {
+		qs = qs.substring(0, hashIdx);
+	}
+	qs.split('&').forEach(function(part) {
+		if(part === "") {
+			return ;
+		}
+		var eq = part.indexOf('=');
+		var name = eq === -1 ? part : part.substring(0, eq);
+		var value = eq === -1 ? "" : part.substring(eq + 1);
+		try { name = decodeURIComponent(name.replace(/\+/g, ' ')); } catch(e) {}
+		try { value = decodeURIComponent(value.replace(/\+/g, ' ')); } catch(e) {}
+		list.push({ 'name': name, 'value': value });
+	});
+	return list;
+}
+
+function cdp107RequestCookies(cookieHeader) {
+	var cookies = [];
+	String(cookieHeader || "").split(';').forEach(function(part) {
+		part = part.trim();
+		var eq = part.indexOf('=');
+		if(eq <= 0) {
+			return ;
+		}
+		cookies.push({ 'name': part.substring(0, eq), 'value': part.substring(eq + 1) });
+	});
+	return cookies;
+}
+
+function cdp107ResponseCookies(setCookieHeader) {
+	var cookies = [];
+	String(setCookieHeader || "").split('\n').forEach(function(line) {
+		line = line.trim();
+		if(line === "") {
+			return ;
+		}
+		var parts = line.split(';');
+		var pair = parts.shift();
+		var eq = pair.indexOf('=');
+		if(eq <= 0) {
+			return ;
+		}
+		var cookie = { 'name': pair.substring(0, eq).trim(), 'value': pair.substring(eq + 1).trim() };
+		parts.forEach(function(attr) {
+			var aeq = attr.indexOf('=');
+			var aname = (aeq === -1 ? attr : attr.substring(0, aeq)).trim().toLowerCase();
+			var avalue = aeq === -1 ? "" : attr.substring(aeq + 1).trim();
+			if(aname === 'path') {
+				cookie['path'] = avalue;
+			}else if(aname === 'domain') {
+				cookie['domain'] = avalue;
+			}else if(aname === 'expires') {
+				var expires = Date.parse(avalue);
+				if(!isNaN(expires)) {
+					cookie['expires'] = new Date(expires).toISOString();
+				}
+			}else if(aname === 'httponly') {
+				cookie['httpOnly'] = true;
+			}else if(aname === 'secure') {
+				cookie['secure'] = true;
+			}
+		});
+		cookies.push(cookie);
+	});
+	return cookies;
+}
+
+function cdp107ByteLength(str) {
+	str = str === undefined || str === null ? "" : String(str);
+	try {
+		return new TextEncoder().encode(str).length;
+	}catch(e) {
+		return str.length;
+	}
+}
+
+function cdp107NormalizeMime(mime) {
+	return String(mime || "").split(';')[0].trim();
+}
+
+//与 devtools.js 的过滤条件逐条对应：资源类型白名单 + MIME 子串黑名单
+function cdp107PassFilter(rec) {
+	if(["document", "xhr", "fetch", "script"].indexOf(rec.resourceType) === -1) {
+		return false;
+	}
+	var mime = cdp107NormalizeMime(rec.response && rec.response.mimeType);
+	if(mime.indexOf("image/") > -1 || mime.indexOf("text/css") > -1 || mime.indexOf("video/") > -1 || mime.indexOf("javascript") > -1) {
+		return false;
+	}
+	return true;
+}
+
+function cdp107BuildRequest(rec) {
+	var headers = rec.requestHeaders || {};
+	var postData = rec.postData;
+	var requestObj = {
+		'method': rec.method,
+		'url': rec.url,
+		'httpVersion': (rec.response && rec.response.protocol) || "",
+		'headers': cdp107HeaderList(headers),
+		'queryString': cdp107QueryString(rec.url),
+		'cookies': cdp107RequestCookies(cdp107HeaderValue(headers, 'cookie')),
+		'headersSize': -1,
+		'bodySize': postData === undefined ? 0 : cdp107ByteLength(postData)
+	};
+	if(postData !== undefined) {
+		requestObj['postData'] = {
+			'mimeType': cdp107HeaderValue(headers, 'content-type'),
+			'text': postData
+		};
+	}
+	return requestObj;
+}
+
+function cdp107BuildResponse(rec, body) {
+	var headers = (rec.response && rec.response.headers) || {};
+	var bodySize = cdp107ByteLength(body);
+	return {
+		'status': rec.response ? rec.response.status : 0,
+		'statusText': rec.response ? (rec.response.statusText || "") : "",
+		'httpVersion': (rec.response && rec.response.protocol) || "",
+		'headers': cdp107HeaderList(headers),
+		'cookies': cdp107ResponseCookies(cdp107HeaderValue(headers, 'set-cookie')),
+		'content': {
+			'size': bodySize,
+			'mimeType': cdp107NormalizeMime(rec.response && rec.response.mimeType)
+		},
+		'redirectURL': rec.redirectURL || "",
+		'headersSize': -1,
+		'bodySize': bodySize,
+		'_transferSize': rec.encodedDataLength === undefined ? 0 : rec.encodedDataLength
+	};
+}
+
+function cdp107BuildEntry(rec, body) {
+	return {
+		'startedDateTime': rec.startedDateTime,
+		'request': cdp107BuildRequest(rec),
+		'content': body,
+		'response': cdp107BuildResponse(rec, body),
+		'resourceType': rec.resourceType
+	};
+}
+
+//重定向分片：同一个 requestId 的前一跳在 requestWillBeSent(带 redirectResponse) 时定稿，与 DevTools HAR 一致
+function cdp107FinalizeRedirect(state, params) {
+	var rec = state.requests[params.requestId];
+	if(!rec) {
+		return ;
+	}
+	rec.response = params.redirectResponse;
+	rec.redirectURL = (params.request && params.request.url) || "";
+	if(!cdp107PassFilter(rec) || state.seenUrls[rec.url]) {
+		return ;
+	}
+	state.seenUrls[rec.url] = true;
+	state.entries.push(cdp107BuildEntry(rec, ""));
+}
+
+function cdp107FetchBody(state, rec) {
+	chrome.debugger.sendCommand({ 'tabId': state.tab.id }, 'Network.getResponseBody', { 'requestId': rec.requestId }, function(result) {
+		var err = cdp107LastError();
+		if(state.finished) {
+			return ;
+		}
+		delete state.requests[rec.requestId];
+
+		var body = "";
+		if(!err && result && result.body !== undefined) {
+			//与面板 getContent 忽略 encoding 的行为一致：二进制内容保持 base64 字符串
+			body = result.body;
+		}
+
+		//与旧面板一致：正文回调完成的先后决定 URL 去重谁胜出
+		if(state.seenUrls[rec.url]) {
+			return ;
+		}
+		state.seenUrls[rec.url] = true;
+		state.entries.push(cdp107BuildEntry(rec, body));
+	});
+}
+
+function cdp107OnEvent(state, method, params) {
+	if(method === 'Network.requestWillBeSent') {
+		if(params.redirectResponse) {
+			cdp107FinalizeRedirect(state, params);
+		}
+
+		var request = params.request || {};
+		state.requests[params.requestId] = {
+			'requestId': params.requestId,
+			'url': request.url,
+			'method': request.method,
+			'requestHeaders': request.headers || {},
+			'postData': request.postData,
+			'resourceType': String(params.type || 'Other').toLowerCase(),
+			'startedDateTime': params.wallTime ? new Date(params.wallTime * 1000).toISOString() : new Date().toISOString(),
+			'response': null,
+			'redirectURL': ''
+		};
+
+		//重定向复用同一 requestId，Set 语义天然幂等
+		if(params.type === 'XHR' || params.type === 'Fetch') {
+			state.inflight[params.requestId] = true;
+		}
+		return ;
+	}
+
+	if(method === 'Network.responseReceived') {
+		var rec = state.requests[params.requestId];
+		if(!rec) {
+			return ;
+		}
+		rec.response = params.response;
+		if(params.type) {
+			rec.resourceType = String(params.type).toLowerCase();
+		}
+		return ;
+	}
+
+	if(method === 'Network.loadingFinished') {
+		var rec = state.requests[params.requestId];
+		delete state.inflight[params.requestId];
+		if(!rec || !rec.response) {
+			return ;
+		}
+		rec.encodedDataLength = params.encodedDataLength;
+		if(!cdp107PassFilter(rec)) {
+			delete state.requests[params.requestId];
+			return ;
+		}
+		cdp107FetchBody(state, rec);
+		return ;
+	}
+
+	if(method === 'Network.loadingFailed') {
+		delete state.inflight[params.requestId];
+		return ;
+	}
+}
+
+function runAction107(tab, info, cb) {
+	var tabId = tab.id;
+	var state = {
+		'tab': tab,
+		'info': info,
+		'cb': cb,
+		'finished': false,
+		'attachedByUs': false,
+		'entries': [],
+		'seenUrls': {},
+		'requests': {},
+		'inflight': {},
+		'matchUrl': undefined,
+		'snapshot': undefined,
+		'onEvent': null,
+		'onDetach': null,
+		'watchdog': null
+	};
+
+	function cleanup(detach) {
+		if(state.watchdog) {
+			clearTimeout(state.watchdog);
+			state.watchdog = null;
+		}
+		if(state.onEvent) {
+			chrome.debugger.onEvent.removeListener(state.onEvent);
+			state.onEvent = null;
+		}
+		if(state.onDetach) {
+			chrome.debugger.onDetach.removeListener(state.onDetach);
+			state.onDetach = null;
+		}
+		if(detach && state.attachedByUs) {
+			state.attachedByUs = false;
+			try {
+				chrome.debugger.detach({ 'tabId': tabId }, function() {
+					//忽略 "Debugger is not attached" / "No tab with id"
+					void chrome.runtime.lastError;
+				});
+			}catch(e) {
+				console.warn("runAction107 detach error:", e);
+			}
+		}
+	}
+
+	function fail(reason) {
+		if(state.finished) {
+			return ;
+		}
+		state.finished = true;
+		console.warn("runAction107[tab:"+tabId+"]", info && info.url, "失败:", reason);
+		cleanup(true);
+		isDone(tab, info, true);
+	}
+
+	function succeed(list) {
+		if(state.finished) {
+			return ;
+		}
+		state.finished = true;
+		cleanup(true);
+		textToBase64(JSON.stringify(list), function(base64) {
+			cb(base64);
+		});
+	}
+
+	//前置检查与旧实现一致：tab 已关闭/页面加载失败不再重试
+	if(window.spiderSlaveTabInfos['tabs'][tabId] === undefined) {
+		console.warn("runAction107[tab:"+tabId+"]tab不存在:",window.tabError[tabId]);
+		if(window.spiderSlaveUrls[info['id']]) {
+			window.spiderSlaveUrls[info['id']]['runCount'] = 6;
+		}
+		state.finished = true;
+		isDone(tab, info, true);
+		return ;
+	}
+	if(window.tabError[tabId] !== undefined) {
+		console.warn("runAction107[tab:"+tabId+"]页面加载失败:",window.tabError[tabId]);
+		if(window.spiderSlaveUrls[info['id']]) {
+			window.spiderSlaveUrls[info['id']]['runCount'] = 6;
+		}
+		state.finished = true;
+		isDone(tab, info, true);
+		return ;
+	}
+
+	state.watchdog = setTimeout(function() {
+		fail("timeout");
+	}, 120000);
+
+	state.onDetach = function(source, reason) {
+		if(source.tabId !== tabId || state.finished) {
+			return ;
+		}
+		fail("debugger detached: " + reason);
+	};
+	chrome.debugger.onDetach.addListener(state.onDetach);
+
+	state.onEvent = function(source, method, params) {
+		if(source.tabId !== tabId || state.finished) {
+			return ;
+		}
+		cdp107OnEvent(state, method, params);
+	};
+	chrome.debugger.onEvent.addListener(state.onEvent);
+
+	function waitXhrFetchQuiet(done) {
+		var startTime = new Date().getTime();
+
+		function check() {
+			if(state.finished) {
+				return ;
+			}
+			var running = getObjectLen(state.inflight);
+			if(running > 0) {
+				console.log("runAction107 等待页面请求完成，剩余", running, "个");
+			}
+			if(running > 0 && new Date().getTime() - startTime < 30000) {
+				setTimeout(check, 500);
+			}else{
+				//与旧面板一致：空闲/超时后再等 500ms
+				setTimeout(done, 500);
+			}
+		}
+		check();
+	}
+
+	function takeRenderedSnapshot(done) {
+		cdp107Send(tabId, 'Runtime.evaluate', {
+			'expression': 'JSON.stringify({html: document.documentElement.outerHTML, url: location.href, characterSet: document.characterSet})',
+			'returnByValue': true
+		}).then(function(result) {
+			if(result && !result.exceptionDetails && result.result && typeof result.result.value === 'string') {
+				try {
+					state.snapshot = JSON.parse(result.result.value);
+				}catch(e) {
+					console.warn("runAction107 解析渲染HTML失败:", e);
+				}
+			}else{
+				console.warn("runAction107 获取JS渲染HTML失败，将使用原始HTML");
+			}
+			done();
+		}, function(e) {
+			console.warn("runAction107 获取JS渲染HTML失败，将使用原始HTML:", e && e.message);
+			done();
+		});
+	}
+
+	function getSelectorTexts() {
+		if(!(info.param && info.param.getBetchSelectorTextsBase64)) {
+			return undefined;
+		}
+		try {
+			return JSON.parse(base64ToString(info.param.getBetchSelectorTextsBase64));
+		}catch(e) {
+			console.warn("runAction107 解析 getBetchSelectorTexts 失败:", e);
+			return undefined;
+		}
+	}
+
+	//在页面主世界执行 selector.js，但用伪造的 document/window 包裹，
+	//保证 iframe 兜底分支与 scrollX/scrollY 与旧 DevTools 页面执行时一致
+	function attachSelectorResult(source, texts, done) {
+		cdp107GetSelectorSource().then(function(sourceCode) {
+			var content = source.content === undefined ? "undefined" : String(source.content);
+			var expression =
+				"(function(){" +
+				"var __fakeDocument = document.implementation.createHTMLDocument('');" +
+				"var __fakeWindow = { scrollX: 0, scrollY: 0 };" +
+				"var __content = " + JSON.stringify(content) + ";" +
+				"var __texts = " + JSON.stringify(texts) + ";" +
+				"return (function(document, window, DOMParser) {" +
+				sourceCode +
+				"\nDOMParserHtml(__content);" +
+				"var __result = getBetchSelectorByTexts(__texts);" +
+				"Object.keys(__result).forEach(function(k){" +
+				"  (__result[k] || []).forEach(function(item){ if(item && item.length > 6) item[6] = {}; });" +
+				"});" +
+				"return JSON.stringify(__result);" +
+				"})(__fakeDocument, __fakeWindow, DOMParser);" +
+				"})()";
+			return cdp107Send(tabId, 'Runtime.evaluate', { 'expression': expression, 'returnByValue': true });
+		}).then(function(result) {
+			if(result && !result.exceptionDetails && result.result && typeof result.result.value === 'string') {
+				try {
+					source.getBetchSelectorByTextsResult = JSON.parse(result.result.value);
+				}catch(e) {
+					console.warn("runAction107 解析 getBetchSelectorByTexts 结果失败:", e);
+				}
+			}else{
+				console.warn("runAction107 getBetchSelectorByTexts 执行失败:", result && result.exceptionDetails);
+			}
+			done();
+		}, function(e) {
+			console.warn("runAction107 getBetchSelectorByTexts 执行失败:", e && e.message);
+			done();
+		});
+	}
+
+	function assembleResult() {
+		var url = state.matchUrl;
+		var texts = getSelectorTexts();
+
+		if(state.snapshot) {
+			var currentUrl = state.snapshot.url || url;
+			var renderedHtml = '<!doctype html>\n' + state.snapshot.html;
+			state.entries.forEach(function(source) {
+				if(source.resourceType === 'document' && source.request.url === url) {
+					source.renderedContent = renderedHtml;
+					source.currentUrl = currentUrl;
+					source.characterSet = state.snapshot.characterSet;
+				}
+			});
+		}
+
+		var sorted = state.entries.slice().sort(function(a, b) {
+			if(a.startedDateTime < b.startedDateTime) {
+				return -1;
+			}
+			if(a.startedDateTime > b.startedDateTime) {
+				return 1;
+			}
+			return 0;
+		});
+
+		//与 devtools.js 一致：只扫描排序后前 100 条，从命中目标 url 的条目开始收集，最终最多 50 条
+		var scanned = sorted.slice(0, 100);
+		var matchIndex = -1;
+		for (var i = 0; i < scanned.length; i++) {
+			if(scanned[i].request.url === url) {
+				matchIndex = i;
+				break;
+			}
+		}
+
+		if(matchIndex === -1) {
+			succeed([]);
+			return ;
+		}
+
+		var picked = scanned.slice(matchIndex, matchIndex + 50);
+		if(texts === undefined) {
+			succeed(picked);
+			return ;
+		}
+
+		attachSelectorResult(scanned[matchIndex], texts, function() {
+			succeed(picked);
+		});
+	}
+
+	function startPageCompleteWait() {
+		if(state.finished) {
+			return ;
+		}
+		chrome.tabs.get(tabId, function(tabInfo) {
+			logTabApiError('runAction107.tabsGet', tabId);
+			if(state.finished) {
+				return ;
+			}
+			if(tabInfo === undefined) {
+				fail("tab不存在");
+				return ;
+			}
+			state.matchUrl = tabInfo.url;
+
+			//runActionComplete 的 cb 在极端并发下可能触发多次，这里只认第一次
+			var completeCalled = false;
+			runActionComplete(tab, info, function() {
+				if(completeCalled || state.finished) {
+					return ;
+				}
+				completeCalled = true;
+
+				waitXhrFetchQuiet(function() {
+					if(state.finished) {
+						return ;
+					}
+					takeRenderedSnapshot(function() {
+						if(state.finished) {
+							return ;
+						}
+						assembleResult();
+					});
+				});
+			});
+		});
+	}
+
+	cdp107Attach(tabId).then(function(attachedByUs) {
+		state.attachedByUs = attachedByUs;
+
+		//必须先 enable 再导航，否则抓不到主文档请求；显式给足缓冲，保证 getResponseBody 能取到正文
+		return cdp107Send(tabId, 'Network.enable', {
+			'maxTotalBufferSize': 64 * 1024 * 1024,
+			'maxResourceBufferSize': 16 * 1024 * 1024,
+			'maxPostDataSize': 8 * 1024 * 1024
+		});
+	}).then(function() {
+		if(state.finished) {
+			return ;
+		}
+
+		//只采集本次导航产生的请求（与旧面板 devtype:1 清空缓存的时机一致）
+		state.entries = [];
+		state.seenUrls = {};
+		state.requests = {};
+		state.inflight = {};
+
+		//与旧面板 inspectedWindow.eval('location.href="..."') 完全一致，转义规则也一致
+		return cdp107Send(tabId, 'Runtime.evaluate', {
+			'expression': 'location.href="' + String(info.url).replace(/["\\]/g, '\\$&') + '"'
+		});
+	}).catch(function(e) {
+		//导航后执行上下文被销毁时该命令可能报错，忽略；导航已经发起
+		if(/context was destroyed|Cannot find context|navigated or closed/i.test(e && e.message || "")) {
+			return ;
+		}
+		throw e;
+	}).then(function() {
+		if(state.finished) {
+			return ;
+		}
+		var delay = 500;
+		if(info.param && info.param.delay) {
+			delay = info.param.delay;
+		}
+		setTimeout(startPageCompleteWait, delay);
+	}).catch(function(e) {
+		fail(e && e.message || String(e));
+	});
 }
 
 function dealOneAction(tab, info, needJump) {
@@ -1666,7 +2253,6 @@ function dealOneAction(tab, info, needJump) {
 	}
 }
 
-window.devtoolsIsReady = {};
 function listen(req, sender, sendResponse) {
 	switch (req.type) {
 		case 1:
@@ -1732,11 +2318,6 @@ chrome.webNavigation.onCompleted.addListener(function(details) {
 
 chrome.runtime.onMessage.addListener(listen)
 chrome.runtime.onUserScriptMessage.addListener(listen)
-chrome.runtime.onConnect.addListener(function(devToolsPort) {
-  if (devToolsPort.name.indexOf("devtools") === 0) {
-    window.devtoolsIsReady[devToolsPort.name] = devToolsPort;
-  }
-});
 
 function debugRun(debugActions) {
 	debugActions.data.forEach(function (v) {
