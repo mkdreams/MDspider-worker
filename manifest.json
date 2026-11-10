@@ -21,6 +21,7 @@
     "storage",
     "unlimitedStorage",
     "downloads",
+    "proxy",
     "webNavigation",
     "cookies",
     "history"

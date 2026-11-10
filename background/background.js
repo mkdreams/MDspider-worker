@@ -11,6 +11,22 @@ window.lockTabFlagToTab = {};
 window.tabError = {};
 window.tabRemovedPending = {};
 
+//代理任务队列：带 param.proxy 的任务批量执行，不同代理之间等待并切换
+window.spiderSlaveProxyState = {
+	'queue': [],          //挂起任务（按拉取顺序）
+	'current': null,      //最近一次切换成功的代理原始字符串
+	'creds': null,        //{scheme,host,port,username,password}
+	'applying': false,    //正在切换
+	'clearing': false,    //正在清除扩展代理设置、恢复启动代理
+	'closingTabs': false, //正在关闭 tab
+	'retry': 0
+};
+window.spiderSlaveProxyAuthRegistered = false;
+//切换代理时保留 URL 中含该关键字的标签页（不区分大小写）
+window.spiderSlaveProxyKeepTabKeyword = 'MDspider';
+//记录已识别为保留页的 tab id，防止页面跳错/变成错误页后误关
+window.spiderSlaveProxyKeepTabIds = {};
+
 //定位 "Unchecked runtime.lastError"（例如 No tab with id: x）来源：在被调用的 chrome.tabs 回调开头加 logTabApiError('标记', tabId)
 //读取 lastError 后浏览器就不再打 Unchecked 警告，定位完成后把调用删掉即可
 function logTabApiError(site, tabId) {
@@ -273,6 +289,33 @@ function loadConfig(cb) {
 			window['spiderReqSlaveFlag'] = window['spiderSlaveFlag'];
 		}
 
+		//把恢复出来的代理任务移入代理队列，避免绕过切换直接执行
+		var proxyRestoredIds = [];
+		for(var urlId in window.spiderSlaveUrls) {
+			if(getTaskProxy(window.spiderSlaveUrls[urlId])) {
+				proxyRestoredIds.push(urlId);
+			}
+		}
+		proxyRestoredIds.forEach(function(urlId) {
+			var taskTemp = window.spiderSlaveUrls[urlId];
+			delete window.spiderSlaveUrls[urlId];
+			enqueuePendingTask(taskTemp);
+		});
+
+		//loadConfig 完成后清除上次会话残留的扩展代理设置，再读取启动参数代理并设置为扩展代理
+		if(window.spiderSlaveProxyState['applying'] !== true
+			&& window.spiderSlaveProxyState['clearing'] !== true
+			&& window.spiderSlaveProxyState['current'] === null) {
+			chrome.proxy.settings.clear({'scope': 'regular'}, function() {
+				if(chrome.runtime.lastError) {
+					console.warn('[spiderProxy] 清除残留代理失败:', chrome.runtime.lastError.message);
+					return;
+				}
+				console.log('[spiderProxy] loadConfig 后已清除扩展代理设置');
+				applyStartupProxyFromCommandLine();
+			});
+		}
+
 		//清理浏览记录
 		var p = new Promise(function(resolve,reject) {
 			chrome.history.deleteAll(function() {
@@ -287,6 +330,25 @@ function loadConfig(cb) {
 	});
 }
 
+//判断是否是需要保留的 MDspider 控制页；记录 id，页面异常跳转后仍能识别
+function isProxyKeepTab(tab) {
+	var keepKeyword = ("" + window.spiderSlaveProxyKeepTabKeyword).toLowerCase();
+	var url = tab['url'] || tab['pendingUrl'] || '';
+	if(keepKeyword && ("" + url).toLowerCase().indexOf(keepKeyword) !== -1) {
+		window.spiderSlaveProxyKeepTabIds[tab['id']] = true;
+		return true;
+	}
+	return window.spiderSlaveProxyKeepTabIds[tab['id']] === true;
+}
+
+function cleanProxyKeepTabIds(seenIds) {
+	for (var id in window.spiderSlaveProxyKeepTabIds) {
+		if(!seenIds[id]) {
+			delete window.spiderSlaveProxyKeepTabIds[id];
+		}
+	}
+}
+
 function closeUnusedTabs(cb) {
 	var keepTabIds = {};
 
@@ -298,9 +360,17 @@ function closeUnusedTabs(cb) {
 
 	chrome.tabs.query({}, function (tabs) {
 		var httpTabs = [], closeTabIds = [], hasNonHttpTab = false;
+		var seenIds = {};
 
 		for (var i = 0; i < tabs.length; i++) {
 			var tab = tabs[i];
+			seenIds[tab.id] = true;
+
+			//MDspider 控制页始终保留
+			if (isProxyKeepTab(tab)) {
+				continue;
+			}
+
 			if (tab.url && tab.url.indexOf('http') === 0) {
 				httpTabs.push(tab);
 				if (!keepTabIds[tab.id]) {
@@ -310,6 +380,8 @@ function closeUnusedTabs(cb) {
 				hasNonHttpTab = true;
 			}
 		}
+
+		cleanProxyKeepTabIds(seenIds);
 
 		//最少保留一个：所有 http tab 都无记录且没有其他非 http tab 时，保留一个不关
 		if (closeTabIds.length === httpTabs.length && httpTabs.length > 0 && !hasNonHttpTab) {
@@ -513,11 +585,17 @@ function workPlay(allCompeletedCb) {
 
 	clearInterval(window.setInterval_getLinksCache);
 	window.setInterval_getLinksCache = setInterval(function () {
-		var len = Object.keys(window.spiderSlaveUrls).length;
-
 		window.spiderSlaveActiveLastTime[1] = parseInt(new Date().getTime()/1000);
 
+		//优先处理代理任务队列：整个队列清空后关闭 tab、切换代理并放行任务
+		var proxyWork = processProxyQueue();
+		var len = Object.keys(window.spiderSlaveUrls).length;
+
 		if (len === 0) {
+			if(proxyWork) {
+				return;
+			}
+
 			if(allCompeletedCb) {
 				allCompeletedCb();
 			}else{
@@ -553,6 +631,11 @@ function workPause() {
 }
 
 function pullActions() {
+	//代理任务待处理时不拉取新任务，避免继续在旧代理下执行
+	if(hasProxyWork()) {
+		return;
+	}
+
 	var timestamp = new Date().getTime();
 	if(timestamp - window.setInterval_getLinksCache_lastRunTime > window.spiderSlaveGetUrlsDelay && window.spiderSlaveInitStatus == 3) {
 		window.setInterval_getLinksCache_lastRunTime = timestamp;
@@ -563,10 +646,15 @@ function pullActions() {
 				}
 
 				data.data.forEach(function (v) {
-					if (!window.spiderSlaveUrls[v['id']] && !window.spiderSlaveDeletedUrls[v['id']]) {
+					//一旦出现代理任务，之后拉到的任务全部按顺序挂起
+					if (getTaskProxy(v) || hasProxyWork()) {
+						enqueuePendingTask(v);
+					} else if (!window.spiderSlaveUrls[v['id']] && !window.spiderSlaveDeletedUrls[v['id']]) {
 						window.spiderSlaveUrls[v['id']] = v;
 					}
 				});
+
+				processProxyQueue();
 
 				//clean deleted urls,keep 30 s
 				var compareTime = new Date().getTime() - 30000;
@@ -579,6 +667,525 @@ function pullActions() {
 		});
 	}
 }
+
+//=== 代理任务处理 ===
+
+function getTaskProxy(task) {
+	if(task && task['param'] && task['param']['proxy']) {
+		return ("" + task['param']['proxy']).trim();
+	}
+	return undefined;
+}
+
+function hasProxyWork() {
+	var s = window.spiderSlaveProxyState;
+	return s['queue'].length > 0 || s['applying'] === true || s['clearing'] === true || s['closingTabs'] === true || s['current'] !== null;
+}
+
+function addSpiderSlaveUrl(task) {
+	if(!task || task['id'] === undefined) {
+		return false;
+	}
+	if(window.spiderSlaveUrls[task['id']] || window.spiderSlaveDeletedUrls[task['id']]) {
+		return false;
+	}
+	window.spiderSlaveUrls[task['id']] = task;
+	return true;
+}
+
+function enqueuePendingTask(task) {
+	if(!task || task['id'] === undefined) {
+		return;
+	}
+	if(window.spiderSlaveUrls[task['id']] || window.spiderSlaveDeletedUrls[task['id']]) {
+		return;
+	}
+
+	var queue = window.spiderSlaveProxyState['queue'];
+	for(var i = 0; i < queue.length; i++) {
+		if(queue[i]['id'] === task['id']) {
+			return;
+		}
+	}
+	queue.push(task);
+}
+
+//整个任务队列清空 + 所有 tab 空闲 + 没有正在加锁/建 tab 的操作
+function isEngineIdle() {
+	if(getObjectLen(window.spiderSlaveUrls) > 0) {
+		return false;
+	}
+	if(window.spiderSlaveTabInfos['allTabLocked'] === true) {
+		return false;
+	}
+	for(var tabId in window.spiderSlaveTabInfos['tabs']) {
+		var tabInfo = window.spiderSlaveTabInfos['tabs'][tabId];
+		if(tabInfo && tabInfo['runStatus'] == 1) {
+			return false;
+		}
+	}
+	return true;
+}
+
+//返回true表示还有代理任务需要等待/处理
+function processProxyQueue() {
+	var s = window.spiderSlaveProxyState;
+
+	if(s['applying'] === true || s['clearing'] === true || s['closingTabs'] === true) {
+		return true;
+	}
+
+	if(s['queue'].length === 0) {
+		//代理任务全部结束且引擎空闲后，关闭所有 tab 再清除扩展代理设置，恢复启动参数/系统代理
+		if(s['current'] !== null) {
+			if(isEngineIdle()) {
+				s['closingTabs'] = true;
+				closeTabsForProxySwitch(function() {
+					s['closingTabs'] = false;
+					clearProxySetting();
+				});
+			}
+			return true;
+		}
+		return false;
+	}
+
+	var head = s['queue'][0];
+	var proxy = getTaskProxy(head);
+
+	//普通任务：如果当前有任务代理，先恢复启动代理再放行；普通任务不走任务代理
+	if(proxy === undefined) {
+		if(s['current'] !== null) {
+			if(!isEngineIdle()) {
+				return true;
+			}
+			s['closingTabs'] = true;
+			closeTabsForProxySwitch(function() {
+				s['closingTabs'] = false;
+
+				//关闭 tab 期间队列可能已变化，重新走一遍队列处理
+				if(s['queue'].length === 0 || getTaskProxy(s['queue'][0]) !== undefined) {
+					processProxyQueue();
+					return;
+				}
+
+				clearProxySetting(function() {
+					releaseNonProxyTasks();
+				});
+			});
+			return true;
+		}
+
+		releaseNonProxyTasks();
+		return hasProxyWork();
+	}
+
+	//相同代理：批量放行，交给引擎按 tab/窗口上限并发执行
+	if(proxy === s['current']) {
+		releaseProxyTasks(proxy);
+		return hasProxyWork();
+	}
+
+	//不同代理：必须等整个任务队列清空、所有 tab 空闲后，关闭 tab 再切换
+	if(!isEngineIdle()) {
+		return true;
+	}
+
+	s['closingTabs'] = true;
+	closeTabsForProxySwitch(function() {
+		s['closingTabs'] = false;
+
+		//关闭 tab 期间队列可能已变化，重新走一遍队列处理
+		if(s['queue'].length === 0 || getTaskProxy(s['queue'][0]) !== proxy) {
+			processProxyQueue();
+			return;
+		}
+		if(!isEngineIdle()) {
+			return;
+		}
+
+		s['applying'] = true;
+		console.log('[spiderProxy] 切换代理:', proxy);
+		applyProxy(proxy, function(ok, err) {
+			s['applying'] = false;
+			if(!ok) {
+				s['retry'] = (s['retry'] || 0) + 1;
+				console.warn('[spiderProxy] 切换失败(' + s['retry'] + '/3):', proxy, err);
+				if(s['retry'] >= 3) {
+					s['retry'] = 0;
+					failProxyTasks(proxy, err);
+					processProxyQueue();
+				}
+				return;
+			}
+
+			s['retry'] = 0;
+			s['current'] = proxy;
+			console.log('[spiderProxy] 切换成功:', proxy);
+			//批量放行该代理下的所有连续任务
+			releaseProxyTasks(proxy);
+			processProxyQueue();
+		});
+	});
+	return true;
+}
+
+//连续放行队首相同代理的任务，允许多个 tab/窗口并发执行
+function releaseProxyTasks(proxy) {
+	var s = window.spiderSlaveProxyState;
+	while(s['queue'].length > 0 && getTaskProxy(s['queue'][0]) === proxy) {
+		addSpiderSlaveUrl(s['queue'].shift());
+	}
+}
+
+//连续放行队首不带代理的普通任务，它们使用启动参数/系统代理
+function releaseNonProxyTasks() {
+	var s = window.spiderSlaveProxyState;
+	while(s['queue'].length > 0 && getTaskProxy(s['queue'][0]) === undefined) {
+		addSpiderSlaveUrl(s['queue'].shift());
+	}
+}
+
+//切换代理前关闭所有 tab，只保留 MDspider 控制页
+function closeTabsForProxySwitch(cb) {
+	var keepKeyword = window.spiderSlaveProxyKeepTabKeyword;
+	var finished = false;
+	var timer = null;
+
+	var finish = function() {
+		if(finished) {
+			return;
+		}
+		finished = true;
+		if(timer !== null) {
+			clearTimeout(timer);
+		}
+		cb();
+	};
+
+	timer = setTimeout(function() {
+		console.warn('[spiderProxy] 关闭 tab 超时，继续切换代理');
+		finish();
+	}, 15000);
+
+	chrome.tabs.query({}, function(tabs) {
+		if(chrome.runtime.lastError) {
+			console.warn('[spiderProxy] 查询 tab 失败:', chrome.runtime.lastError.message);
+			finish();
+			return;
+		}
+
+		tabs = tabs || [];
+		var keepTab = null;
+		var closeIds = [];
+		var seenIds = {};
+		tabs.forEach(function(tab) {
+			seenIds[tab['id']] = true;
+			if(isProxyKeepTab(tab)) {
+				keepTab = tab;
+			}else{
+				closeIds.push(tab['id']);
+			}
+		});
+		cleanProxyKeepTabIds(seenIds);
+
+		//找不到保留页时不关闭任何 tab，避免把最后一个窗口关掉导致浏览器退出
+		if(keepTab === null) {
+			console.warn('[spiderProxy] 未找到含关键字的标签页，跳过关闭 tab:', keepKeyword);
+			finish();
+			return;
+		}
+
+		console.log('[spiderProxy] 切换代理前关闭 tab 数量:', closeIds.length, '保留:', keepTab['url'] || keepTab['pendingUrl']);
+		if(closeIds.length === 0) {
+			finish();
+			return;
+		}
+
+		var remain = closeIds.length;
+		closeIds.forEach(function(tabId) {
+			chrome.tabs.remove(tabId, function() {
+				if(chrome.runtime.lastError) {
+					console.warn('[spiderProxy] 关闭 tab 失败:', tabId, chrome.runtime.lastError.message);
+				}
+				remain--;
+				if(remain <= 0) {
+					finish();
+				}
+			});
+		});
+	});
+}
+
+//扩展代理设置会覆盖启动参数 --proxy-server，代理任务结束后清除以恢复启动代理
+function clearProxySetting(cb) {
+	var s = window.spiderSlaveProxyState;
+	if(s['clearing'] === true) {
+		return;
+	}
+	s['clearing'] = true;
+	var lastProxy = s['current'];
+
+	chrome.proxy.settings.clear({'scope': 'regular'}, function() {
+		s['clearing'] = false;
+		if(chrome.runtime.lastError) {
+			console.warn('[spiderProxy] 恢复启动代理失败:', chrome.runtime.lastError.message);
+			return;
+		}
+		s['current'] = null;
+		s['creds'] = null;
+		console.log('[spiderProxy] 代理任务结束，已恢复启动代理，原任务代理:', lastProxy);
+		//清除后重新套用启动参数代理（带 API 域名 bypass），保证 spiderSlaveApiCb 始终直连
+		applyStartupProxyFromCommandLine(function() {
+			if(cb) {
+				cb();
+			}
+			processProxyQueue();
+		});
+	});
+}
+
+//切换代理连续失败时，把队首相同代理的任务全部上报失败，避免整条队列卡死
+function failProxyTasks(proxy, err) {
+	var s = window.spiderSlaveProxyState;
+	var failTasks = [];
+	while(s['queue'].length > 0 && getTaskProxy(s['queue'][0]) === proxy) {
+		failTasks.push(s['queue'].shift());
+	}
+
+	failTasks.forEach(function(task) {
+		console.warn('[spiderProxy] 任务因切换代理失败而放弃:', task['id'], proxy, err);
+		window.spiderSlaveDeletedUrls[task['id']] = new Date().getTime();
+		if(window.spiderSlaveApiCb) {
+			ajaxPost({ 'admintype': 2, 'tab': {'id': 0}, 'url': window.spiderSlaveApiCb, 'data': { 'id': task['id'], 'sResponse': 'ZmFsc2U=','sFlag': window.spiderSlaveFlag,'workCreateFlag':window.workCreateFlag } }, function() {});
+		}
+	});
+}
+
+//启动时如果浏览器带 --proxy-server，把扩展代理设置成同一个值（保留 API 域名 bypass）
+function applyStartupProxyFromCommandLine(cb) {
+	chrome.proxy.settings.get({'incognito': false}, function(details) {
+		if(chrome.runtime.lastError) {
+			if(cb) cb();
+			return;
+		}
+
+		var value = details && details['value'];
+		if(!value || value['mode'] !== 'fixed_servers' || !value['rules']) {
+			if(cb) cb();
+			return;
+		}
+
+		var singleProxy = value['rules']['singleProxy'];
+		if(!singleProxy || !singleProxy['host'] || !singleProxy['port']) {
+			if(cb) cb();
+			return;
+		}
+
+		var scheme = singleProxy['scheme'] || 'http';
+		var proxyStr = scheme + '://' + singleProxy['host'] + ':' + singleProxy['port'];
+		console.log('[spiderProxy] 启动参数代理，设置扩展代理:', proxyStr);
+		applyProxy(proxyStr, function(ok, err) {
+			if(!ok) {
+				console.warn('[spiderProxy] 设置启动参数代理失败:', err);
+			}
+			if(cb) cb();
+		});
+	});
+}
+
+//spiderSlaveApiCb / spiderSlaveApiActionList 的域名不走代理（通常是内网/本机服务）
+function getProxyBypassList() {
+	var hosts = [];
+	var addUrlHost = function(url) {
+		if(!url) {
+			return;
+		}
+		try {
+			var host = new URL(url)['hostname'];
+			if(host) {
+				hosts.push(host);
+			}
+		}catch(e) {}
+	};
+	addUrlHost(window.spiderSlaveApiCb);
+	addUrlHost(window.spiderSlaveApiActionList);
+
+	var bypassList = [];
+	hosts.forEach(function(host) {
+		var isIpv6 = host.charAt(0) === '[';
+		var isIpv4 = /^\d+\.\d+\.\d+\.\d+$/.test(host);
+		if(bypassList.indexOf(host) === -1) {
+			bypassList.push(host);
+		}
+		if(!isIpv6 && !isIpv4) {
+			var wildcard = '*.' + host;
+			if(bypassList.indexOf(wildcard) === -1) {
+				bypassList.push(wildcard);
+			}
+		}
+	});
+	return bypassList;
+}
+
+function parseProxy(proxyStr) {
+	var raw = ("" + proxyStr).trim();
+	var lower = raw.toLowerCase();
+
+	if(lower === 'direct') {
+		return {'type': 'direct'};
+	}
+	if(lower === 'system' || lower === '') {
+		return {'type': 'system'};
+	}
+
+	//PAC
+	if(/^https?:\/\//i.test(raw) && /\.pac(\?.*)?$/i.test(raw)) {
+		return {'type': 'pac', 'url': raw};
+	}
+
+	var scheme = 'http';
+	var rest = raw;
+	var schemeMatch = raw.match(/^([a-zA-Z0-9]+):\/\/(.*)$/);
+	if(schemeMatch) {
+		scheme = schemeMatch[1].toLowerCase();
+		rest = schemeMatch[2];
+	}
+
+	var allowedSchemes = ['http', 'https', 'socks4', 'socks5', 'quic'];
+	if(allowedSchemes.indexOf(scheme) === -1) {
+		return {'type': 'invalid', 'error': 'unsupported scheme: ' + scheme};
+	}
+
+	//账号密码
+	var username = null, password = null;
+	var atIndex = rest.lastIndexOf('@');
+	if(atIndex !== -1) {
+		var userinfo = rest.substring(0, atIndex);
+		rest = rest.substring(atIndex + 1);
+		var colonIndex = userinfo.indexOf(':');
+		try {
+			if(colonIndex !== -1) {
+				username = decodeURIComponent(userinfo.substring(0, colonIndex));
+				password = decodeURIComponent(userinfo.substring(colonIndex + 1));
+			}else{
+				username = decodeURIComponent(userinfo);
+			}
+		}catch(e) {
+			if(colonIndex !== -1) {
+				username = userinfo.substring(0, colonIndex);
+				password = userinfo.substring(colonIndex + 1);
+			}else{
+				username = userinfo;
+			}
+		}
+	}
+
+	//去掉路径
+	rest = rest.split('/')[0];
+
+	var host, port;
+	if(rest.charAt(0) === '[') {
+		//IPv6: [::1]:8080
+		var endIndex = rest.indexOf(']');
+		if(endIndex === -1) {
+			return {'type': 'invalid', 'error': 'invalid proxy: ' + raw};
+		}
+		host = rest.substring(1, endIndex);
+		var portStr = rest.substring(endIndex + 1);
+		port = portStr.charAt(0) === ':' ? parseInt(portStr.substring(1), 10) : NaN;
+	}else{
+		var portIndex = rest.lastIndexOf(':');
+		if(portIndex === -1) {
+			return {'type': 'invalid', 'error': 'proxy port missing: ' + raw};
+		}
+		host = rest.substring(0, portIndex);
+		port = parseInt(rest.substring(portIndex + 1), 10);
+	}
+
+	if(!host || isNaN(port) || port <= 0 || port > 65535) {
+		return {'type': 'invalid', 'error': 'invalid proxy: ' + raw};
+	}
+
+	return {'type': 'fixed', 'scheme': scheme, 'host': host, 'port': port, 'username': username, 'password': password};
+}
+
+function applyProxy(proxyStr, cb) {
+	var parsed = parseProxy(proxyStr);
+	if(parsed['type'] === 'invalid') {
+		cb(false, parsed['error']);
+		return;
+	}
+
+	var value;
+	if(parsed['type'] === 'fixed') {
+		var bypassList = getProxyBypassList();
+		console.log('[spiderProxy] 代理绕过列表:', bypassList.join(',') || '(空)');
+		value = {
+			'mode': 'fixed_servers',
+			'rules': {
+				'singleProxy': {'scheme': parsed['scheme'], 'host': parsed['host'], 'port': parsed['port']},
+				'bypassList': bypassList
+			}
+		};
+	}else if(parsed['type'] === 'pac') {
+		value = {'mode': 'pac_script', 'pacScript': {'url': parsed['url'], 'mandatory': true}};
+	}else if(parsed['type'] === 'direct') {
+		value = {'mode': 'direct'};
+	}else{
+		value = {'mode': 'system'};
+	}
+
+	chrome.proxy.settings.set({'value': value, 'scope': 'regular'}, function() {
+		if(chrome.runtime.lastError) {
+			cb(false, chrome.runtime.lastError.message);
+			return;
+		}
+
+		chrome.proxy.settings.get({'incognito': false}, function(details) {
+			if(chrome.runtime.lastError) {
+				cb(false, chrome.runtime.lastError.message);
+				return;
+			}
+			if(details.levelOfControl !== 'controlled_by_this_extension') {
+				cb(false, 'levelOfControl=' + details.levelOfControl);
+				return;
+			}
+
+			window.spiderSlaveProxyState['creds'] = (parsed['type'] === 'fixed' && parsed['username'] !== null)
+				? {'scheme': parsed['scheme'], 'host': parsed['host'], 'port': parsed['port'], 'username': parsed['username'], 'password': parsed['password'] || ''}
+				: null;
+
+			cb(true);
+		});
+	});
+}
+
+//代理认证：只处理代理服务器的407
+function registerProxyAuth() {
+	if(window.spiderSlaveProxyAuthRegistered) {
+		return;
+	}
+	window.spiderSlaveProxyAuthRegistered = true;
+
+	try {
+		chrome.webRequest.onAuthRequired.addListener(function(details) {
+			var creds = window.spiderSlaveProxyState['creds'];
+			if(!creds || details['isProxy'] !== true) {
+				return {};
+			}
+			var challenger = details['challenger'] || {};
+			if(challenger['host'] === creds['host'] && parseInt(challenger['port']) === parseInt(creds['port'])) {
+				return {'authCredentials': {'username': creds['username'], 'password': creds['password']}};
+			}
+			return {};
+		}, {'urls': ['<all_urls>']}, ['asyncBlocking']);
+	}catch(e) {
+		console.warn('[spiderProxy] 注册代理认证失败:', e);
+	}
+}
+
+registerProxyAuth();
 
 window["parseAction"] = function(data) {
 	v = JSON.parse(data);
@@ -925,6 +1532,9 @@ function isDone(tab, info, isError) {
 			window.spiderSlaveTabInfos['tabs'][tab.id]['doneResolve'](true);
 		}
 		clearTimeout(window.setTimeout_checkIsDie[tab.id]);
+
+		//代理任务完成后立即尝试放行队列中的下一个任务
+		processProxyQueue();
 	}else{
 		if(window.spiderSlaveUrls[info['id']]['runCount'] === undefined) {
 			window.spiderSlaveUrls[info['id']]['runCount'] = 0;
