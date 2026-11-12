@@ -646,6 +646,9 @@ function pullActions() {
 				}
 
 				data.data.forEach(function (v) {
+					if(parseInt(v['type'], 10) === 108 && !v['url']) {
+						v['url'] = 'about:blank';
+					}
 					//一旦出现代理任务，之后拉到的任务全部按顺序挂起
 					if (getTaskProxy(v) || hasProxyWork()) {
 						enqueuePendingTask(v);
@@ -686,6 +689,9 @@ function addSpiderSlaveUrl(task) {
 	if(!task || task['id'] === undefined) {
 		return false;
 	}
+	if(parseInt(task['type'], 10) === 108 && !task['url']) {
+		task['url'] = 'about:blank';
+	}
 	if(window.spiderSlaveUrls[task['id']] || window.spiderSlaveDeletedUrls[task['id']]) {
 		return false;
 	}
@@ -696,6 +702,9 @@ function addSpiderSlaveUrl(task) {
 function enqueuePendingTask(task) {
 	if(!task || task['id'] === undefined) {
 		return;
+	}
+	if(parseInt(task['type'], 10) === 108 && !task['url']) {
+		task['url'] = 'about:blank';
 	}
 	if(window.spiderSlaveUrls[task['id']] || window.spiderSlaveDeletedUrls[task['id']]) {
 		return;
@@ -1192,6 +1201,9 @@ window["parseAction"] = function(data) {
 	if (!v["type"]) {
 		v["type"] = 1;
 	}
+	if(parseInt(v['type'], 10) === 108 && !v['url']) {
+		v['url'] = 'about:blank';
+	}
 
 	if (v['id'] == 0) {
 		v['id'] = randomStr();
@@ -1371,9 +1383,9 @@ function getNextTab(urlId) {
 			return [urlId,-2];
 		}
 
-		if(!window.spiderSlaveUrls[urlId] || [1,107].indexOf(window.spiderSlaveUrls[urlId]['type']) == -1) {
+		if(!window.spiderSlaveUrls[urlId] || [1,107,108].indexOf(window.spiderSlaveUrls[urlId]['type']) == -1) {
 			//get one a,or get cookies url
-			urlId = getUrlInfo([1,107]);
+			urlId = getUrlInfo([1,107,108]);
 		}
 
 		if (urlId == -1) {
@@ -2759,7 +2771,212 @@ function runAction107(tab, info, cb) {
 	});
 }
 
+// ---------- action 108: 切换代理后查询出口 IP ----------
+var spider108DefaultIpUrls = [
+	'https://api.ipify.org/?format=json',
+	'https://ipinfo.io/json',
+	'https://ifconfig.me/ip',
+	'https://www.cloudflare.com/cdn-cgi/trace',
+	'https://myip.ipip.net/',
+	'http://members.3322.org/dyndns/getip',
+	'http://ip.3322.net/',
+	'https://checkip.amazonaws.com/'
+];
+
+function spider108ExtractIp(text) {
+	text = String(text || '');
+
+	var match = text.match(/"ip"\s*:\s*"([^"]+)"/i);
+	if(match && match[1]) {
+		return match[1].trim();
+	}
+
+	match = text.match(/(?:^|\s)ip=([0-9a-fA-F:.]+)/i);
+	if(match && match[1]) {
+		return match[1].trim();
+	}
+
+	match = text.match(/\b((?:\d{1,3}\.){3}\d{1,3})\b/);
+	if(match && match[1]) {
+		var valid = true;
+		match[1].split('.').forEach(function(part) {
+			if(parseInt(part, 10) > 255) {
+				valid = false;
+			}
+		});
+		if(valid) {
+			return match[1];
+		}
+	}
+
+	match = text.match(/\b((?:[0-9a-fA-F]{1,4}:){2,7}[0-9a-fA-F]{1,4})\b/);
+	if(match && match[1]) {
+		return match[1];
+	}
+
+	return null;
+}
+
+function runAction108(tab, info) {
+	var param = info['param'] || {};
+	var delay = (param['delay'] !== undefined) ? parseInt(param['delay'], 10) : 500;
+	var maxRunTime = (param['maxRunTime'] !== undefined) ? parseInt(param['maxRunTime'], 10) : 30000;
+	var ipUrls = param['ipUrls'];
+
+	if(typeof ipUrls === 'string') {
+		try {
+			ipUrls = JSON.parse(ipUrls);
+		}catch(e) {
+			ipUrls = null;
+		}
+	}
+	if(!(ipUrls instanceof Array) || ipUrls.length === 0) {
+		ipUrls = spider108DefaultIpUrls;
+	}
+
+	var finished = false;
+	var overallTimer = setTimeout(function() {
+		fail('timeout');
+	}, maxRunTime);
+
+	function cleanup() {
+		if(overallTimer) {
+			clearTimeout(overallTimer);
+			overallTimer = null;
+		}
+	}
+
+	function fail(reason) {
+		if(finished) {
+			return;
+		}
+		finished = true;
+		cleanup();
+		console.warn('[spiderProxy][108] 获取出口 IP 失败:', info['id'], reason);
+		reportResult(false);
+	}
+
+	function succeed(ip) {
+		if(finished) {
+			return;
+		}
+		finished = true;
+		cleanup();
+		console.log('[spiderProxy][108] 出口 IP:', info['id'], ip);
+		reportResult(ip);
+	}
+
+	function reportResult(value) {
+		var reported = false;
+		var safetyTimer = null;
+
+		var finish = function() {
+			if(reported) {
+				return;
+			}
+			reported = true;
+			if(safetyTimer) {
+				clearTimeout(safetyTimer);
+			}
+			if(window.spiderSlaveTabInfos['tabs'][tab.id]) {
+				isDone(tab, info);
+			}else{
+				window.spiderSlaveDeletedUrls[info['id']] = new Date().getTime();
+				delete window.spiderSlaveUrls[info['id']];
+				processProxyQueue();
+			}
+		};
+
+		if(value === false) {
+			ajaxPost({
+				'admintype': 2,
+				'tab': {id: tab.id},
+				'url': window.spiderSlaveApiCb,
+				'data': {
+					'id': info['id'],
+					'sResponse': 'ZmFsc2U=',
+					'sFlag': window.spiderSlaveFlag,
+					'workCreateFlag': window.workCreateFlag,
+					'userDataPath': window.userDataPath,
+					'userName': (window.userName ? window.userName : '')
+				}
+			}, finish, finish);
+		}else{
+			var payload = JSON.stringify({
+				'ip': value,
+				'workCreateFlag': window.workCreateFlag || ''
+			});
+			textToBase64(payload, function(base64) {
+				var sResponse = deleteBase64Pre(base64);
+				ajaxPost({
+					'admintype': 2,
+					'tab': {id: tab.id},
+					'url': window.spiderSlaveApiCb,
+					'data': {
+						'id': info['id'],
+						'sResponse': uint8ArrayToBlob(pako.gzip(sResponse)),
+						'sFlag': window.spiderSlaveFlag,
+						'workCreateFlag': window.workCreateFlag,
+						'userDataPath': window.userDataPath,
+						'userName': (window.userName ? window.userName : '')
+					}
+				}, finish, finish);
+			});
+		}
+
+		safetyTimer = setTimeout(finish, 15000);
+	}
+
+	function tryNext(index) {
+		if(finished) {
+			return;
+		}
+		if(index >= ipUrls.length) {
+			fail('all candidates failed');
+			return;
+		}
+
+		var url = ipUrls[index];
+		var controller = new AbortController();
+		var perTimer = setTimeout(function() {
+			controller.abort();
+		}, Math.min(8000, maxRunTime));
+
+		fetch(url, {'signal': controller.signal, 'cache': 'no-store'})
+			.then(function(response) {
+				if(!response.ok) {
+					throw new Error('HTTP ' + response.status);
+				}
+				return response.text();
+			})
+			.then(function(text) {
+				clearTimeout(perTimer);
+				var ip = spider108ExtractIp(text);
+				if(ip) {
+					succeed(ip);
+				}else{
+					tryNext(index + 1);
+				}
+			})
+			.catch(function(e) {
+				clearTimeout(perTimer);
+				console.warn('[spiderProxy][108] IP 服务失败:', url, e && e.message);
+				tryNext(index + 1);
+			});
+	}
+
+	setTimeout(function() {
+		tryNext(0);
+	}, delay);
+}
+
 function dealOneAction(tab, info, needJump) {
+	//type 108：代理已切换完成，直接查询出口 IP 并回传，不执行页面动作
+	if(info && parseInt(info['type'], 10) === 108) {
+		runAction108(tab, info);
+		return ;
+	}
+
 	if(window.spiderSlaveActionCountChangeUser > 0 && window.spiderSlaveHelpmate) {
 		window.spiderSlaveRunActionCount++;
 		if(window.spiderSlaveRunActionCount > window.spiderSlaveActionCountChangeUser) {
@@ -2821,6 +3038,7 @@ function dealOneAction(tab, info, needJump) {
 		101: "ajax", 
 		102: "scroll",
 		103: "a by click",
+		108: "change proxy",
 		200: "browser action"
 	};
 
