@@ -1399,7 +1399,15 @@ function getNextTab(urlId) {
 		}
 
 		window.spiderSlaveTabInfos['allTabLocked'] = true;
-		autoCreateTab(window.spiderSlaveUrls[urlId]['url'], function (tab) {
+		//type 107：新建 tab 时用 about:blank，让**唯一一次导航**发生在 Network.enable 之后
+		//（否则建 tab 时就带着目标 URL 发起导航，这次请求在 enable 之前、抓不到；再对同一个 URL 赋 location.href
+		//  可能被浏览器吞掉不产生新请求 → HAR 0 条 → 结果为空）
+		var createTabUrl = window.spiderSlaveUrls[urlId]['url'];
+		var createTabInfo = window.spiderSlaveUrls[urlId];
+		if(createTabInfo && parseInt(createTabInfo['type'], 10) === 107) {
+			createTabUrl = 'about:blank';
+		}
+		autoCreateTab(createTabUrl, function (tab) {
 			window.spiderSlaveTabInfos['tabs'][tab.id] = tab;
 			window.spiderSlaveTabInfos['tabs'][tab.id]['runStatus'] = 1;
 			window.spiderSlaveTabInfos['tabs'][tab.id]['iActiveTime'] = new Date().getTime();
@@ -2641,18 +2649,6 @@ function runAction107(tab, info, cb) {
 		var url = state.matchUrl;
 		var texts = getSelectorTexts();
 
-		if(state.snapshot) {
-			var currentUrl = state.snapshot.url || url;
-			var renderedHtml = '<!doctype html>\n' + state.snapshot.html;
-			state.entries.forEach(function(source) {
-				if(source.resourceType === 'document' && source.request.url === url) {
-					source.renderedContent = renderedHtml;
-					source.currentUrl = currentUrl;
-					source.characterSet = state.snapshot.characterSet;
-				}
-			});
-		}
-
 		var sorted = state.entries.slice().sort(function(a, b) {
 			if(a.startedDateTime < b.startedDateTime) {
 				return -1;
@@ -2673,9 +2669,43 @@ function runAction107(tab, info, cb) {
 			}
 		}
 
+		//页面完成时的 URL 仍匹配不到时依次兜底：导航发起时的 URL → 最后一条 document 条目
+		//（新建 tab 时发起时的 URL 可能还是 about:blank，302/JS 跳转时完成后的 URL 也可能与主文档请求不一致）
+		if(matchIndex === -1 && state.navUrl && state.navUrl !== url) {
+			for (var i = 0; i < scanned.length; i++) {
+				if(scanned[i].request.url === state.navUrl) {
+					matchIndex = i;
+					url = state.navUrl;
+					break;
+				}
+			}
+		}
+		if(matchIndex === -1) {
+			for (var i = scanned.length - 1; i >= 0; i--) {
+				if(scanned[i].resourceType === 'document') {
+					matchIndex = i;
+					url = scanned[i].request.url;
+					break;
+				}
+			}
+		}
+
 		if(matchIndex === -1) {
 			succeed([]);
 			return ;
+		}
+
+		//渲染后 HTML 挂到最终匹配到的那条主文档上（而不是只用发起时的 URL 猜）
+		if(state.snapshot) {
+			var currentUrl = state.snapshot.url || url;
+			var renderedHtml = '<!doctype html>\n' + state.snapshot.html;
+			state.entries.forEach(function(source) {
+				if(source.resourceType === 'document' && source.request.url === url) {
+					source.renderedContent = renderedHtml;
+					source.currentUrl = currentUrl;
+					source.characterSet = state.snapshot.characterSet;
+				}
+			});
 		}
 
 		var picked = scanned.slice(matchIndex, matchIndex + 50);
@@ -2703,14 +2733,20 @@ function runAction107(tab, info, cb) {
 				return ;
 			}
 			state.matchUrl = tabInfo.url;
+			state.navUrl = tabInfo.url;   // 导航发起时的 URL（兜底用；新建 tab 时可能还是 about:blank）
 
 			//runActionComplete 的 cb 在极端并发下可能触发多次，这里只认第一次
 			var completeCalled = false;
-			runActionComplete(tab, info, function() {
+			runActionComplete(tab, info, function(nowTab) {
 				if(completeCalled || state.finished) {
 					return ;
 				}
 				completeCalled = true;
+
+				//页面完成时的 URL 才是主文档的真实地址（新建 tab 时上面那份 tabInfo.url 可能尚未提交）
+				if(nowTab && nowTab.url) {
+					state.matchUrl = nowTab.url;
+				}
 
 				waitXhrFetchQuiet(function() {
 					if(state.finished) {
